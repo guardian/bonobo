@@ -11,9 +11,9 @@ class Application(dynamo: Dynamo) extends Controller {
   }
 
   def createKey = Action {
-    val test = new BonoboKeys("key", "1", "2", "3", "4", "5", 6, 7, "8", "9")
-    dynamo.save(test)
-    Ok(views.html.createKey("A new object has been saved to DynamoDB", test))
+    val testObj = new BonoboKeys("key", "1", "2", "3", "4", "5", 6, 7, "8", "9")
+    dynamo.save(testObj)
+    Ok(views.html.createKey("The new key has been saved to DynamoDB", testObj))
   }
 
   def showKeys = Action {
