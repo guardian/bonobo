@@ -1,0 +1,23 @@
+@(keys: List[BonoboKeys])
+<table>
+    <thead>
+    <tr>
+        <td>API Key</td>
+        <td>Name</td>
+        <td>Company</td>
+        <td>Tier</td>
+        <td>Status</td>
+    </tr>
+    </thead>
+    <tbody>
+    @for(key <- keys) {
+        <tr>
+            <td>@key.key</td>
+            <td>@key.name</td>
+            <td>@key.company</td>
+            <td>@key.tier</td>
+            <td>@key.status</td>
+        </tr>
+    }
+    </tbody>
+</table>

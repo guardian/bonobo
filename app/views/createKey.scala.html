@@ -1,0 +1,13 @@
+@(message: String, obj: BonoboKeys)
+
+@main("Create key") {
+    <h2>@message</h2>
+    <hr/>
+    <h3>Created object:</h3>
+    <dl>
+        <dt>API Key</dt>
+        <dd>@obj.key</dd>
+        <dt>Name</dt>
+        <dd>@obj.name</dd>
+    </dl>
+}
