@@ -14,6 +14,8 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20"
 )
 
+libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "1.1.5"
+
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 // Play provides two styles of routers, one expects its actions to be injected, the

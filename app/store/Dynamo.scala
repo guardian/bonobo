@@ -25,6 +25,7 @@ class Dynamo(db: DynamoDB, tableName: String) {
       .withPrimaryKey("Id", bonoboKeys.Id)
       .withString("key", bonoboKeys.key)
       .withString("name", bonoboKeys.name)
+      .withString("surname", bonoboKeys.surname)
       .withString("company", bonoboKeys.company)
       .withString("email", bonoboKeys.email)
       .withInt("requests_per_day", bonoboKeys.requests_per_day)
@@ -39,6 +40,7 @@ class Dynamo(db: DynamoDB, tableName: String) {
       Id = item.getString("Id"),
       key = item.getString("key"),
       name = item.getString("name"),
+      surname = item.getString("surname"),
       company = item.getString("company"),
       email = item.getString("email"),
       requests_per_day = item.getInt("requests_per_day"),
