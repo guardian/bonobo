@@ -1,7 +1,8 @@
 package store
 
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec
-import com.amazonaws.services.dynamodbv2.document.{ DynamoDB, Item }
+import com.amazonaws.services.dynamodbv2.document.utils.{NameMap, ValueMap}
+import com.amazonaws.services.dynamodbv2.document.{DynamoDB, Item}
 import models._
 
 import scala.collection.JavaConverters._
@@ -10,14 +11,31 @@ class Dynamo(db: DynamoDB, tableName: String) {
 
   private val bonoboTable = db.getTable(tableName)
 
-  def save(bonoboKeys: BonoboKeys): Unit = {
-    val item = toItem(bonoboKeys)
-    bonoboTable.putItem(item)
+  def search(query: String, limit: Int = 20): List[BonoboKeys] = {
+    val scan = new ScanSpec()
+      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s OR #5 = :s OR #6 = :s")
+      .withNameMap(new NameMap()
+      .`with`("#1", "key")
+      .`with`("#2", "email")
+      .`with`("#3", "name")
+      .`with`("#4", "surname")
+      .`with`("#5", "company")
+      .`with`("#6", "url")
+      )
+      .withValueMap(new ValueMap().withString(":s", query))
+      .withMaxResultSize(limit)
+    val it = bonoboTable.scan(scan).iterator().asScala
+    it.map(fromItem(_)).toList.sortBy(_.created_at).reverse
   }
 
   def getAllKeys(): List[BonoboKeys] = {
     val it = bonoboTable.scan(new ScanSpec()).iterator().asScala
     it.map(fromItem(_)).toList.sortBy(_.created_at).reverse
+  }
+
+  def save(bonoboKeys: BonoboKeys): Unit = {
+    val item = toItem(bonoboKeys)
+    bonoboTable.putItem(item)
   }
 
   def toItem(bonoboKeys: BonoboKeys): Item = {
