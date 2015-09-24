@@ -4,7 +4,8 @@
 
 # Home page
 GET        /                    controllers.Application.index
-GET        /createKey           controllers.Application.createKey
+GET        /createKey           controllers.Application.createKeyForm
+POST       /createKey           controllers.Application.createKey
 GET        /showKeys            controllers.Application.showKeys
 
 # Map static resources from the /public folder to the /assets URL path
