@@ -37,7 +37,7 @@ class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
   )
 
   def search = Action { implicit request =>
-      val query = search_form.bindFromRequest.get
+    val query = search_form.bindFromRequest.get
     val keys: List[BonoboKeys] = dynamo.search(query)
     Ok(views.html.showKeys(keys, s"Search results for query: $query"))
   }

@@ -25,12 +25,12 @@ class Dynamo(db: DynamoDB, tableName: String) {
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
     val it = bonoboTable.scan(scan).iterator().asScala
-    it.map(fromItem(_)).toList.sortBy(_.created_at).reverse
+    it.map(fromItem).toList.sortBy(_.created_at).reverse
   }
 
   def getAllKeys(): List[BonoboKeys] = {
     val it = bonoboTable.scan(new ScanSpec()).iterator().asScala
-    it.map(fromItem(_)).toList.sortBy(_.created_at).reverse
+    it.map(fromItem).toList.sortBy(_.created_at).reverse
   }
 
   def save(bonoboKeys: BonoboKeys): Unit = {
