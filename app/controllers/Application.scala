@@ -1,15 +1,18 @@
 package controllers
 
+import scala.concurrent.Future
+
 import models.{ConsumerInput, BonoboKeys}
 import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.data._
 import play.api.mvc._
-import scalaj.http._
 import store.Dynamo
+import play.api.libs.ws._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class Application(dynamo: Dynamo) extends Controller {
+class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
 
   def index = Action {
     Ok(views.html.index("Yo yo yo, your new application is ready."))
@@ -35,25 +38,15 @@ class Application(dynamo: Dynamo) extends Controller {
   }
 
   /* creates a new user and stores information on dynamoDB */
-  def createKey = Action { implicit request =>
+  def createKey = Action.async { implicit request =>
     val (key, email, name, surname, company, url, requests_per_day, requests_per_minute, tier, status) = form.bindFromRequest.get
 
-    // try to add a new username
-    val response = Http("http://52.18.126.249:8001/consumers").postForm(Seq("username" -> email.toString)).asString
-    val json_request: JsValue = Json.parse(response.body)
+    // make the POST request
+    val response: Future[WSResponse] = ws.url("http://52.18.126.249:8001/consumers").post(Map("username" -> Seq("value")))
 
-    // create the consumer object from json
-    val consumer = json_request.as[ConsumerInput]
-
-    def matchResponse(x: String): Result = x match {
-      case "HTTP/1.1 201 Created" => createNewUser()
-      case "HTTP/1.1 409 Conflict" => displayConflictError()
-      case _ => displayGenericError()
-    }
-
-    def createNewUser(): Result = {
-      val newEntry = new BonoboKeys(consumer.id.get, key.toString, email.toString, name.toString, surname.toString,
-        company, url, requests_per_day, requests_per_minute, tier, status, consumer.created_at.get )
+    def createNewUser(consumer: ConsumerInput): Result = {
+      val newEntry = new BonoboKeys(consumer.id, key.toString, email.toString, name.toString, surname.toString,
+        company, url, requests_per_day, requests_per_minute, tier, status, consumer.created_at)
       dynamo.save(newEntry)
 
       Ok(views.html.createKey("A new object has been saved to DynamoDB"))
@@ -67,9 +60,17 @@ class Application(dynamo: Dynamo) extends Controller {
       Ok(views.html.createKey("Something horrible happened"))
     }
 
-    matchResponse(response.headers.get("Status").get)
-
-    //Ok(views.html.createKey(printFormContent()))
+    response.map {
+      response =>
+        response.status match {
+          case 201 => response.json.validate[ConsumerInput] match {
+            case JsSuccess(consumerInput, _) => createNewUser(consumerInput)
+            case JsError(consumerError) => displayGenericError()
+          }
+          case 409 => displayConflictError()
+          case _ => displayGenericError()
+        }
+    }
   }
 
 

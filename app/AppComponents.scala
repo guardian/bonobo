@@ -4,6 +4,9 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import controllers.Application
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.ning.NingWSComponents
+
 //import play.Routes
 import play.api.ApplicationLoader.Context
 import play.api.BuiltInComponentsFromContext
@@ -11,7 +14,7 @@ import play.api.routing.Router
 import router.Routes
 import store.Dynamo
 
-class AppComponents(context: Context) extends BuiltInComponentsFromContext(context) {
+class AppComponents(context: Context) extends BuiltInComponentsFromContext(context) with NingWSComponents {
   val awsCreds = new AWSCredentialsProviderChain(
     new EnvironmentVariableCredentialsProvider(),
     new SystemPropertiesCredentialsProvider(),
@@ -27,7 +30,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new Dynamo(new DynamoDB(client), tableName)
   }
 
-  val appController = new Application(dynamo)
+  val appController = new Application(dynamo, wsClient)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, assets)
 
