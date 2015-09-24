@@ -32,6 +32,16 @@ class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
     )
   )
 
+  val search_form = Form(
+    "query" -> nonEmptyText(minLength = 2, maxLength = 45)
+  )
+
+  def search = Action { implicit request =>
+    val query = search_form.bindFromRequest.get
+    val keys: List[BonoboKeys] = dynamo.search(query)
+    Ok(views.html.showKeys(keys, s"Search results for query: $query"))
+  }
+
   def createKeyForm = Action {
     Ok(views.html.createKey("Enter your details"))
   }
@@ -74,6 +84,6 @@ class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
 
   def showKeys = Action {
     val keys: List[BonoboKeys] = dynamo.getAllKeys()
-    Ok(views.html.showKeys(keys))
+    Ok(views.html.showKeys(keys, "All keys"))
   }
 }
