@@ -2,7 +2,7 @@ package controllers
 
 import scala.concurrent.Future
 
-import models.{ConsumerInput, BonoboKeys}
+import models.{ ConsumerInput, BonoboKeys }
 import play.api.data.Forms._
 import play.api.libs.json._
 import play.api.data._
@@ -10,7 +10,6 @@ import play.api.mvc._
 import store.Dynamo
 import play.api.libs.ws._
 import scala.concurrent.ExecutionContext.Implicits.global
-
 
 class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
 
@@ -72,7 +71,6 @@ class Application(dynamo: Dynamo, ws: WSClient) extends Controller {
         }
     }
   }
-
 
   def showKeys = Action {
     val keys: List[BonoboKeys] = dynamo.getAllKeys()

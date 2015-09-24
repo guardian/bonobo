@@ -1,4 +1,4 @@
-import play.api.{Application, ApplicationLoader}
+import play.api.{ Application, ApplicationLoader }
 import play.api.ApplicationLoader.Context
 
 class AppLoader extends ApplicationLoader {

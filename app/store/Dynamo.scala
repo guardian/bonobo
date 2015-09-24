@@ -1,7 +1,7 @@
 package store
 
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec
-import com.amazonaws.services.dynamodbv2.document.{DynamoDB, Item}
+import com.amazonaws.services.dynamodbv2.document.{ DynamoDB, Item }
 import models._
 
 import scala.collection.JavaConverters._
