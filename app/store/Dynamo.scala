@@ -17,7 +17,7 @@ class Dynamo(db: DynamoDB, tableName: String) {
 
   def getAllKeys(): List[BonoboKeys] = {
     val it = bonoboTable.scan(new ScanSpec()).iterator().asScala
-    it.map(fromItem(_)).toList
+    it.map(fromItem(_)).toList.sortBy(_.created_at).reverse
   }
 
   def toItem(bonoboKeys: BonoboKeys): Item = {
@@ -33,6 +33,7 @@ class Dynamo(db: DynamoDB, tableName: String) {
       .withString("status", bonoboKeys.status)
       .withString("tier", bonoboKeys.tier)
       .withString("url", bonoboKeys.url)
+      .withLong("created_at", bonoboKeys.created_at)
   }
 
   def fromItem(item: Item): BonoboKeys = {
@@ -47,7 +48,8 @@ class Dynamo(db: DynamoDB, tableName: String) {
       requests_per_minute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
       tier = item.getString("tier"),
-      url = item.getString("url")
+      url = item.getString("url"),
+      created_at = item.getLong("created_at")
     )
   }
 }

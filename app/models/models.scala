@@ -13,10 +13,12 @@ case class BonoboKeys
  requests_per_day: Int,
  requests_per_minute: Int,
  tier: String,
- status: String)
+ status: String,
+ created_at: Long)
 
-case class ConsumerInput(id: Option[String], username: Option[String], message: Option[String])
+case class ConsumerInput(id: Option[String], username: Option[String], message: Option[String], created_at: Option[Long])
 
 object ConsumerInput {
  implicit val consumerRead = Json.reads[ConsumerInput]
 }
+
