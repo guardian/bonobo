@@ -1,8 +1,6 @@
 package models
 
 import play.api.libs.json.Json
-import play.api.libs.functional.syntax._
-import play.libs.F.Tuple
 
 case class BonoboKeys
 (Id: String,
@@ -22,18 +20,3 @@ case class ConsumerInput(id: Option[String], username: Option[String], message: 
 object ConsumerInput {
  implicit val consumerRead = Json.reads[ConsumerInput]
 }
-
-
-/*
-case class ConsumerHeaders(AccessControlAllowOrigin: String,
-Connection: String,
-ContentType: String,
-Date: String,
-Server: String,
-Status: String,
-TransferEncoding: String)
-
-object ConsumerHeaders {
-  implicit val consumerRead = Json.reads[ConsumerInput]
-}
-*/
