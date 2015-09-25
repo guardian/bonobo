@@ -27,9 +27,16 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
   )
 
   def search = Action { implicit request =>
-    val query = search_form.bindFromRequest.get
-    val keys: List[BonoboKey] = dynamo.search(query)
-    Ok(views.html.showKeys(keys, s"Search results for query: $query"))
+    def handleErrors(f: Form[String]): Result = {
+      Ok(views.html.index("empty string?"))
+    }
+
+    def handleSuccess(q: String): Result = {
+      val keys: List[BonoboKey] = dynamo.search(q)
+      Ok(views.html.showKeys(keys, s"Search results for query: $q", None))
+    }
+
+    search_form.bindFromRequest.fold(handleErrors, handleSuccess)
   }
 
   def createKeyForm = Action { implicit request =>
@@ -42,7 +49,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
       val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
         formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
       dynamo.save(newEntry)
-      Ok(views.html.createKey("A new object has been saved to DynamoDB", form))
+      Ok(views.html.createKey("A new key has been successfully added.", form))
     }
 
     def displayError(message: String): Result = {
@@ -66,7 +73,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 
   def showKeys = Action {
     val keys: List[BonoboKey] = dynamo.getAllKeys()
-    Ok(views.html.showKeys(keys, "All keys"))
+    Ok(views.html.showKeys(keys, "All keys", None))
   }
 }
 

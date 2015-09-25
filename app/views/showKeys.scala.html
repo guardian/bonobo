@@ -1,8 +1,9 @@
-@(keys: List[BonoboKey], pageTitle: String)
+@(keys: List[BonoboKey], pageTitle: String, optionalError: Option[String])
 
 @main(pageTitle){
     <div class="row">
         <div class="col-md-12">
+            <p class="text-danger">@optionalError</p>
             <table class="table table-responsive table-striped">
                 <thead>
                     <tr>
