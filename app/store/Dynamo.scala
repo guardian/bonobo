@@ -7,7 +7,17 @@ import models._
 
 import scala.collection.JavaConverters._
 
-class Dynamo(db: DynamoDB, tableName: String) {
+trait DB {
+
+  def search(query: String, limit: Int = 20): List[BonoboKey]
+
+  def save(bonoboKey: BonoboKey): Unit
+
+  def getAllKeys(): List[BonoboKey]
+
+}
+
+class Dynamo(db: DynamoDB, tableName: String) extends DB {
 
   private val bonoboTable = db.getTable(tableName)
 

@@ -13,6 +13,7 @@ import play.api.BuiltInComponentsFromContext
 import play.api.routing.Router
 import router.Routes
 import store.Dynamo
+import kong.KongClient
 
 class AppComponents(context: Context) extends BuiltInComponentsFromContext(context) with NingWSComponents {
   val awsCreds = new AWSCredentialsProviderChain(
@@ -30,8 +31,10 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new Dynamo(new DynamoDB(client), tableName)
   }
 
+  val kong = new KongClient(wsClient)
+
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  val appController = new Application(dynamo, wsClient, messagesApi)
+  val appController = new Application(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, assets)
 
