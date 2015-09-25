@@ -1,8 +1,8 @@
 package store
 
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec
-import com.amazonaws.services.dynamodbv2.document.utils.{NameMap, ValueMap}
-import com.amazonaws.services.dynamodbv2.document.{DynamoDB, Item}
+import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
+import com.amazonaws.services.dynamodbv2.document.{ DynamoDB, Item }
 import models._
 
 import scala.collection.JavaConverters._
@@ -11,16 +11,15 @@ class Dynamo(db: DynamoDB, tableName: String) {
 
   private val bonoboTable = db.getTable(tableName)
 
-  def search(query: String, limit: Int = 20): List[BonoboKeys] = {
+  def search(query: String, limit: Int = 20): List[BonoboKey] = {
     val scan = new ScanSpec()
-      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s OR #5 = :s OR #6 = :s")
+      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s OR #5 = :s")
       .withNameMap(new NameMap()
-      .`with`("#1", "key")
-      .`with`("#2", "email")
-      .`with`("#3", "name")
-      .`with`("#4", "surname")
-      .`with`("#5", "company")
-      .`with`("#6", "url")
+        .`with`("#1", "key")
+        .`with`("#2", "email")
+        .`with`("#3", "name")
+        .`with`("#4", "company")
+        .`with`("#5", "url")
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
@@ -28,22 +27,21 @@ class Dynamo(db: DynamoDB, tableName: String) {
     it.map(fromItem).toList.sortBy(_.created_at).reverse
   }
 
-  def getAllKeys(): List[BonoboKeys] = {
+  def getAllKeys(): List[BonoboKey] = {
     val it = bonoboTable.scan(new ScanSpec()).iterator().asScala
     it.map(fromItem).toList.sortBy(_.created_at).reverse
   }
 
-  def save(bonoboKeys: BonoboKeys): Unit = {
+  def save(bonoboKeys: BonoboKey): Unit = {
     val item = toItem(bonoboKeys)
     bonoboTable.putItem(item)
   }
 
-  def toItem(bonoboKeys: BonoboKeys): Item = {
+  def toItem(bonoboKeys: BonoboKey): Item = {
     new Item()
-      .withPrimaryKey("Id", bonoboKeys.Id)
+      .withPrimaryKey("Id", bonoboKeys.id)
       .withString("key", bonoboKeys.key)
       .withString("name", bonoboKeys.name)
-      .withString("surname", bonoboKeys.surname)
       .withString("company", bonoboKeys.company)
       .withString("email", bonoboKeys.email)
       .withInt("requests_per_day", bonoboKeys.requestsPerDay)
@@ -54,12 +52,11 @@ class Dynamo(db: DynamoDB, tableName: String) {
       .withLong("created_at", bonoboKeys.created_at)
   }
 
-  def fromItem(item: Item): BonoboKeys = {
-    BonoboKeys(
-      Id = item.getString("Id"),
+  def fromItem(item: Item): BonoboKey = {
+    BonoboKey(
+      id = item.getString("Id"),
       key = item.getString("key"),
       name = item.getString("name"),
-      surname = item.getString("surname"),
       company = item.getString("company"),
       email = item.getString("email"),
       requestsPerDay = item.getInt("requests_per_day"),

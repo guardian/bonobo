@@ -4,7 +4,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import controllers.Application
-import play.api.i18n.{DefaultLangs, DefaultMessagesApi, MessagesApi}
+import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 
 //import play.Routes

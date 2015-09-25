@@ -1,9 +1,9 @@
 package controllers
 
-import models.{BonoboKeys, ConsumerInput}
+import models.{ BonoboKey, ConsumerInput }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.i18n.{I18nSupport, MessagesApi}
+import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.mvc._
@@ -26,10 +26,9 @@ class Application(dynamo: Dynamo, ws: WSClient, val messagesApi: MessagesApi) ex
 
   def search = Action { implicit request =>
     val query = search_form.bindFromRequest.get
-    val keys: List[BonoboKeys] = dynamo.search(query)
+    val keys: List[BonoboKey] = dynamo.search(query)
     Ok(views.html.showKeys(keys, s"Search results for query: $query"))
   }
-
 
   def createKeyForm = Action { implicit request =>
     Ok(views.html.createKey("Enter your details", form))
@@ -38,8 +37,8 @@ class Application(dynamo: Dynamo, ws: WSClient, val messagesApi: MessagesApi) ex
   /* creates a new user and stores information on dynamoDB */
   def createKey = Action.async { implicit request =>
     def createNewUser(consumer: ConsumerInput, formData: FormData): Result = {
-      val newEntry = new BonoboKeys(consumer.id, formData.key, formData.email, formData.name, formData.surname,
-        formData.company, formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
+      val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
+        formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
       dynamo.save(newEntry)
       Ok(views.html.createKey("A new object has been saved to DynamoDB", form))
     }
@@ -74,20 +73,19 @@ class Application(dynamo: Dynamo, ws: WSClient, val messagesApi: MessagesApi) ex
   }
 
   def showKeys = Action {
-    val keys: List[BonoboKeys] = dynamo.getAllKeys()
+    val keys: List[BonoboKey] = dynamo.getAllKeys()
     Ok(views.html.showKeys(keys, "All keys"))
   }
 }
 
 object Application {
-  case class FormData(key: String, email: String, name: String, surname: String, company: String, url: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class FormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
 
   val form: Form[FormData] = Form(
     mapping(
       "key" -> nonEmptyText,
       "email" -> nonEmptyText,
       "name" -> nonEmptyText,
-      "surname" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "requestsPerDay" -> number,
