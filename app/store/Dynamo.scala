@@ -46,8 +46,8 @@ class Dynamo(db: DynamoDB, tableName: String) {
       .withString("surname", bonoboKeys.surname)
       .withString("company", bonoboKeys.company)
       .withString("email", bonoboKeys.email)
-      .withInt("requests_per_day", bonoboKeys.requests_per_day)
-      .withInt("requests_per_minute", bonoboKeys.requests_per_minute)
+      .withInt("requests_per_day", bonoboKeys.requestsPerDay)
+      .withInt("requests_per_minute", bonoboKeys.requestsPerMinute)
       .withString("status", bonoboKeys.status)
       .withString("tier", bonoboKeys.tier)
       .withString("url", bonoboKeys.url)
@@ -62,8 +62,8 @@ class Dynamo(db: DynamoDB, tableName: String) {
       surname = item.getString("surname"),
       company = item.getString("company"),
       email = item.getString("email"),
-      requests_per_day = item.getInt("requests_per_day"),
-      requests_per_minute = item.getInt("requests_per_minute"),
+      requestsPerDay = item.getInt("requests_per_day"),
+      requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
       tier = item.getString("tier"),
       url = item.getString("url"),

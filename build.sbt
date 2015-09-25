@@ -11,7 +11,8 @@ libraryDependencies ++= Seq(
   cache,
   ws,
   specs2 % Test,
-  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20"
+  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20",
+  "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24"
 )
 
 libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "1.1.5"
