@@ -2,15 +2,14 @@ package models
 
 import play.api.libs.json.Json
 
-case class BonoboKeys(Id: String,
+case class BonoboKey(id: String,
   key: String,
   email: String,
   name: String,
-  surname: String,
   company: String,
   url: String,
-  requests_per_day: Int,
-  requests_per_minute: Int,
+  requestsPerDay: Int,
+  requestsPerMinute: Int,
   tier: String,
   status: String,
   created_at: Long)

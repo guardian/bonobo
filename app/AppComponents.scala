@@ -4,7 +4,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import controllers.Application
-import play.api.libs.ws.WSClient
+import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 
 //import play.Routes
@@ -30,7 +30,8 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new Dynamo(new DynamoDB(client), tableName)
   }
 
-  val appController = new Application(dynamo, wsClient)
+  val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
+  val appController = new Application(dynamo, wsClient, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, assets)
 
