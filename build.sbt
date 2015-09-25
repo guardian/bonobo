@@ -7,15 +7,13 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.6"
 
 libraryDependencies ++= Seq(
-  jdbc,
-  cache,
   ws,
-  specs2 % Test,
   "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20",
-  "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24"
+  "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
+  "org.scalatest" % "scalatest_2.11" % "2.2.5",
+  "org.scalatestplus" % "play_2.11" % "1.4.0-M4",
+  "org.mockito" % "mockito-all" % "1.10.19"
 )
-
-libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "1.1.5"
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
