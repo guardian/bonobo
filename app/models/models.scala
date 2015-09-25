@@ -14,9 +14,9 @@ case class BonoboKey(id: String,
   status: String,
   created_at: Long)
 
-case class ConsumerInput(id: String, created_at: Long)
+case class KongCreateKeyResponse(id: String, created_at: Long)
 
-object ConsumerInput {
-  implicit val consumerRead = Json.reads[ConsumerInput]
+object KongCreateKeyResponse {
+  implicit val consumerRead = Json.reads[KongCreateKeyResponse]
 }
 

@@ -11,7 +11,7 @@ import scala.concurrent.Future
 object Kong {
 
   sealed trait CreateKeyResult
-  case class Succeeded(consumerInput: ConsumerInput) extends CreateKeyResult
+  case class Succeeded(consumerInput: KongCreateKeyResponse) extends CreateKeyResult
   case object UsernameAlreadyTaken extends CreateKeyResult
   case object GenericError extends CreateKeyResult
 
@@ -31,7 +31,7 @@ class KongClient(ws: WSClient) extends Kong {
     ws.url("http://52.18.126.249:8001/consumers").post(Map("username" -> Seq(username))).map {
       response =>
         response.status match {
-          case 201 => response.json.validate[ConsumerInput] match {
+          case 201 => response.json.validate[KongCreateKeyResponse] match {
             case JsSuccess(consumerInput, _) => Succeeded(consumerInput) // createNewUser(consumerInput, formData)
             case JsError(consumerError) => GenericError // displayGenericError()
           }

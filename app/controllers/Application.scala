@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ BonoboKey, ConsumerInput }
+import models.{ BonoboKey, KongCreateKeyResponse }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -38,7 +38,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 
   /* creates a new user and stores information on dynamoDB */
   def createKey = Action.async { implicit request =>
-    def createNewUser(consumer: ConsumerInput, formData: FormData): Result = {
+    def createNewUser(consumer: KongCreateKeyResponse, formData: FormData): Result = {
       val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
         formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
       dynamo.save(newEntry)
