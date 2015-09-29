@@ -55,13 +55,14 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         response.status match {
           case 201 => Future.successful()
           case 409 => Future.failed(ConflictFailure)
-          case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit"))
+          case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit. $consumerId"))
         }
     }
   }
 
   private def createKey(consumerId: String): Future[Unit] = {
-    ws.url(s"/consumers/$consumerId/keyauth").post("").flatMap {
+    ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
+      "key" -> Seq(consumerId))).flatMap { // TODO: actually create a key
       response =>
         response.status match {
           case 201 => Future.successful()

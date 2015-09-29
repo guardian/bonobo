@@ -30,8 +30,10 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(awsCreds).withRegion(awsRegion)
     new Dynamo(new DynamoDB(client), tableName)
   }
-
-  val kong = new KongClient(wsClient, "http://52.18.126.249:8001", configuration.getString("kong.apiName") getOrElse "internal")
+  val kong = new KongClient(wsClient, configuration.getString("kong.apiAddress") getOrElse
+    sys.error("You haven't configured application.conf correctly"),
+    configuration.getString("kong.apiName") getOrElse
+      sys.error("You haven't configured application.conf correctly"))
 
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   val appController = new Application(dynamo, kong, messagesApi)
