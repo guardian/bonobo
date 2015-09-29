@@ -62,10 +62,10 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   private def createKey(consumerId: String): Future[Unit] = {
+    // TODO: we're using the consumerId as a key here. Might want to change this down the line?
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
-      // TODO: we're using the consumerId as a key here. Might want to change this down the line?
-      response =>
       "key" -> Seq(consumerId))).flatMap {
+      response =>
         response.status match {
           case 201 => Future.successful()
           case _ => Future.failed(KeyCreationFailed)
