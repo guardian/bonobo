@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ BonoboKey, KongCreateKeyResponse }
+import models.{ BonoboKey, KongCreateConsumerResponse }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -38,30 +38,33 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 
   /* creates a new user and stores information on dynamoDB */
   def createKey = Action.async { implicit request =>
-    def createNewUser(consumer: KongCreateKeyResponse, formData: FormData): Result = {
+    def saveUserToDynamo(consumer: KongCreateConsumerResponse, formData: FormData): Result = {
+      // save info on dynamoDB
       val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
         formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
       dynamo.save(newEntry)
-      Ok(views.html.createKey("A new object has been saved to DynamoDB", form))
+
+      Ok(views.html.createKey("A new user has been successfully added", form))
     }
 
     def displayError(message: String): Result = {
       Ok(views.html.createKey(message, form))
     }
 
-    def handleErrors(f: Form[FormData]): Future[Result] = {
+    def handleInvalidForm(f: Form[FormData]): Future[Result] = {
       Future.successful(Ok(views.html.createKey("Please, correct the highlighted fields.", f)))
     }
 
-    def handleSuccess(formData: FormData): Future[Result] = {
-      kong.createKey(formData.email) map {
-        case Succeeded(consumerInput) => createNewUser(consumerInput, formData)
-        case UsernameAlreadyTaken => displayError("Email already taken")
-        case GenericError => displayError("Something horrible happened")
+    def handleValidForm(formData: FormData): Future[Result] = {
+      kong.createConsumer(formData.email) map {
+        consumer => saveUserToDynamo(consumer, formData)
+      } recover {
+        case ConflictFailure => displayError("Username already taken")
+        case GenericFailure(message) => displayError(message)
       }
     }
 
-    form.bindFromRequest.fold[Future[Result]](handleErrors, handleSuccess)
+    form.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def showKeys = Action {

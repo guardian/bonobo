@@ -31,7 +31,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new Dynamo(new DynamoDB(client), tableName)
   }
 
-  val kong = new KongClient(wsClient)
+  val kong = new KongClient(wsClient, "http://52.18.126.249:8001", configuration.getString("kong.apiName") getOrElse "internal")
 
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   val appController = new Application(dynamo, kong, messagesApi)
