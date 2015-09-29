@@ -11,7 +11,7 @@ import scala.concurrent.Future
 object Kong {
   case object KeyCreationFailed extends RuntimeException("KeyCreationFailed", null, true, false)
   case object ConflictFailure extends Exception
-  case class GenericFailure(messege: String) extends Exception(messege)
+  case class GenericFailure(message: String) extends Exception(message)
 }
 
 trait Kong {
@@ -63,8 +63,9 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   private def createKey(consumerId: String): Future[Unit] = {
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
-      "key" -> Seq(consumerId))).flatMap { // TODO: actually create a key
+      // TODO: we're using the consumerId as a key here. Might want to change this down the line?
       response =>
+      "key" -> Seq(consumerId))).flatMap {
         response.status match {
           case 201 => Future.successful()
           case _ => Future.failed(KeyCreationFailed)

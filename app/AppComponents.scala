@@ -31,7 +31,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(awsCreds).withRegion(awsRegion)
     new Dynamo(new DynamoDB(client), tableName)
   }
-  
+
   val kong = {
     def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
     val apiAddress = confString("kong.apiAddress")
@@ -43,5 +43,4 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
   val appController = new Application(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, assets)
-
 }
