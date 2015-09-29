@@ -9,21 +9,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 object Kong {
-  case object KeyCreationFailed extends Exception
+  case object KeyCreationFailed extends RuntimeException("KeyCreationFailed", null, true, false)
   case object ConflictFailure extends Exception
   case class GenericFailure(messege: String) extends Exception(messege)
 }
 
 trait Kong {
-
-  def createConsumer(username: String): Future[KongCreateConsumerResponse]
-
+  def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
   import Kong._
 
-  def registerNewUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
+  def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
 
     for {
       consumer <- createConsumer(username)
@@ -33,7 +31,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   }
 
-  def createConsumer(username: String): Future[KongCreateConsumerResponse] = {
+  private def createConsumer(username: String): Future[KongCreateConsumerResponse] = {
     ws.url(s"$serverUrl/consumers").post(Map("username" -> Seq(username))).flatMap {
       response =>
         response.status match {
@@ -47,7 +45,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
+  private def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
     ws.url(s"$serverUrl/apis/$apiName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
       "name" -> Seq("ratelimiting"),
@@ -62,7 +60,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  def createKey(consumerId: String): Future[Unit] = {
+  private def createKey(consumerId: String): Future[Unit] = {
     ws.url(s"/consumers/$consumerId/keyauth").post("").flatMap {
       response =>
         response.status match {

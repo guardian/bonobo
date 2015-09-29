@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ BonoboKey, KongCreateConsumerResponse }
+import models.{RateLimits, BonoboKey, KongCreateConsumerResponse}
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -56,7 +56,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
     }
 
     def handleValidForm(formData: FormData): Future[Result] = {
-      kong.createConsumer(formData.email) map {
+      val rateLimit = RateLimits(formData.requestsPerMinute, formData.requestsPerDay)
+      kong.registerUser(formData.email, rateLimit) map {
         consumer => saveUserToDynamo(consumer, formData)
       } recover {
         case ConflictFailure => displayError("Username already taken")
