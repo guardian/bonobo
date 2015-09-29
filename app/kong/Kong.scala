@@ -55,7 +55,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         response.status match {
           case 201 => Future.successful()
           case 409 => Future.failed(ConflictFailure)
-          case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit. $consumerId"))
+          case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit" +
+            s"for user $consumerId"))
         }
     }
   }
