@@ -33,7 +33,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def save(bonoboKey: BonoboKey): Unit = ???
 
       def getAllKeys(): List[BonoboKey] = {
-        return List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", 293029))
+        List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", 293029))
       }
     }
     val application = new Application(dynamo, mockKong, messagesApi)
