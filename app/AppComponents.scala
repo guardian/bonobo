@@ -23,6 +23,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new ProfileCredentialsProvider(),
     new InstanceProfileCredentialsProvider()
   )
+
   val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
 
   val dynamo = {
@@ -31,11 +32,15 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new Dynamo(new DynamoDB(client), tableName)
   }
 
-  val kong = new KongClient(wsClient)
+  val kong = {
+    def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
+    val apiAddress = confString("kong.apiAddress")
+    val apiName = confString("kong.apiName")
+    new KongClient(wsClient, apiAddress, apiName)
+  }
 
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   val appController = new Application(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, assets)
-
 }

@@ -14,9 +14,11 @@ case class BonoboKey(id: String,
   status: String,
   created_at: Long)
 
-case class KongCreateKeyResponse(id: String, created_at: Long)
+case class KongCreateConsumerResponse(id: String, created_at: Long)
 
-object KongCreateKeyResponse {
-  implicit val consumerRead = Json.reads[KongCreateKeyResponse]
+object KongCreateConsumerResponse {
+  implicit val consumerRead = Json.reads[KongCreateConsumerResponse]
 }
 
+case class RateLimits(requestsPerMinute: Int,
+  requestsPerDay: Int)
