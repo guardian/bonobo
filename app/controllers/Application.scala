@@ -26,9 +26,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
         Ok(views.html.index("Invalid search"))
       },
       searchFormData => {
-        val query = searchFormData.query
-        val keys: List[BonoboKey] = dynamo.search(query)
-        Ok(views.html.showKeys(keys, s"Search results for query: $query"))
+        val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
+        Ok(views.html.showKeys(keys, s"Search results for query: ${searchFormData.query}"))
       }
     )
   }
@@ -90,11 +89,11 @@ object Application {
     )(FormData.apply)(FormData.unapply)
   )
 
-  case class searchFormData(query: String)
+  case class SearchFormData(query: String)
 
   val searchForm = Form(
     mapping(
       "query" -> nonEmptyText(minLength = 2, maxLength = 45)
-    )(searchFormData.apply)(searchFormData.unapply)
+    )(SearchFormData.apply)(SearchFormData.unapply)
   )
 }
