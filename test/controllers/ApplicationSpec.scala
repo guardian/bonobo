@@ -28,12 +28,13 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     val dynamo = new DB {
       def search(query: String, limit: Port): List[BonoboKey] = ???
       def save(bonoboKey: BonoboKey): Unit = ???
-      def getAllKeys(): List[BonoboKey] = {
-        List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", 293029))
+      def getKeys(direction: String, range: String): (List[BonoboKey], Boolean) = {
+        (List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", "293029")), false)
       }
+      def retrieveKey(id: String): BonoboKey = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi)
-    val result: Future[Result] = application.showKeys().apply(FakeRequest())
+    val result: Future[Result] = application.showFirstKeys().apply(FakeRequest())
     contentAsString(result) should include("email@some.com")
   }
 
