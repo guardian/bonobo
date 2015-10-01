@@ -12,7 +12,7 @@ case class BonoboKey(id: String,
   requestsPerMinute: Int,
   tier: String,
   status: String,
-  created_at: Long)
+  createdAt: String)
 
 case class KongCreateConsumerResponse(id: String, created_at: Long)
 

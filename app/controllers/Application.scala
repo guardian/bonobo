@@ -27,30 +27,38 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
       },
       searchFormData => {
         val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
-        Ok(views.html.showKeys(keys, s"Search results for query: ${searchFormData.query}"))
+        val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
+        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false))
       }
     )
   }
 
   def createKeyForm = Action { implicit request =>
-    Ok(views.html.createKey("Enter your details", form))
+    Ok(views.html.createKey(message = "", form))
+  }
+
+  def editKey(id: String) = Action { implicit request =>
+    val result = dynamo.retrieveKey(id)
+    val filledForm = form.fill(FormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
+      result.requestsPerMinute, result.tier, result.status))
+    Ok(views.html.editKey(message = "", id, filledForm))
   }
 
   def createKey = Action.async { implicit request =>
     def saveUser(consumer: KongCreateConsumerResponse, formData: FormData): Result = {
       val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
-        formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at)
+        formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at.toString)
       dynamo.save(newEntry)
 
-      Ok(views.html.createKey("A new user has been successfully added", form))
+      Ok(views.html.createKey(message = "A new user has been successfully added", form))
     }
 
     def displayError(message: String): Result = {
       Ok(views.html.createKey(message, form))
     }
 
-    def handleInvalidForm(f: Form[FormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createKey("Please, correct the highlighted fields.", f)))
+    def handleInvalidForm(form: Form[FormData]): Future[Result] = {
+      Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form)))
     }
 
     def handleValidForm(formData: FormData): Future[Result] = {
@@ -65,9 +73,14 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
     form.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def showKeys = Action {
-    val keys: List[BonoboKey] = dynamo.getAllKeys()
-    Ok(views.html.showKeys(keys, "All keys"))
+  def showFirstKeys = Action {
+    val (keys, hasNext) = dynamo.getKeys("next", "")
+    Ok(views.html.showKeys(keys, pageTitle = "All keys", lastDirection = "", hasNext))
+  }
+
+  def showKeys(direction: String, range: String) = Action { implicit request =>
+    val (keys, hasNext) = dynamo.getKeys(direction, range)
+    Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext))
   }
 }
 
