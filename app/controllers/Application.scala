@@ -27,7 +27,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
       },
       searchFormData => {
         val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
-        Ok(views.html.showKeys(keys, s"Search results for query: ${searchFormData.query}", "", false))
+        val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
+        Ok(views.html.showKeys(keys, searchResultsMessage, "", false))
       }
     )
   }
