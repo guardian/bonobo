@@ -4,8 +4,6 @@ import models.{ RateLimits, BonoboKey, KongCreateConsumerResponse }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
-import play.api.libs.json._
-import play.api.libs.ws._
 import play.api.mvc._
 import store._
 import kong._
@@ -22,14 +20,16 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
     Ok(views.html.index("Yo yo yo, your new application is ready."))
   }
 
-  val search_form = Form(
-    "query" -> nonEmptyText(minLength = 2, maxLength = 45)
-  )
-
   def search = Action { implicit request =>
-    val query = search_form.bindFromRequest.get
-    val keys: List[BonoboKey] = dynamo.search(query)
-    Ok(views.html.showKeys(keys, s"Search results for query: $query"))
+    searchForm.bindFromRequest.fold(
+      formWithErrors => {
+        Ok(views.html.index("Invalid search"))
+      },
+      searchFormData => {
+        val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
+        Ok(views.html.showKeys(keys, s"Search results for query: ${searchFormData.query}"))
+      }
+    )
   }
 
   def createKeyForm = Action { implicit request =>
@@ -62,7 +62,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
         case GenericFailure(message) => displayError(message)
       }
     }
-
     form.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
@@ -73,7 +72,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 }
 
 object Application {
-  case class FormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class FormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
+    requestsPerMinute: Int, tier: String, status: String)
 
   val form: Form[FormData] = Form(
     mapping(
@@ -87,5 +87,13 @@ object Application {
       "tier" -> nonEmptyText,
       "status" -> nonEmptyText
     )(FormData.apply)(FormData.unapply)
+  )
+
+  case class SearchFormData(query: String)
+
+  val searchForm = Form(
+    mapping(
+      "query" -> nonEmptyText(minLength = 2, maxLength = 45)
+    )(SearchFormData.apply)(SearchFormData.unapply)
   )
 }

@@ -20,5 +20,4 @@ object KongCreateConsumerResponse {
   implicit val consumerRead = Json.reads[KongCreateConsumerResponse]
 }
 
-case class RateLimits(requestsPerMinute: Int,
-  requestsPerDay: Int)
+case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)

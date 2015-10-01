@@ -28,7 +28,6 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       _ <- setRateLimit(consumer.id, rateLimit)
       _ <- createKey(consumer.id)
     } yield consumer
-
   }
 
   private def createConsumer(username: String): Future[KongCreateConsumerResponse] = {
@@ -56,7 +55,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
           case 201 => Future.successful()
           case 409 => Future.failed(ConflictFailure)
           case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit" +
-            s"for user $consumerId"))
+            s" for user $consumerId"))
         }
     }
   }
@@ -72,5 +71,4 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         }
     }
   }
-
 }
