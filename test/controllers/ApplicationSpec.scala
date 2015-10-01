@@ -20,7 +20,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
   "index" should "say yo" in {
     val application = new Application(mockDynamo, mockKong, null)
-    val result: Future[Result] = application.index().apply(FakeRequest())
+    val result: Future[Result] = application.index.apply(FakeRequest())
     contentAsString(result) should include("Yo yo yo")
   }
 
@@ -34,7 +34,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def retrieveKey(id: String): BonoboKey = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi)
-    val result: Future[Result] = application.showFirstKeys().apply(FakeRequest())
+    val result: Future[Result] = application.showFirstKeys.apply(FakeRequest())
     contentAsString(result) should include("email@some.com")
   }
 
@@ -42,13 +42,13 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     val myRequest: (String, String) = ("name", "")
     val application = new Application(mockDynamo, mockKong, messagesApi)
 
-    val result: Future[Result] = application.createKey().apply(FakeRequest().withFormUrlEncodedBody(myRequest))
+    val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
     val application = new Application(mockDynamo, mockKong, messagesApi)
-    val result: Future[Result] = application.search().apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
+    val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
 
@@ -65,7 +65,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     }
     val application = new Application(mockDynamo, kong, messagesApi)
 
-    val result: Future[Result] = application.createKey().apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
+    val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
     contentAsString(result) should include("A new user has been successfully added")
   }
 }

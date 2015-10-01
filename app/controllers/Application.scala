@@ -57,8 +57,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
       Ok(views.html.createKey(message, form))
     }
 
-    def handleInvalidForm(f: Form[FormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form = f)))
+    def handleInvalidForm(form: Form[FormData]): Future[Result] = {
+      Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form)))
     }
 
     def handleValidForm(formData: FormData): Future[Result] = {
