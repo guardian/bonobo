@@ -38,7 +38,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 
   def editKey(id: String) = Action { implicit request =>
     val result = dynamo.retrieveKey(id)
-    println(result)
     val filledForm = form.fill(FormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey("", id, filledForm))

@@ -69,7 +69,6 @@ class Dynamo(db: DynamoDB, tableName: String) extends DB {
     val result = bonoboTable.query(query).iterator().asScala.map(fromItem).toList
     val testQuery = createQuerySpec(result.last.createdAt) //TODO: improve query using COUNT
     val testResult = bonoboTable.query(testQuery).asScala.toList
-    println("Next " + testResult.length)
     testResult.length match {
       case 0 => (result, false)
       case _ => (result, true)
@@ -89,7 +88,6 @@ class Dynamo(db: DynamoDB, tableName: String) extends DB {
     val result = bonoboTable.query(query).iterator().asScala.map(fromItem).toList.reverse
     val testQuery = createQuerySpec(result.head.createdAt) //TODO: improve query using COUNT
     val testResult = bonoboTable.query(testQuery).asScala.toList.reverse
-    println("Previous " + testResult.length)
     testResult.length match {
       case 0 => (result, false)
       case _ => (result, true)
@@ -101,7 +99,6 @@ class Dynamo(db: DynamoDB, tableName: String) extends DB {
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("id = :i")
       .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
-
     val it = bonoboTable.query(query).iterator().asScala
     it.map(fromItem).toList.head
   }
