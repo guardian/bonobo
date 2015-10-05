@@ -30,3 +30,8 @@ object BonoboKey {
       formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, createdAt)
   }
 }
+case class KongPluginConfig(id: String)
+
+object KongPluginConfig {
+  implicit val pluginsRead = Json.reads[KongPluginConfig]
+}

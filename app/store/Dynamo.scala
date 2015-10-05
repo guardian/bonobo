@@ -1,6 +1,6 @@
 package store
 
-import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec }
+import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec, UpdateItemSpec }
 import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
 import com.amazonaws.services.dynamodbv2.document._
 import models._
@@ -19,6 +19,9 @@ trait DB {
 
   def retrieveKey(id: String): BonoboKey
 
+  def updateUser(bonoboKey: BonoboKey): Unit
+
+  def deleteUser(createdAt: String): Unit
 }
 
 class Dynamo(db: DynamoDB, tableName: String) extends DB {
@@ -66,11 +69,14 @@ class Dynamo(db: DynamoDB, tableName: String) extends DB {
     }
     val query = createQuerySpec(afterRange)
     val result = bonoboTable.query(query).asScala.toList.map(fromItem)
-    val testQuery = createQuerySpec(result.last.createdAt) //TODO: improve query using COUNT
-    val testResult = bonoboTable.query(testQuery).asScala.toList
-    testResult.length match {
-      case 0 => (result, false)
-      case _ => (result, true)
+    if (result.length == 0) (result, false)
+    else {
+      val testQuery = createQuerySpec(result.last.createdAt) //TODO: improve query using COUNT
+      val testResult = bonoboTable.query(testQuery).asScala.toList
+      testResult.length match {
+        case 0 => (result, false)
+        case _ => (result, true)
+      }
     }
   }
 
@@ -105,6 +111,23 @@ class Dynamo(db: DynamoDB, tableName: String) extends DB {
   def save(bonoboKey: BonoboKey): Unit = {
     val item = toItem(bonoboKey)
     bonoboTable.putItem(item)
+  }
+
+  def updateUser(bonoboKey: BonoboKey): Unit = {
+    bonoboTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", bonoboKey.createdAt),
+      new AttributeUpdate("name").put(bonoboKey.name),
+      new AttributeUpdate("company").put(bonoboKey.company),
+      new AttributeUpdate("email").put(bonoboKey.email),
+      new AttributeUpdate("requests_per_day").put(bonoboKey.requestsPerDay),
+      new AttributeUpdate("requests_per_minute").put(bonoboKey.requestsPerMinute),
+      new AttributeUpdate("status").put(bonoboKey.status),
+      new AttributeUpdate("tier").put(bonoboKey.tier),
+      new AttributeUpdate("url").put(bonoboKey.url)
+    )
+  }
+
+  def deleteUser(createdAt: String): Unit = {
+    bonoboTable.deleteItem(new PrimaryKey("hashkey", "hashkey", "createdAt", createdAt))
   }
 }
 

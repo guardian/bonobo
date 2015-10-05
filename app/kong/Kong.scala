@@ -10,12 +10,13 @@ import scala.concurrent.Future
 
 object Kong {
   case object KeyCreationFailed extends RuntimeException("KeyCreationFailed", null, true, false)
-  case object ConflictFailure extends Exception
+  case class ConflictFailure(message: String) extends Exception(message)
   case class GenericFailure(message: String) extends Exception(message)
 }
 
 trait Kong {
   def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse]
+  def updateUser(id: String, newRateLimit: RateLimits): Future[Unit]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
@@ -38,7 +39,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
             case JsSuccess(json, _) => Future.successful(json)
             case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
           }
-          case 409 => Future.failed(ConflictFailure)
+          case 409 => Future.failed(ConflictFailure(response.toString))
           case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to add a new consumer"))
         }
     }
@@ -53,7 +54,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       response =>
         response.status match {
           case 201 => Future.successful()
-          case 409 => Future.failed(ConflictFailure)
+          case 409 => Future.failed(ConflictFailure(response.body))
           case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit" +
             s" for user $consumerId"))
         }
@@ -68,6 +69,36 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         response.status match {
           case 201 => Future.successful()
           case _ => Future.failed(KeyCreationFailed)
+        }
+    }
+  }
+
+  private def getPluginId(consumerId: String): Future[String] = {
+    ws.url(s"$serverUrl/apis/$apiName").get().map {
+      response =>
+        response.json.validate[List[KongPluginConfig]] match {
+          case JsSuccess(json, _) => json.head.id
+          case JsError(pluginIdError) => "something bad happened"
+        }
+    }
+  }
+
+  def updateUser(id: String, newRateLimit: RateLimits): Future[Unit] = {
+    getPluginId(id) map {
+      pluginId =>
+        ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
+          "consumer_id" -> Seq(id),
+          "name" -> Seq("ratelimiting"),
+          "value.minute" -> Seq(newRateLimit.requestsPerMinute.toString),
+          "value.day" -> Seq(newRateLimit.requestsPerDay.toString))).flatMap {
+          response =>
+            response.status match {
+              case 200 => Future.successful()
+              case 409 => Future.failed(ConflictFailure(response.body))
+              case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to set the rate limit" +
+                s" for user $id; \n the sever said ${response.body} \n" +
+                s"the request was $serverUrl/apis/$apiName/plugins/$pluginId"))
+            }
         }
     }
   }
