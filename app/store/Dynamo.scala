@@ -1,10 +1,9 @@
 package store
 
-import com.amazonaws.services.dynamodbv2.document.spec.{ UpdateItemSpec, QuerySpec, ScanSpec }
+import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec }
 import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
 import com.amazonaws.services.dynamodbv2.document._
 import models._
-import org.joda.time.DateTimeZone
 
 import scala.collection.JavaConverters._
 
