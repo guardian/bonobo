@@ -46,9 +46,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
 
   def createKey = Action.async { implicit request =>
     def saveUser(consumer: KongCreateConsumerResponse, formData: CreateFormData, rateLimits: RateLimits): Result = {
-      val key: String = java.util.UUID.randomUUID.toString
-      val newEntry = new BonoboKey(consumer.id, key, formData.email, formData.name, formData.company,
-        formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, consumer.created_at.toString)
+      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.created_at.toString)
       dynamo.save(newEntry)
 
       Ok(views.html.createKey(message = "A new user has been successfully added", createForm))
