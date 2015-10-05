@@ -31,25 +31,24 @@
                 }
                 </tbody>
             </table>
-            <div class="row">
+            <div class="row col-md-12">
                 @if(lastDirection != "" || hasNext == true){
                     @if(lastDirection == "next" && hasNext == false) {
-                        <form action="@routes.Application.showKeys("previous", keys.head.createdAt)" method="post" class="col-md-6">
-                            <button type="submit" accesskey="b" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</button>
-                        </form>
+                        <div class="col-md-6">
+                            <a href="@routes.Application.showKeys("previous", keys.head.createdAt)" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
+                        </div>
                     } else {
                         @if((lastDirection == "previous" && hasNext == false) || lastDirection == "") {
-                            <form action="@routes.Application.showKeys("next", keys.last.createdAt)" method="post" class="col-md-6 col-md-offset-6">
-                                <button type="submit" accesskey="n" class="btn btn-primary col-md-4 pull-left">
-                                    Next <span class="glyphicon glyphicon-chevron-right"></span> </button>
-                            </form>
+                            <div class="col-md-6 col-md-offset-6">
+                                <a href="@routes.Application.showKeys("next", keys.last.createdAt)" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
+                            </div>
                         } else {
-                            <form action="@routes.Application.showKeys("previous", keys.head.createdAt)" method="post" class="col-md-6">
-                                <button type="submit" accesskey="b" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</button>
-                            </form>
-                            <form action="@routes.Application.showKeys("next", keys.last.createdAt)" method="post" class="col-md-6">
-                                <button type="submit" accesskey="n" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span> </button>
-                            </form>
+                            <div class="col-md-6">
+                                <a href="@routes.Application.showKeys("previous", keys.head.createdAt)" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="@routes.Application.showKeys("next", keys.last.createdAt)" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
+                            </div>
                         }
 
                     }
