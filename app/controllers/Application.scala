@@ -34,61 +34,74 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
   }
 
   def createKeyForm = Action { implicit request =>
-    Ok(views.html.createKey(message = "", form))
+    Ok(views.html.createKey(message = "", createForm))
   }
 
   def editKey(id: String) = Action { implicit request =>
     val result = dynamo.retrieveKey(id)
-    val filledForm = form.fill(FormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
+    val filledForm = editForm.fill(EditFormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm))
   }
 
   def createKey = Action.async { implicit request =>
-    def saveUser(consumer: KongCreateConsumerResponse, formData: FormData): Result = {
-      val newEntry = new BonoboKey(consumer.id, formData.key, formData.email, formData.name, formData.company,
-        formData.url, formData.requestsPerDay, formData.requestsPerMinute, formData.tier, formData.status, consumer.created_at.toString)
+    def saveUser(consumer: KongCreateConsumerResponse, formData: CreateFormData, rateLimits: RateLimits): Result = {
+      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.created_at.toString)
       dynamo.save(newEntry)
 
-      Ok(views.html.createKey(message = "A new user has been successfully added", form))
+      Ok(views.html.createKey(message = "A new user has been successfully added", createForm))
     }
 
     def displayError(message: String): Result = {
-      Ok(views.html.createKey(message, form))
+      Ok(views.html.createKey(message, createForm))
     }
 
-    def handleInvalidForm(form: Form[FormData]): Future[Result] = {
+    def handleInvalidForm(form: Form[CreateFormData]): Future[Result] = {
       Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form)))
     }
 
-    def handleValidForm(formData: FormData): Future[Result] = {
-      val rateLimit = RateLimits(formData.requestsPerMinute, formData.requestsPerDay)
-      kong.registerUser(formData.email, rateLimit) map {
-        consumer => saveUser(consumer, formData)
+    def handleValidForm(createFormData: CreateFormData): Future[Result] = {
+      val rateLimits: RateLimits = createFormData.tier match {
+        case "1" => new RateLimits(720, 5000)
+        case "2" => new RateLimits(720, 10000)
+        case "3" => new RateLimits(720, 10000)
+      }
+      kong.registerUser(createFormData.email, rateLimits) map {
+        consumer => saveUser(consumer, createFormData, rateLimits)
       } recover {
         case ConflictFailure => displayError("Username already taken")
         case GenericFailure(message) => displayError(message)
       }
     }
-    form.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    createForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def showFirstKeys = Action {
-    val (keys, hasNext) = dynamo.getKeys("next", "")
-    Ok(views.html.showKeys(keys, pageTitle = "All keys", lastDirection = "", hasNext))
-  }
-
-  def showKeys(direction: String, range: String) = Action { implicit request =>
+  def showKeys(direction: String, range: String) = Action {
     val (keys, hasNext) = dynamo.getKeys(direction, range)
-    Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext))
+    range match {
+      case "" => Ok(views.html.showKeys(keys, pageTitle = "All keys", "", hasNext))
+      case _ => Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext))
+    }
   }
 }
 
 object Application {
-  case class FormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
-    requestsPerMinute: Int, tier: String, status: String)
+  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String, status: String)
 
-  val form: Form[FormData] = Form(
+  val createForm: Form[CreateFormData] = Form(
+    mapping(
+      "email" -> nonEmptyText,
+      "name" -> nonEmptyText,
+      "company" -> nonEmptyText,
+      "url" -> nonEmptyText,
+      "tier" -> nonEmptyText,
+      "status" -> nonEmptyText
+    )(CreateFormData.apply)(CreateFormData.unapply)
+  )
+
+  case class EditFormData(key: String, email: String, name: String, company: String, url: String, reqestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+
+  val editForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
       "email" -> nonEmptyText,
@@ -99,7 +112,7 @@ object Application {
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
       "status" -> nonEmptyText
-    )(FormData.apply)(FormData.unapply)
+    )(EditFormData.apply)(EditFormData.unapply)
   )
 
   case class SearchFormData(query: String)

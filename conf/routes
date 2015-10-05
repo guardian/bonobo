@@ -3,13 +3,12 @@
 # ~~~~
 
 # Home page
-GET         /                    controllers.Application.index
-GET         /createKey           controllers.Application.createKeyForm
-POST        /createKey           controllers.Application.createKey
-GET         /showKeys            controllers.Application.showFirstKeys
-POST        /showKeys            controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
-GET         /search              controllers.Application.search
-GET         /editKey             controllers.Application.editKey(id: String)
+GET         /                     controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
+GET         /keys                 controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
+GET         /keys/search          controllers.Application.search
+GET         /keys/create          controllers.Application.createKeyForm
+POST        /keys                 controllers.Application.createKey
+GET         /keys/:id/edit        controllers.Application.editKey(id: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)

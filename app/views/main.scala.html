@@ -14,7 +14,7 @@
         <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="@routes.Application.index">Bonobo</a>
+                    <a class="navbar-brand" href="@routes.Application.showKeys()">Bonobo</a>
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
                     <form action="@routes.Application.search" class="navbar-form navbar-left" role="search" method="GET">
@@ -24,8 +24,8 @@
                         <button type="submit" class="btn btn-default">Submit</button>
                     </form>
                     <ul class="nav navbar-nav">
-                        <li><a href="@routes.Application.showFirstKeys">All Keys</a></li>
-                        <li><a href="@routes.Application.createKey">Create Key</a></li>
+                        <li><a href="@routes.Application.showKeys()">All Keys</a></li>
+                        <li><a href="@routes.Application.createKeyForm">Create Key</a></li>
                     </ul>
                 </div>
             </div>
