@@ -76,11 +76,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
     createForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  //  def showFirstKeys = Action {
-  //    val (keys, hasNext) = dynamo.getKeys("next", "")
-  //    Ok(views.html.showKeys(keys, pageTitle = "All keys", lastDirection = "", hasNext))
-  //  }
-
   def showKeys(direction: String, range: String) = Action {
     val (keys, hasNext) = dynamo.getKeys(direction, range)
     range match {
