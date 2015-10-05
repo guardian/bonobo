@@ -132,7 +132,8 @@ object Application {
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
-  case class EditFormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class EditFormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
+                          requestsPerMinute: Int, tier: String, status: String)
 
   val editForm: Form[EditFormData] = Form(
     mapping(

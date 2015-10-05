@@ -27,11 +27,18 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
       def search(query: String, limit: Port): List[BonoboKey] = ???
+
       def save(bonoboKey: BonoboKey): Unit = ???
+
       def getKeys(direction: String, range: String): (List[BonoboKey], Boolean) = {
         (List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", "293029")), false)
       }
+
       def retrieveKey(id: String): BonoboKey = ???
+
+      def deleteUser(createdAt: String): Unit = ???
+
+      def updateUser(bonoboKey: BonoboKey): Unit = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi)
     val result: Future[Result] = application.showKeys("next", "").apply(FakeRequest())
@@ -62,6 +69,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
         Future.successful(KongCreateConsumerResponse(id = "31231231", created_at = 43242342))
       }
+      def updateUser(id: String, newRateLimit: RateLimits): Future[Unit] = ???
     }
     val application = new Application(mockDynamo, kong, messagesApi)
 
