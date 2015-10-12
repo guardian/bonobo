@@ -1,7 +1,7 @@
-@(message: String, form: Form[controllers.Application.CreateFormData])(implicit messages: Messages)
+@(message: String, form: Form[controllers.Application.CreateFormData], firstName: String)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@main("Create key") {
+@main("Create key", firstName) {
     <h4>@message</h4>
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">

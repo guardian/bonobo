@@ -18,12 +18,6 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   val mockKong = mock[Kong]
   val messagesApi = new DefaultMessagesApi(Environment.simple(), Configuration.reference, new DefaultLangs(Configuration.reference))
 
-  "index" should "say yo" in {
-    val application = new Application(mockDynamo, mockKong, null)
-    val result: Future[Result] = application.index.apply(FakeRequest())
-    contentAsString(result) should include("Yo yo yo")
-  }
-
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
       def search(query: String, limit: Port): List[BonoboKey] = ???
@@ -40,21 +34,21 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def updateUser(bonoboKey: BonoboKey): Unit = ???
     }
-    val application = new Application(dynamo, mockKong, messagesApi)
+    val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", "").apply(FakeRequest())
     contentAsString(result) should include("email@some.com")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
-    val application = new Application(mockDynamo, mockKong, messagesApi)
+    val application = new Application(mockDynamo, mockKong, messagesApi, null, false)
 
     val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
-    val application = new Application(mockDynamo, mockKong, messagesApi)
+    val application = new Application(mockDynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
@@ -71,7 +65,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       }
       def updateUser(id: String, newRateLimit: RateLimits): Future[Unit] = ???
     }
-    val application = new Application(mockDynamo, kong, messagesApi)
+    val application = new Application(mockDynamo, kong, messagesApi, null, false)
 
     val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
     contentAsString(result) should include("A new user has been successfully added")

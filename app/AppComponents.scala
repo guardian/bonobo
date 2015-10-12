@@ -3,11 +3,12 @@ import com.amazonaws.auth.{ AWSCredentialsProviderChain, EnvironmentVariableCred
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import controllers.Application
+import controllers.{ Auth, Application }
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
+import com.gu.googleauth.GoogleAuthConfig
+import org.joda.time.Duration
 
-//import play.Routes
 import play.api.ApplicationLoader.Context
 import play.api.BuiltInComponentsFromContext
 import play.api.routing.Router
@@ -39,8 +40,22 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
     new KongClient(wsClient, apiAddress, apiName)
   }
 
+  val googleAuthConfig = {
+    def missingKey(description: String) =
+      sys.error(s"$description missing. You can create an OAuth 2 client from the Credentials section of the Google dev console.")
+    GoogleAuthConfig(
+      clientId = configuration.getString("google.clientId") getOrElse missingKey("OAuth 2 client ID"),
+      clientSecret = configuration.getString("google.clientSecret") getOrElse missingKey("OAuth 2 client secret"),
+      redirectUrl = configuration.getString("google.redirectUrl") getOrElse missingKey("OAuth 2 callback URL"),
+      domain = Some("guardian.co.uk"),
+      maxAuthAge = Some(Duration.standardDays(90)),
+      enforceValidity = true
+    )
+  }
+
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  val appController = new Application(dynamo, kong, messagesApi)
+  val appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, true)
+  val authController = new Auth(googleAuthConfig, wsApi)
   val assets = new controllers.Assets(httpErrorHandler)
-  val router: Router = new Routes(httpErrorHandler, appController, assets)
+  val router: Router = new Routes(httpErrorHandler, appController, authController, assets)
 }

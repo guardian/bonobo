@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
   "org.scalatest" % "scalatest_2.11" % "2.2.5",
   "org.scalatestplus" % "play_2.11" % "1.4.0-M4",
-  "org.mockito" % "mockito-all" % "1.10.19"
+  "org.mockito" % "mockito-all" % "1.10.19",
+  "com.gu" %% "play-googleauth" % "0.3.1"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
@@ -22,3 +23,5 @@ resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 routesGenerator := InjectedRoutesGenerator
 
 scalariformSettings
+
+testOptions in Test += Tests.Argument("-oF")

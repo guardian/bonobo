@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, firstName: String)(content: Html)
 
 <!DOCTYPE html>
 
@@ -27,6 +27,11 @@
                         <li><a href="@routes.Application.showKeys()">All Keys</a></li>
                         <li><a href="@routes.Application.createKeyForm">Create Key</a></li>
                     </ul>
+                    @if(!firstName.equals("")){
+                        <ul class="nav navbar-nav navbar-right">
+                            <li><a href="#">Welcome, @firstName!</a></li>
+                        </ul>
+                    }
                 </div>
             </div>
         </nav>
