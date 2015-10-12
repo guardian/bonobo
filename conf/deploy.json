@@ -13,10 +13,10 @@
       "depends": [ "artifactUploadOnly", "deployOnly" ]
     },
     "artifactUploadOnly": {
-      "actions": [ "content-api-bonobo.uploadArtifacts" ]
+      "actions": [ "bonobo.uploadArtifacts" ]
     },
     "deployOnly": {
-      "actions": [ "content-api-bonobo.deploy" ]
+      "actions": [ "bonobo.deploy" ]
     }
   }
 }
