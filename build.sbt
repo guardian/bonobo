@@ -3,6 +3,9 @@ name := """bonobo"""
 version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
+  .enablePlugins(RiffRaffArtifact, UniversalPlugin)
+
+riffRaffPackageType := (packageZipTarball in Universal).value
 
 scalaVersion := "2.11.6"
 
@@ -25,3 +28,5 @@ routesGenerator := InjectedRoutesGenerator
 scalariformSettings
 
 testOptions in Test += Tests.Argument("-oF")
+
+

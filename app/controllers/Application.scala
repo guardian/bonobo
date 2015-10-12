@@ -57,9 +57,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def handleValidForm(createFormData: CreateFormData): Future[Result] = {
       val rateLimits: RateLimits = createFormData.tier match {
-        case "1" => new RateLimits(720, 5000)
-        case "2" => new RateLimits(720, 10000)
-        case "3" => new RateLimits(720, 10000)
+        case "Developer" => new RateLimits(720, 5000)
+        case "Rights managed" => new RateLimits(720, 10000)
+        case "Internal" => new RateLimits(720, 10000)
       }
       kong.registerUser(createFormData.email, rateLimits) map {
         consumer => saveUserOnDB(consumer, createFormData, rateLimits)
@@ -107,7 +107,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         kong.updateUser(id, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay)) map {
           _ =>
             {
-              println("yo yo saving in the db")
               updateUserOnDB(newFormData)
             }
         }
