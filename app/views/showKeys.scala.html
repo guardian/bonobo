@@ -1,6 +1,6 @@
-@(keys: List[BonoboKey], pageTitle: String, lastDirection: String, hasNext: Boolean)(implicit messages: Messages)
+@(keys: List[BonoboKey], pageTitle: String, lastDirection: String, hasNext: Boolean, firstName: String)(implicit messages: Messages)
 
-@main(pageTitle){
+@main(pageTitle, firstName){
     <div class="row">
         <div class="col-md-12">
             <table class="table table-responsive table-striped">
