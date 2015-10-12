@@ -1,0 +1,205 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation for Bonobo",
+  "Parameters": {
+    "BonoboSecurityGroupForKong": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Security group for Bonobo instances to access Kong internal LB"
+    },
+    "VPC": {
+      "Description": "Virtual Private Cloud to run EC2 instances within",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "Subnets": {
+      "Description": "Subnets to run load balancer within",
+      "Type": "List<AWS::EC2::Subnet::Id>"
+    },
+    "Stage": {
+      "Description": "Environment name",
+      "Type": "String",
+      "Default": "CODE"
+    }
+  },
+  "Resources": {
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties": {
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Ref": "LoadBalancerSecurityGroup"
+          }
+        ],
+        "Subnets": {
+          "Ref": "Subnets"
+        },
+        "CrossZone": true,
+        "Listeners": [
+          {
+            "LoadBalancerPort": "80",
+            "InstancePort": "9000",
+            "Protocol": "HTTP"
+          }
+        ],
+        "HealthCheck": {
+          "Target": "HTTP:9000/healthcheck",
+          "Timeout": "5",
+          "Interval": "10",
+          "UnhealthyThreshold": "2",
+          "HealthyThreshold": "2"
+        },
+        "Tags": [
+          {
+            "Key": "Stack",
+            "Value": "content-api"
+          },
+          {
+            "Key": "Stage",
+            "Value": {
+              "Ref": "Stage"
+            }
+          },
+          {
+            "Key": "App",
+            "Value": "bonobo"
+          }
+        ]
+      }
+    },
+    "AutoscalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "LoadBalancerNames": [
+          {
+            "Ref": "LoadBalancer"
+          }
+        ],
+        "VPCZoneIdentifier": {
+          "Ref": "Subnets"
+        },
+        "AvailabilityZones": {
+          "Fn::GetAZs": ""
+        },
+        "LaunchConfigurationName": {
+          "Ref": "LaunchConfig"
+        },
+        "MinSize": "1",
+        "MaxSize": "1",
+        "DesiredCapacity": "1",
+        "Tags": [
+          {
+            "Key": "Stack",
+            "Value": "content-api",
+            "PropagateAtLaunch": "true"
+          },
+          {
+            "Key": "Stage",
+            "Value": {
+              "Ref": "Stage"
+            },
+            "PropagateAtLaunch": "true"
+          },
+          {
+            "Key": "App",
+            "Value": "bonobo",
+            "PropagateAtLaunch": "true"
+          }
+        ]
+      }
+    },
+    "LaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": "ami-fd67518a",
+        "InstanceType": "t2.micro",
+        "SecurityGroups": [
+          {
+            "Ref": "BonoboSecurityGroup"
+          },
+          {
+            "Ref": "BonoboSecurityGroupForKong"
+          }
+        ],
+        "AssociatePublicIpAddress": true,
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/usr/bin/env bash",
+                "wget -NP /home/ubuntu/.ssh --no-check-certificate https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "BonoboSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for Bonobo instances",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "22",
+            "ToPort": "22",
+            "CidrIp": "77.91.248.0/21"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "9000",
+            "ToPort": "9000",
+            "SourceSecurityGroupId": {
+              "Ref": "LoadBalancerSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "LoadBalancerSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group for Bonobo load balancer",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "Egress9000": {
+      "Type": "AWS::EC2::SecurityGroupEgress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "LoadBalancerSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": "9000",
+        "ToPort": "9000",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "BonoboSecurityGroup",
+            "GroupId"
+          ]
+        }
+      }
+    }
+  }
+}
