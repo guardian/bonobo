@@ -13,7 +13,6 @@ POST        /keys/:id             controllers.Application.updateKey(id: String)
 
 #Google Auth
 GET         /login                controllers.Auth.login
-#GET         /logout               controllers.Auth.logout
 GET         /oauth2callback       controllers.Auth.oauth2Callback
 
 # Map static resources from the /public folder to the /assets URL path
