@@ -116,6 +116,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends 
     }
     editForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
+
+  def healthcheck = Action { Ok("OK") }
 }
 
 object Application {
@@ -133,7 +135,7 @@ object Application {
   )
 
   case class EditFormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
-                          requestsPerMinute: Int, tier: String, status: String)
+    requestsPerMinute: Int, tier: String, status: String)
 
   val editForm: Form[EditFormData] = Form(
     mapping(
