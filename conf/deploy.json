@@ -1,0 +1,22 @@
+{
+  "defaultStacks": [ "content-api-bonobo" ],
+  "packages": {
+    "bonobo": {
+      "type": "autoscaling",
+      "data": {
+        "bucket": "content-api-dist"
+      }
+    }
+  },
+  "recipes": {
+    "default": {
+      "depends": [ "artifactUploadOnly", "deployOnly" ]
+    },
+    "artifactUploadOnly": {
+      "actions": [ "content-api-bonobo.uploadArtifacts" ]
+    },
+    "deployOnly": {
+      "actions": [ "content-api-bonobo.deploy" ]
+    }
+  }
+}
