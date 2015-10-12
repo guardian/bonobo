@@ -57,7 +57,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   "insertNewKey" should "insert a new key" in {
     val myRequest = Map("id" -> "1234", "key" -> "123", "name" -> "Bruce Wayne", "email" -> "batman@ddd.com",
       "company" -> "Wayne Enterprises", "url" -> "www.lol.com", "requestsPerDay" -> "200", "requestsPerMinute" -> "10",
-      "tier" -> "1", "status" -> "active", "created_at" -> "1231321123")
+      "tier" -> "Internal", "status" -> "active", "created_at" -> "1231321123")
 
     val kong = new Kong {
       def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
