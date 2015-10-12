@@ -118,6 +118,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
     editForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
+
+  def healthcheck = Action { Ok("OK") }
 }
 
 object Application {

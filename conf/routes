@@ -10,6 +10,7 @@ GET         /keys/create          controllers.Application.createKeyForm
 POST        /keys                 controllers.Application.createKey
 GET         /keys/:id/edit        controllers.Application.editKey(id: String)
 POST        /keys/:id             controllers.Application.updateKey(id: String)
+GET         /healthcheck          controllers.Application.healthcheck
 
 #Google Auth
 GET         /login                controllers.Auth.login
