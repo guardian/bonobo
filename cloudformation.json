@@ -21,6 +21,40 @@
     }
   },
   "Resources": {
+    "RootRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Principal": { "Service": [ "ec2.amazonaws.com" ] },
+            "Action": [ "sts:AssumeRole" ]
+          }]
+        },
+        "Path": "/"
+      }
+    },
+    "DownloadConfigFromS3Policy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "download-config-from-s3",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": ["s3:GetObject"],
+            "Resource": "arn:aws:s3:::content-api-config/*"
+          }]
+        },
+        "Roles": [{"Ref": "RootRole" }]
+      }
+    },
+    "InstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Path": "/",
+        "Roles": [{ "Ref": "RootRole" }]
+      }
+    },
     "LoadBalancer": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties": {
@@ -51,7 +85,7 @@
         "Tags": [
           {
             "Key": "Stack",
-            "Value": "content-api"
+            "Value": "content-api-bonobo"
           },
           {
             "Key": "Stage",
@@ -112,6 +146,7 @@
       "Properties": {
         "ImageId": "ami-fd67518a",
         "InstanceType": "t2.micro",
+        "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups": [
           {
             "Ref": "BonoboSecurityGroup"
@@ -127,7 +162,19 @@
               "\n",
               [
                 "#!/usr/bin/env bash",
-                "wget -NP /home/ubuntu/.ssh --no-check-certificate https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys"
+                "wget -NP /home/ubuntu/.ssh --no-check-certificate https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys",
+                "adduser --disabled-password content-api",
+                "cd /home/content-api",
+                "mkdir logs",
+                "mkdir -p /etc/gu",
+                { "Fn::Join": [ "", [ "wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api-bonobo/",{ "Ref": "Stage" }, "/bonobo/bonobo-1.0-SNAPSHOT.tgz" ] ] },
+                { "Fn::Join": [ "", [ "wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api-bonobo/",{ "Ref": "Stage" }, "/bonobo/bonobo.service" ] ] },
+                "tar -xvf bonobo-1.0-SNAPSHOT.tgz",
+                "mv bonobo-1.0-SNAPSHOT bonobo",
+                "mv bonobo.service /etc/systemd/system",
+                { "Fn::Join": [ "", [ "aws s3 cp s3://content-api-config/bonobo/",{ "Ref": "Stage" }, "/bonobo.conf /etc/gu/bonobo.conf" ] ] },
+                "chown -R content-api:content-api /home/content-api /etc/gu",
+                "systemctl start bonobo.service"
               ]
             ]
           }

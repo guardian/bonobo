@@ -1,0 +1,14 @@
+[Unit]
+Description=Bonobo
+
+[Service]
+User=content-api
+Group=content-api
+Restart=on-failure
+Environment='HOME=/home/content-api'
+Environment='JAVA_OPTS=-XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/home/content-api/logs/gc.log -XX:ReservedCodeCacheSize=256m -Dconfig.file=/etc/gu/bonobo.conf'
+WorkingDirectory=/home/content-api
+ExecStart=/home/content-api/bonobo/bin/bonobo
+
+[Install]
+WantedBy=multi-user.target
