@@ -48,9 +48,9 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   private def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
     ws.url(s"$serverUrl/apis/$apiName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
-      "name" -> Seq("ratelimiting"),
-      "value.minute" -> Seq(rateLimit.requestsPerMinute.toString),
-      "value.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
+      "name" -> Seq("rate-limiting"),
+      "config.minute" -> Seq(rateLimit.requestsPerMinute.toString),
+      "config.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
       response =>
         response.status match {
           case 201 => Future.successful()
