@@ -85,7 +85,7 @@
         "Tags": [
           {
             "Key": "Stack",
-            "Value": "content-api"
+            "Value": "content-api-bonobo"
           },
           {
             "Key": "Stage",
