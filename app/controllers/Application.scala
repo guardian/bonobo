@@ -5,6 +5,7 @@ import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
+import play.api.Logger
 import play.api.mvc.Security.AuthenticatedBuilder
 import play.api.mvc._
 import store._
@@ -103,18 +104,32 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(newFormData: EditFormData): Future[Result] = {
-      if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-        kong.updateUser(id, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay)) map {
-          _ =>
-            {
-              updateUserOnDB(newFormData)
-            }
+      
+      def updateRateLimitsIfNecessary(): Future[Happy.type] = {
+        if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
+          kong.updateUser(id, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+        } else {
+          Future.successful(Happy)
         }
-      } else {
+      }
+
+      def deactivateKeyIfNecessary(): Future[Happy.type] = {
+        if (oldKey.status == "Active" && newFormData.status == "Inactive") {
+          kong.deactivateUser(id)
+        } else {
+          Future.successful(Happy)
+        }
+      }
+
+      for {
+        _ <- updateRateLimitsIfNecessary()
+        _ <- deactivateKeyIfNecessary()
+      } yield {
         updateUserOnDB(newFormData)
-        Future.successful(Ok(views.html.editKey(message = "YEE! A user should have been updated!", id, editForm.fill(newFormData), request.user.firstName)))
+        Ok(views.html.editKey(message = "YEE! A user should have been updated!", id, editForm.fill(newFormData), request.user.firstName))
       }
     }
+
     editForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 

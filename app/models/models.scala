@@ -15,6 +15,14 @@ case class BonoboKey(id: String,
   status: String,
   createdAt: String)
 
+object BonoboKey {
+  def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String): BonoboKey = {
+    val key: String = java.util.UUID.randomUUID.toString
+    new BonoboKey(id, key, formData.email, formData.name, formData.company,
+      formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, createdAt)
+  }
+}
+
 case class KongCreateConsumerResponse(id: String, created_at: Long)
 
 object KongCreateConsumerResponse {
@@ -23,15 +31,21 @@ object KongCreateConsumerResponse {
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
-object BonoboKey {
-  def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String): BonoboKey = {
-    val key: String = java.util.UUID.randomUUID.toString
-    new BonoboKey(id, key, formData.email, formData.name, formData.company,
-      formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, createdAt)
-  }
-}
 case class KongPluginConfig(id: String)
 
 object KongPluginConfig {
   implicit val pluginsRead = Json.reads[KongPluginConfig]
+}
+
+case class KongKeyResponse(data: List[KongKeyId])
+
+case class KongKeyId(id: String)
+
+object KongKeyId {
+  implicit val keyRead = Json.reads[KongKeyId]
+}
+
+object KongKeyResponse {
+  implicit val keyRead = Json.reads[KongKeyResponse]
+
 }
