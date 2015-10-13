@@ -48,6 +48,20 @@
         "Roles": [{"Ref": "RootRole" }]
       }
     },
+    "DynamoDBPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "dynamodb-policy",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [ "dynamodb:*" ],
+            "Resource": "arn:aws:dynamodb:*:***REMOVED***:table/bonobo-DEV-keys"
+          }]
+        },
+        "Roles": [{"Ref": "RootRole" }]
+      }
+    },
     "InstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
