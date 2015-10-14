@@ -1,6 +1,8 @@
 package controllers
 
-import models.{ KongCreateConsumerResponse, RateLimits, BonoboKey }
+import kong.Kong.Happy
+import models.{ UserCreationResult, KongCreateConsumerResponse, RateLimits, BonoboKey }
+import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi }
@@ -60,10 +62,12 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       "tier" -> "Internal", "status" -> "active", "created_at" -> "1231321123")
 
     val kong = new Kong {
-      def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
-        Future.successful(KongCreateConsumerResponse(id = "31231231", created_at = 43242342))
+      def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult] = {
+        Future.successful(UserCreationResult(id = "31231231", createdAt = new DateTime(1444830845000L), "my-random-key"))
       }
-      def updateUser(id: String, newRateLimit: RateLimits): Future[Unit] = ???
+      def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type] = ???
+      def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = ???
+      def deleteKey(consumerId: String): Future[Happy.type] = ???
     }
     val application = new Application(mockDynamo, kong, messagesApi, null, false)
 

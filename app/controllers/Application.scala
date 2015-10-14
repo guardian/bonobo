@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ RateLimits, BonoboKey, KongCreateConsumerResponse }
+import models.{ RateLimits, BonoboKey, UserCreationResult }
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
@@ -42,9 +42,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def createKey = maybeAuth.async { implicit request =>
 
-    def saveUserOnDB(consumer: KongCreateConsumerResponse, formData: CreateFormData, rateLimits: RateLimits): Result = {
+    def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
-      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.created_at.toString)
+      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.createdAt.toString, consumer.key)
       dynamo.save(newEntry)
 
       Ok(views.html.createKey(message = "A new user has been successfully added", createForm, request.user.firstName))
@@ -123,11 +123,11 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         }
       }
 
-      def activateKeyIfNecessary(): Future[Happy.type] = {
+      def activateKeyIfNecessary(): Future[String] = {
         if (oldKey.status == "Inactive" && newFormData.status == "Active") {
-          kong.createKey(consumerId)
+          kong.createKey(consumerId, Some(oldKey.key))
         } else {
-          Future.successful(Happy)
+          Future.successful(oldKey.key)
         }
       }
 
@@ -148,7 +148,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 }
 
 object Application {
-  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String, status: String)
+  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String)
 
   val createForm: Form[CreateFormData] = Form(
     mapping(
@@ -156,8 +156,7 @@ object Application {
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
-      "tier" -> nonEmptyText,
-      "status" -> nonEmptyText
+      "tier" -> nonEmptyText
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
