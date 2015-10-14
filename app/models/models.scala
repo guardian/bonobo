@@ -39,15 +39,19 @@ object KongPluginConfig {
   implicit val pluginsRead = Json.reads[KongPluginConfig]
 }
 
-case class KongKeyResponse(data: List[KongKeyId])
+/* These are used to extract the key.id from the json response of kong.getKeyIdForGivenUser(),
+   which looks like this: { "data" : [ { "id": "<value>", ... }, ... ] }
+ */
 
-case class KongKeyId(id: String)
+case class KongListConsumerKeysResponse(data: List[KongKeyResponse])
 
-object KongKeyId {
-  implicit val keyRead = Json.reads[KongKeyId]
-}
+case class KongKeyResponse(id: String)
 
 object KongKeyResponse {
   implicit val keyRead = Json.reads[KongKeyResponse]
+}
+
+object KongListConsumerKeysResponse {
+  implicit val keyRead = Json.reads[KongListConsumerKeysResponse]
 
 }

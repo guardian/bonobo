@@ -89,27 +89,27 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
 
-  def updateKey(id: String) = maybeAuth.async { implicit request =>
+  def updateKey(consumerId: String) = maybeAuth.async { implicit request =>
 
-    val oldKey = dynamo.retrieveKey(id)
+    val oldKey = dynamo.retrieveKey(consumerId)
 
     def handleInvalidForm(form: Form[EditFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", id, form, request.user.firstName)))
+      Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
     }
 
     def updateUserOnDB(newFormData: EditFormData): Result = {
-      val updatedUser = new BonoboKey(id, newFormData.key, newFormData.email, newFormData.name, newFormData.company,
+      val updatedUser = new BonoboKey(consumerId, newFormData.key, newFormData.email, newFormData.name, newFormData.company,
         newFormData.url, newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
       dynamo.updateUser(updatedUser)
 
-      Ok(views.html.editKey(message = "The user has been successfully updated", id, editForm.fill(newFormData), request.user.firstName))
+      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
     }
 
     def handleValidForm(newFormData: EditFormData): Future[Result] = {
 
       def updateRateLimitsIfNecessary(): Future[Happy.type] = {
         if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-          kong.updateUser(id, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+          kong.updateUser(consumerId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
         } else {
           Future.successful(Happy)
         }
@@ -117,7 +117,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
       def deactivateKeyIfNecessary(): Future[Happy.type] = {
         if (oldKey.status == "Active" && newFormData.status == "Inactive") {
-          kong.deactivateUser(id)
+          kong.deleteKey(consumerId)
         } else {
           Future.successful(Happy)
         }
@@ -125,7 +125,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
       def activateKeyIfNecessary(): Future[Happy.type] = {
         if (oldKey.status == "Inactive" && newFormData.status == "Active") {
-          kong.createKey(id)
+          kong.createKey(consumerId)
         } else {
           Future.successful(Happy)
         }
@@ -137,7 +137,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateUserOnDB(newFormData)
-        Ok(views.html.editKey(message = "YEE! A user should have been updated!", id, editForm.fill(newFormData), request.user.firstName))
+        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
       }
     }
 
