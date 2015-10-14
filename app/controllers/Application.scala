@@ -121,9 +121,18 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         }
       }
 
+      def activateKeyIfNecessary(): Future[Happy.type] = {
+        if (oldKey.status == "Inactive" && newFormData.status == "Active") {
+          kong.createKey(id)
+        } else {
+          Future.successful(Happy)
+        }
+      }
+
       for {
         _ <- updateRateLimitsIfNecessary()
         _ <- deactivateKeyIfNecessary()
+        _ <- activateKeyIfNecessary()
       } yield {
         updateUserOnDB(newFormData)
         Ok(views.html.editKey(message = "YEE! A user should have been updated!", id, editForm.fill(newFormData), request.user.firstName))

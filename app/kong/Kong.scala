@@ -30,6 +30,7 @@ trait Kong {
 
   def deactivateUser(userId: String): Future[Happy.type]
 
+  def createKey(consumerId: String): Future[Happy.type]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
@@ -75,7 +76,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  private def createKey(consumerId: String): Future[Happy.type] = {
+  def createKey(consumerId: String): Future[Happy.type] = {
     // TODO: we're using the consumerId as a key here. Might want to change this down the line?
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
       "key" -> Seq(consumerId))).flatMap {
