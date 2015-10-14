@@ -28,9 +28,9 @@ trait Kong {
 
   def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
-  def deactivateUser(userId: String): Future[Happy.type]
-
   def createKey(consumerId: String): Future[Happy.type]
+
+  def deleteKey(userId: String): Future[Happy.type]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
@@ -127,22 +127,22 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   def getKeyIdForGivenUser(consumerId: String): Future[String] = {
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").get().flatMap {
       response =>
-        response.json.validate[KongKeyResponse] match {
-          case JsSuccess(KongKeyResponse(id :: ids), _) => Future.successful(id.id)
-          case JsSuccess(KongKeyResponse(Nil), _) => Future.failed(GenericFailure("No keys found"))
+        response.json.validate[KongListConsumerKeysResponse] match {
+          case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => Future.successful(head.id)
+          case JsSuccess(KongListConsumerKeysResponse(Nil), _) => Future.failed(GenericFailure("No keys found"))
           case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
         }
     }
   }
 
-  def deactivateUser(userId: String): Future[Happy.type] = {
+  def deleteKey(userId: String): Future[Happy.type] = {
     getKeyIdForGivenUser(userId) flatMap {
       keyId =>
         ws.url(s"$serverUrl/consumers/$userId/keyauth/$keyId").delete().flatMap {
           response =>
             response.status match {
               case 204 => Future.successful(Happy)
-              case other => Future.failed(GenericFailure(s"Kong responded with statys $other when trying to delete " +
+              case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to delete " +
                 s"the key $keyId for user $userId; the server said ${
                   response.body
                 }"))
