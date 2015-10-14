@@ -42,7 +42,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     for {
       consumer <- createConsumer(username)
       _ <- setRateLimit(consumer.id, rateLimit)
-      _ <- createKey(consumer.id)
+      _ <- createKey(consumer.id) // TODO: this will not do if I want to set a custom key
     } yield consumer
   }
 

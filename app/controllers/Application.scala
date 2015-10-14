@@ -41,7 +41,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def createKey = maybeAuth.async { implicit request =>
+
     def saveUserOnDB(consumer: KongCreateConsumerResponse, formData: CreateFormData, rateLimits: RateLimits): Result = {
+
       val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.created_at.toString)
       dynamo.save(newEntry)
 
@@ -104,7 +106,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(newFormData: EditFormData): Future[Result] = {
-      
+
       def updateRateLimitsIfNecessary(): Future[Happy.type] = {
         if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
           kong.updateUser(id, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
