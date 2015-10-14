@@ -17,8 +17,10 @@ case class BonoboKey(id: String,
 
 object BonoboKey {
   def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String): BonoboKey = {
-    val key: String = java.util.UUID.randomUUID.toString
-    new BonoboKey(id, key, formData.email, formData.name, formData.company,
+    /* Notice that the second field here is the key, which by default is the same as the user's id;
+       if we decide to use a custom key instead *at creation time* we need some refactoring
+     */
+    new BonoboKey(id, id, formData.email, formData.name, formData.company,
       formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, createdAt)
   }
 }
