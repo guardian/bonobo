@@ -30,7 +30,7 @@ trait Kong {
 
   def createKey(consumerId: String): Future[Happy.type]
 
-  def deleteKey(userId: String): Future[Happy.type]
+  def deleteKey(consumerId: String): Future[Happy.type]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
@@ -137,15 +137,15 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  def deleteKey(userId: String): Future[Happy.type] = {
-    getKeyIdForGivenUser(userId) flatMap {
+  def deleteKey(consumerId: String): Future[Happy.type] = {
+    getKeyIdForGivenUser(consumerId) flatMap {
       keyId =>
-        ws.url(s"$serverUrl/consumers/$userId/keyauth/$keyId").delete().flatMap {
+        ws.url(s"$serverUrl/consumers/$consumerId/keyauth/$keyId").delete().flatMap {
           response =>
             response.status match {
               case 204 => Future.successful(Happy)
               case other => Future.failed(GenericFailure(s"Kong responded with status $other when trying to delete " +
-                s"the key $keyId for user $userId; the server said ${
+                s"the key $keyId for user $consumerId; the server said ${
                   response.body
                 }"))
             }
