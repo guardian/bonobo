@@ -11,7 +11,6 @@
                 @b3.text( form("company"), '_label -> "Company", 'placeholder -> "Company" )
                 @b3.text( form("url"), '_label -> "URL", 'placeholder -> "URL" )
                 @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "Rights managed" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
-                @b3.select( form("status"), options = Seq("Active" -> "Active", "Inactive" -> "Inactive"), '_label -> "Status" )
                 @b3.submit('class -> "btn btn-primary"){ Save }
             }
         </div>

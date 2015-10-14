@@ -1,6 +1,7 @@
 package models
 
 import controllers.Application.CreateFormData
+import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 case class BonoboKey(id: String,
@@ -16,20 +17,21 @@ case class BonoboKey(id: String,
   createdAt: String)
 
 object BonoboKey {
-  def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String): BonoboKey = {
-    /* Notice that the second field here is the key, which by default is the same as the user's id;
-       if we decide to use a custom key instead *at creation time* we need some refactoring
-     */
-    new BonoboKey(id, id, formData.email, formData.name, formData.company,
-      formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, formData.status, createdAt)
+  def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String, key: String): BonoboKey = {
+
+    new BonoboKey(id, key, formData.email, formData.name, formData.company,
+      formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, "Active", createdAt)
   }
 }
 
+/* model used to parse json after create user */
 case class KongCreateConsumerResponse(id: String, created_at: Long)
 
 object KongCreateConsumerResponse {
   implicit val consumerRead = Json.reads[KongCreateConsumerResponse]
 }
+
+case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
