@@ -37,6 +37,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   import Kong._
 
+  val RateLimitingPluginName = "ratelimiting"
+
   def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
 
     for {
@@ -63,7 +65,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   private def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
     ws.url(s"$serverUrl/apis/$apiName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
-      "name" -> Seq("ratelimiting"),
+      "name" -> Seq(RateLimitingPluginName),
       "value.minute" -> Seq(rateLimit.requestsPerMinute.toString),
       "value.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
       response =>
@@ -92,7 +94,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     Logger.info("calling get plugin id")
     ws.url(s"$serverUrl/apis/$apiName/plugins")
       .withQueryString("consumer_id" -> s"$consumerId")
-      .withQueryString("name" -> "ratelimiting").get().flatMap {
+      .withQueryString("name" -> RateLimitingPluginName).get().flatMap {
         response =>
           (response.json \\ "id").headOption match {
             case Some(JsString(id)) => Future.successful(id)
@@ -107,7 +109,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         Logger.info(s"UPDATE USER request is $serverUrl/apis/$apiName/plugins/$pluginId")
         ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
           "consumer_id" -> Seq(id),
-          "name" -> Seq("ratelimiting"),
+          "name" -> Seq(RateLimitingPluginName),
           "value.minute" -> Seq(newRateLimit.requestsPerMinute.toString),
           "value.day" -> Seq(newRateLimit.requestsPerDay.toString))).flatMap {
           response =>
