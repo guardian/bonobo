@@ -1,6 +1,7 @@
 package kong
 
 import models._
+import org.joda.time.DateTime
 
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -24,11 +25,11 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse]
+  def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult]
 
   def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
-  def createKey(consumerId: String): Future[Happy.type]
+  def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
 
   def deleteKey(consumerId: String): Future[Happy.type]
 }
@@ -39,13 +40,13 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   val RateLimitingPluginName = "ratelimiting"
 
-  def registerUser(username: String, rateLimit: RateLimits): Future[KongCreateConsumerResponse] = {
+  def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult] = {
 
     for {
       consumer <- createConsumer(username)
       _ <- setRateLimit(consumer.id, rateLimit)
-      _ <- createKey(consumer.id) // TODO: this will not do if I want to set a custom key
-    } yield consumer
+      key <- createKey(consumer.id)
+    } yield UserCreationResult(consumer.id, new DateTime(consumer.created_at), key)
   }
 
   private def createConsumer(username: String): Future[KongCreateConsumerResponse] = {
@@ -78,13 +79,13 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  def createKey(consumerId: String): Future[Happy.type] = {
-    // TODO: we're using the consumerId as a key here. Might want to change this down the line?
+  def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = {
+    val key: String = customKey getOrElse java.util.UUID.randomUUID.toString
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
-      "key" -> Seq(consumerId))).flatMap {
+      "key" -> Seq(key))).flatMap {
       response =>
         response.status match {
-          case 201 => Future.successful(Happy)
+          case 201 => Future.successful(key)
           case _ => Future.failed(KeyCreationFailed)
         }
     }
