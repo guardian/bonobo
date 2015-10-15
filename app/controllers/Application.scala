@@ -44,7 +44,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
-      val bonoboNewEntry = BonoboKey.apply(consumer, formData, rateLimits)
+      val bonoboNewEntry = BonoboKey.apply(formData)
       dynamo.saveOnBonobo(bonoboNewEntry)
 
       val kongNewEntry = KongKey.apply(consumer, formData, rateLimits)

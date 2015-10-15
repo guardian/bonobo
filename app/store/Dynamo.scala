@@ -142,32 +142,18 @@ object Dynamo {
   def toItem(bonoboKey: BonoboKey): Item = {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
-      .withString("id", bonoboKey.id)
-      .withString("key", bonoboKey.key)
       .withString("name", bonoboKey.name)
       .withString("company", bonoboKey.company)
       .withString("email", bonoboKey.email)
-      .withInt("requests_per_day", bonoboKey.requestsPerDay)
-      .withInt("requests_per_minute", bonoboKey.requestsPerMinute)
-      .withString("status", bonoboKey.status)
-      .withString("tier", bonoboKey.tier)
       .withString("url", bonoboKey.url)
-      .withString("createdAt", bonoboKey.createdAt)
   }
 
   def fromItem(item: Item): BonoboKey = {
     BonoboKey(
-      id = item.getString("id"),
-      key = item.getString("key"),
       name = item.getString("name"),
       company = item.getString("company"),
       email = item.getString("email"),
-      requestsPerDay = item.getInt("requests_per_day"),
-      requestsPerMinute = item.getInt("requests_per_minute"),
-      status = item.getString("status"),
-      tier = item.getString("tier"),
-      url = item.getString("url"),
-      createdAt = item.getString("createdAt")
+      url = item.getString("url")
     )
   }
 

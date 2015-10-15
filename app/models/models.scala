@@ -5,23 +5,16 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 /* model used for saving stuff related to Bonobo */
-case class BonoboKey(id: String,
-  key: String,
+case class BonoboKey(
   email: String,
   name: String,
   company: String,
-  url: String,
-  requestsPerDay: Int,
-  requestsPerMinute: Int,
-  tier: String,
-  status: String,
-  createdAt: String)
+  url: String)
 
 object BonoboKey {
-  def apply(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): BonoboKey = {
+  def apply(formData: CreateFormData): BonoboKey = {
 
-    new BonoboKey(consumer.id, consumer.key, formData.email, formData.name, formData.company, formData.url,
-      rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, "Active", consumer.createdAt.toString)
+    new BonoboKey(formData.email, formData.name, formData.company, formData.url)
   }
 }
 
