@@ -1,4 +1,4 @@
-@(keys: List[BonoboKey], pageTitle: String, lastDirection: String, hasNext: Boolean, firstName: String)(implicit messages: Messages)
+@(keys: List[KongKey], pageTitle: String, lastDirection: String, hasNext: Boolean, firstName: String)(implicit messages: Messages)
 
 @main(pageTitle, firstName){
     <div class="row">
@@ -8,8 +8,6 @@
                     <tr>
                         <th>API Key</th>
                         <th>Name</th>
-                        <th>Email</th>
-                        <th>Company</th>
                         <th>Tier</th>
                         <th>Status</th>
                         <th>Created At</th>
@@ -21,8 +19,6 @@
                     <tr>
                         <td>@key.key</td>
                         <td>@key.name</td>
-                        <td>@key.email</td>
-                        <td>@key.company</td>
                         <td>@key.tier</td>
                         <td>@key.status</td>
                         <td>@key.createdAt</td>

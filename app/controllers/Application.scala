@@ -29,7 +29,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         Ok(views.html.index("Invalid search"))
       },
       searchFormData => {
-        val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
+        val keys: List[KongKey] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
         Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, request.user.firstName))
       }
@@ -87,7 +87,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKey(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveKey(id)
-    val filledForm = editForm.fill(EditFormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
+    val filledForm = editForm.fill(EditFormData(result.key, result.name, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
@@ -100,10 +100,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
     }
 
-    def updateUserOnDB(newFormData: EditFormData): Result = {
-      val updatedUser = new BonoboKey(consumerId, newFormData.key, newFormData.email, newFormData.name, newFormData.company,
-        newFormData.url, newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
-      dynamo.updateUser(updatedUser)
+    def updateKongKey(newFormData: EditFormData): Result = {
+      val updatedKey = new KongKey(consumerId, newFormData.key, newFormData.name,
+        newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
+      dynamo.updateKongKey(updatedKey)
 
       Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
     }
@@ -139,7 +139,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- deactivateKeyIfNecessary()
         _ <- activateKeyIfNecessary()
       } yield {
-        updateUserOnDB(newFormData)
+        updateKongKey(newFormData)
         Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
       }
     }
@@ -163,16 +163,13 @@ object Application {
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
-  case class EditFormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
+  case class EditFormData(key: String, name: String, requestsPerDay: Int,
     requestsPerMinute: Int, tier: String, status: String)
 
   val editForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
-      "email" -> nonEmptyText,
       "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
