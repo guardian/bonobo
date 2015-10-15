@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ RateLimits, BonoboKey, UserCreationResult }
+import models.{ KongKey, RateLimits, BonoboKey, UserCreationResult }
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
@@ -44,8 +44,11 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
-      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.createdAt.toString, consumer.key)
-      dynamo.save(newEntry)
+      val bonoboNewEntry = BonoboKey.apply(consumer, formData, rateLimits)
+      dynamo.saveOnBonobo(bonoboNewEntry)
+
+      val kongNewEntry = KongKey.apply(consumer, formData, rateLimits)
+      dynamo.saveOnKong(kongNewEntry)
 
       Ok(views.html.createKey(message = "A new user has been successfully added", createForm, request.user.firstName))
     }
