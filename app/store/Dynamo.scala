@@ -11,19 +11,19 @@ trait DB {
 
   val limit = 4
 
-  def search(query: String, limit: Int = 20): List[BonoboKey]
+  def search(query: String, limit: Int = 20): List[KongKey]
 
   def saveOnBonobo(bonoboKey: BonoboKey): Unit
 
   def saveOnKong(kongKey: KongKey): Unit
 
-  def getKeys(direction: String, range: String): (List[BonoboKey], Boolean)
+  def getKeys(direction: String, range: String): (List[KongKey], Boolean)
 
-  def retrieveKey(id: String): BonoboKey
+  def retrieveKey(id: String): KongKey
 
-  def updateUser(bonoboKey: BonoboKey): Unit
+  def updateKongKey(kongKey: KongKey): Unit
 
-  def deleteUser(createdAt: String): Unit
+  def deleteKongKey(createdAt: String): Unit
 }
 
 class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) extends DB {
@@ -33,7 +33,7 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
   private val BonoboTable = db.getTable(bonoboBonoboTable)
   private val KongTable = db.getTable(bonoboKongTable)
 
-  def search(query: String, limit: Int = 20): List[BonoboKey] = {
+  def search(query: String, limit: Int = 20): List[KongKey] = {
     val scan = new ScanSpec()
       .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s OR #5 = :s")
       .withNameMap(new NameMap()
@@ -45,10 +45,10 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
-    BonoboTable.scan(scan).asScala.toList.map(fromItem)
+    KongTable.scan(scan).asScala.toList.map(fromKongItem)
   }
 
-  def getKeys(direction: String, range: String): (List[BonoboKey], Boolean) = {
+  def getKeys(direction: String, range: String): (List[KongKey], Boolean) = {
     direction match {
       case "previous" => getKeysBefore(range)
       case "next" => getKeysAfter(range)
@@ -56,7 +56,7 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
     }
   }
 
-  private def getKeysAfter(afterRange: String): (List[BonoboKey], Boolean) = {
+  private def getKeysAfter(afterRange: String): (List[KongKey], Boolean) = {
     def createQuerySpec(range: String): QuerySpec = {
       range match {
         case "" => new QuerySpec()
@@ -71,11 +71,11 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
       }
     }
     val query = createQuerySpec(afterRange)
-    val result = BonoboTable.query(query).asScala.toList.map(fromItem)
+    val result = KongTable.query(query).asScala.toList.map(fromKongItem)
     if (result.length == 0) (result, false)
     else {
       val testQuery = createQuerySpec(result.last.createdAt) //TODO: improve query using COUNT
-      val testResult = BonoboTable.query(testQuery).asScala.toList
+      val testResult = KongTable.query(testQuery).asScala.toList
       testResult.length match {
         case 0 => (result, false)
         case _ => (result, true)
@@ -83,7 +83,7 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
     }
   }
 
-  private def getKeysBefore(beforeRange: String): (List[BonoboKey], Boolean) = {
+  private def getKeysBefore(beforeRange: String): (List[KongKey], Boolean) = {
     def createQuerySpec(range: String): QuerySpec = {
       new QuerySpec()
         .withKeyConditionExpression(":h = hashkey")
@@ -93,22 +93,22 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
         .withMaxResultSize(limit)
     }
     val query = createQuerySpec(beforeRange)
-    val result = BonoboTable.query(query).asScala.toList.map(fromItem).reverse
+    val result = KongTable.query(query).asScala.toList.map(fromKongItem).reverse
     val testQuery = createQuerySpec(result.head.createdAt) //TODO: improve query using COUNT
-    val testResult = BonoboTable.query(testQuery).asScala.toList.reverse
+    val testResult = KongTable.query(testQuery).asScala.toList.reverse
     testResult.length match {
       case 0 => (result, false)
       case _ => (result, true)
     }
   }
 
-  def retrieveKey(id: String): BonoboKey = {
+  def retrieveKey(id: String): KongKey = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("id = :i")
       .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
-    val item = BonoboTable.query(query).asScala.toList.head
-    fromItem(item)
+    val item = KongTable.query(query).asScala.toList.head
+    fromKongItem(item)
   }
 
   def saveOnBonobo(bonoboKey: BonoboKey): Unit = {
@@ -122,20 +122,17 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
     KongTable.putItem(item)
   }
 
-  def updateUser(bonoboKey: BonoboKey): Unit = {
-    BonoboTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", bonoboKey.createdAt),
-      new AttributeUpdate("name").put(bonoboKey.name),
-      new AttributeUpdate("company").put(bonoboKey.company),
-      new AttributeUpdate("email").put(bonoboKey.email),
-      new AttributeUpdate("requests_per_day").put(bonoboKey.requestsPerDay),
-      new AttributeUpdate("requests_per_minute").put(bonoboKey.requestsPerMinute),
-      new AttributeUpdate("status").put(bonoboKey.status),
-      new AttributeUpdate("tier").put(bonoboKey.tier),
-      new AttributeUpdate("url").put(bonoboKey.url)
+  def updateKongKey(kongKey: KongKey): Unit = {
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt),
+      new AttributeUpdate("name").put(kongKey.name),
+      new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
+      new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
+      new AttributeUpdate("status").put(kongKey.status),
+      new AttributeUpdate("tier").put(kongKey.tier)
     )
   }
 
-  def deleteUser(createdAt: String): Unit = {
+  def deleteKongKey(createdAt: String): Unit = {
     BonoboTable.deleteItem(new PrimaryKey("hashkey", "hashkey", "createdAt", createdAt))
   }
 }
