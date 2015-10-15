@@ -80,7 +80,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = {
-    val key: String = customKey getOrElse (java.util.UUID.randomUUID.toString)
+    val key: String = customKey getOrElse java.util.UUID.randomUUID.toString
     ws.url(s"$serverUrl/consumers/$consumerId/keyauth").post(Map(
       "key" -> Seq(key))).flatMap {
       response =>
