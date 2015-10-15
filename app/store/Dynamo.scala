@@ -13,7 +13,7 @@ trait DB {
 
   def search(query: String, limit: Int = 20): List[KongKey]
 
-  def saveOnBonobo(bonoboKey: BonoboKey): Unit
+  def saveOnBonobo(bonoboKey: BonoboUser): Unit
 
   def saveOnKong(kongKey: KongKey): Unit
 
@@ -111,7 +111,7 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
     fromKongItem(item)
   }
 
-  def saveOnBonobo(bonoboKey: BonoboKey): Unit = {
+  def saveOnBonobo(bonoboKey: BonoboUser): Unit = {
     val item = toItem(bonoboKey)
     BonoboTable.putItem(item)
   }
@@ -139,7 +139,7 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
 
 object Dynamo {
 
-  def toItem(bonoboKey: BonoboKey): Item = {
+  def toItem(bonoboKey: BonoboUser): Item = {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
       .withString("name", bonoboKey.name)
@@ -148,8 +148,8 @@ object Dynamo {
       .withString("url", bonoboKey.url)
   }
 
-  def fromItem(item: Item): BonoboKey = {
-    BonoboKey(
+  def fromItem(item: Item): BonoboUser = {
+    BonoboUser(
       name = item.getString("name"),
       company = item.getString("company"),
       email = item.getString("email"),
