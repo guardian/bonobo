@@ -4,6 +4,7 @@ import controllers.Application.CreateFormData
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 
+/* model used for saving stuff related to Bonobo */
 case class BonoboKey(id: String,
   key: String,
   email: String,
@@ -17,10 +18,28 @@ case class BonoboKey(id: String,
   createdAt: String)
 
 object BonoboKey {
-  def apply(formData: CreateFormData, rateLimits: RateLimits, id: String, createdAt: String, key: String): BonoboKey = {
+  def apply(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): BonoboKey = {
 
-    new BonoboKey(id, key, formData.email, formData.name, formData.company,
-      formData.url, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, "Active", createdAt)
+    new BonoboKey(consumer.id, consumer.key, formData.email, formData.name, formData.company, formData.url,
+      rateLimits.requestsPerDay, rateLimits.requestsPerMinute, formData.tier, "Active", consumer.createdAt.toString)
+  }
+}
+
+/* model used for saving stuff related to Kong */
+case class KongKey(id: String,
+  key: String,
+  name: String,
+  requestsPerDay: Int,
+  requestsPerMinute: Int,
+  tier: String,
+  status: String,
+  createdAt: String)
+
+object KongKey {
+  def apply(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): KongKey = {
+
+    new KongKey(consumer.id, consumer.key, formData.name, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
+      formData.tier, "Active", consumer.createdAt.toString)
   }
 }
 
