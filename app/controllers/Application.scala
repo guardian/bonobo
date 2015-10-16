@@ -67,7 +67,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         case "Rights managed" => new RateLimits(720, 10000)
         case "Internal" => new RateLimits(720, 10000)
       }
-      kong.registerUser(createFormData.email, rateLimits) map {
+      kong.registerUser(createFormData.email, rateLimits, createFormData.key) map {
         consumer => saveUserOnDB(consumer, createFormData, rateLimits)
       } recover {
         case ConflictFailure(message) => displayError("Conflict failure: " + message)
@@ -151,7 +151,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 }
 
 object Application {
-  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String)
+  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
   val createUserForm: Form[CreateFormData] = Form(
     mapping(
@@ -159,7 +159,8 @@ object Application {
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
-      "tier" -> nonEmptyText
+      "tier" -> nonEmptyText,
+      "key" -> optional(text)
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 

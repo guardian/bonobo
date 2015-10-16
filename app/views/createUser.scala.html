@@ -11,6 +11,7 @@
                 @b3.text( form("company"), '_label -> "Company", 'placeholder -> "Company" )
                 @b3.text( form("url"), '_label -> "URL", 'placeholder -> "URL" )
                 @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "Rights managed" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
+                @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Insert custom key (optional)" )
                 @b3.submit('class -> "btn btn-primary"){ Save }
             }
         </div>
