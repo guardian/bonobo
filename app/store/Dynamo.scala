@@ -13,9 +13,9 @@ trait DB {
 
   def search(query: String, limit: Int = 20): List[KongKey]
 
-  def saveOnBonobo(bonoboKey: BonoboUser): Unit
+  def saveBonoboUser(bonoboKey: BonoboUser): Unit
 
-  def saveOnKong(kongKey: KongKey): Unit
+  def saveKongKey(kongKey: KongKey): Unit
 
   def getKeys(direction: String, range: String): (List[KongKey], Boolean)
 
@@ -26,12 +26,12 @@ trait DB {
   def deleteKongKey(createdAt: String): Unit
 }
 
-class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) extends DB {
+class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   import Dynamo._
 
-  private val BonoboTable = db.getTable(bonoboBonoboTable)
-  private val KongTable = db.getTable(bonoboKongTable)
+  private val BonoboTable = db.getTable(usersTable)
+  private val KongTable = db.getTable(keysTable)
 
   def search(query: String, limit: Int = 20): List[KongKey] = {
     val scan = new ScanSpec()
@@ -111,13 +111,13 @@ class Dynamo(db: DynamoDB, bonoboBonoboTable: String, bonoboKongTable: String) e
     fromKongItem(item)
   }
 
-  def saveOnBonobo(bonoboKey: BonoboUser): Unit = {
-    val item = toItem(bonoboKey)
+  def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
+    val item = toItem(bonoboUser)
     BonoboTable.putItem(item)
   }
 
   // save stuff on the Kong table
-  def saveOnKong(kongKey: KongKey): Unit = {
+  def saveKongKey(kongKey: KongKey): Unit = {
     val item = toKongItem(kongKey)
     KongTable.putItem(item)
   }
