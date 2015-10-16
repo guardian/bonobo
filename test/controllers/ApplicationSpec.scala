@@ -24,19 +24,19 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     val dynamo = new DB {
 
       def search(query: String, limit: Port): List[KongKey] = ???
-      def saveOnKong(kongKey: KongKey): Unit = ???
-      def saveOnBonobo(bonoboKey: BonoboUser): Unit = ???
+      def saveBonoboUser(bonoboUser: BonoboUser): Unit = ???
+      def saveKongKey(kongKey: KongKey): Unit = ???
       def updateKongKey(kongKey: KongKey): Unit = ???
       def deleteKongKey(createdAt: String): Unit = ???
       def retrieveKey(id: String): KongKey = ???
 
       def getKeys(direction: String, range: String): (List[KongKey], Boolean) = {
-        (List(KongKey("id", "key", "batman", 10, 1, "dev", "Active", "some date")), false)
+        (List(KongKey("id", "my-new-key", 10, 1, "dev", "Active", "some date")), false)
       }
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", "").apply(FakeRequest())
-    contentAsString(result) should include("batman")
+    contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
