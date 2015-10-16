@@ -6,8 +6,8 @@
 GET         /                     controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
 GET         /keys                 controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
 GET         /keys/search          controllers.Application.search
-GET         /keys/create          controllers.Application.createKeyForm
-POST        /keys                 controllers.Application.createKey
+GET         /users/create         controllers.Application.createNewUserForm
+POST        /users                controllers.Application.createUser
 GET         /keys/:id/edit        controllers.Application.editKey(id: String)
 POST        /keys/:id             controllers.Application.updateKey(id: String)
 GET         /healthcheck          controllers.Application.healthcheck
