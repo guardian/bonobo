@@ -45,10 +45,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
       val newBonoboUser = BonoboUser.apply(formData)
-      dynamo.saveOnBonobo(newBonoboUser)
+      dynamo.saveBonoboUser(newBonoboUser)
 
       val newKongKey = KongKey.apply(consumer, formData, rateLimits)
-      dynamo.saveOnKong(newKongKey)
+      dynamo.saveKongKey(newKongKey)
 
       Ok(views.html.createUser(message = "A new user has been successfully added", createUserForm, request.user.firstName))
     }
