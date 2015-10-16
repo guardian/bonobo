@@ -86,6 +86,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       response =>
         response.status match {
           case 201 => Future.successful(key)
+          case 409 => Future.failed(ConflictFailure("Key already taken - use a different value as a key"))
           case _ => Future.failed(KeyCreationFailed)
         }
     }
