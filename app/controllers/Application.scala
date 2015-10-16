@@ -1,6 +1,6 @@
 package controllers
 
-import models.{ RateLimits, BonoboKey, UserCreationResult }
+import models.{ KongKey, RateLimits, BonoboUser, UserCreationResult }
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
@@ -29,33 +29,36 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         Ok(views.html.index("Invalid search"))
       },
       searchFormData => {
-        val keys: List[BonoboKey] = dynamo.search(searchFormData.query)
+        val keys: List[KongKey] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
         Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, request.user.firstName))
       }
     )
   }
 
-  def createKeyForm = maybeAuth { implicit request =>
-    Ok(views.html.createKey(message = "", createForm, request.user.firstName))
+  def createNewUserForm = maybeAuth { implicit request =>
+    Ok(views.html.createUser(message = "", createUserForm, request.user.firstName))
   }
 
-  def createKey = maybeAuth.async { implicit request =>
+  def createUser = maybeAuth.async { implicit request =>
 
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
-      val newEntry = BonoboKey.apply(formData, rateLimits, consumer.id, consumer.createdAt.toString, consumer.key)
-      dynamo.save(newEntry)
+      val newBonoboUser = BonoboUser(consumer.id, formData)
+      dynamo.saveBonoboUser(newBonoboUser)
 
-      Ok(views.html.createKey(message = "A new user has been successfully added", createForm, request.user.firstName))
+      val newKongKey = KongKey(consumer, formData, rateLimits)
+      dynamo.saveKongKey(newKongKey)
+
+      Ok(views.html.createUser(message = "A new user has been successfully added", createUserForm, request.user.firstName))
     }
 
     def displayError(message: String): Result = {
-      Ok(views.html.createKey(message, createForm, request.user.firstName))
+      Ok(views.html.createUser(message, createUserForm, request.user.firstName))
     }
 
     def handleInvalidForm(form: Form[CreateFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
+      Future.successful(Ok(views.html.createUser(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
     }
 
     def handleValidForm(createFormData: CreateFormData): Future[Result] = {
@@ -64,14 +67,14 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         case "Rights managed" => new RateLimits(720, 10000)
         case "Internal" => new RateLimits(720, 10000)
       }
-      kong.registerUser(createFormData.email, rateLimits) map {
+      kong.registerUser(createFormData.email, rateLimits, createFormData.key) map {
         consumer => saveUserOnDB(consumer, createFormData, rateLimits)
       } recover {
         case ConflictFailure(message) => displayError("Conflict failure: " + message)
         case GenericFailure(message) => displayError(message)
       }
     }
-    createForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
@@ -84,7 +87,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKey(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveKey(id)
-    val filledForm = editForm.fill(EditFormData(result.key, result.email, result.name, result.company, result.url, result.requestsPerDay,
+    val filledForm = editUserForm.fill(EditFormData(result.key, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
@@ -97,12 +100,12 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
     }
 
-    def updateUserOnDB(newFormData: EditFormData): Result = {
-      val updatedUser = new BonoboKey(consumerId, newFormData.key, newFormData.email, newFormData.name, newFormData.company,
-        newFormData.url, newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
-      dynamo.updateUser(updatedUser)
+    def updateKongKey(newFormData: EditFormData): Result = {
+      val updatedKey = new KongKey(consumerId, newFormData.key,
+        newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
+      dynamo.updateKongKey(updatedKey)
 
-      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
+      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
     }
 
     def handleValidForm(newFormData: EditFormData): Future[Result] = {
@@ -136,40 +139,37 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- deactivateKeyIfNecessary()
         _ <- activateKeyIfNecessary()
       } yield {
-        updateUserOnDB(newFormData)
-        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
+        updateKongKey(newFormData)
+        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
       }
     }
 
-    editForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    editUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def healthcheck = Action { Ok("OK") }
 }
 
 object Application {
-  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String)
+  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
-  val createForm: Form[CreateFormData] = Form(
+  val createUserForm: Form[CreateFormData] = Form(
     mapping(
       "email" -> nonEmptyText,
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
-      "tier" -> nonEmptyText
+      "tier" -> nonEmptyText,
+      "key" -> optional(text)
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
-  case class EditFormData(key: String, email: String, name: String, company: String, url: String, requestsPerDay: Int,
+  case class EditFormData(key: String, requestsPerDay: Int,
     requestsPerMinute: Int, tier: String, status: String)
 
-  val editForm: Form[EditFormData] = Form(
+  val editUserForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
-      "email" -> nonEmptyText,
-      "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,

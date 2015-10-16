@@ -1,7 +1,7 @@
 package controllers
 
 import kong.Kong.Happy
-import models.{ UserCreationResult, KongCreateConsumerResponse, RateLimits, BonoboKey }
+import models._
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
@@ -22,30 +22,28 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
-      def search(query: String, limit: Port): List[BonoboKey] = ???
 
-      def save(bonoboKey: BonoboKey): Unit = ???
+      def search(query: String, limit: Port): List[KongKey] = ???
+      def saveBonoboUser(bonoboUser: BonoboUser): Unit = ???
+      def saveKongKey(kongKey: KongKey): Unit = ???
+      def updateKongKey(kongKey: KongKey): Unit = ???
+      def deleteKongKey(createdAt: String): Unit = ???
+      def retrieveKey(id: String): KongKey = ???
 
-      def getKeys(direction: String, range: String): (List[BonoboKey], Boolean) = {
-        (List(BonoboKey("id", "key", "email@some.com", "name", "company", "url", 200, 2, "1", "Active", "293029")), false)
+      def getKeys(direction: String, range: String): (List[KongKey], Boolean) = {
+        (List(KongKey("id", "my-new-key", 10, 1, "dev", "Active", "some date")), false)
       }
-
-      def retrieveKey(id: String): BonoboKey = ???
-
-      def deleteUser(createdAt: String): Unit = ???
-
-      def updateUser(bonoboKey: BonoboKey): Unit = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", "").apply(FakeRequest())
-    contentAsString(result) should include("email@some.com")
+    contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
     val application = new Application(mockDynamo, mockKong, messagesApi, null, false)
 
-    val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
+    val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
@@ -56,6 +54,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   }
 
   /* TODO: this test is pretty useless but I'll leave it here as a reference for now */
+  /*
   "insertNewKey" should "insert a new key" in {
     val myRequest = Map("id" -> "1234", "key" -> "123", "name" -> "Bruce Wayne", "email" -> "batman@ddd.com",
       "company" -> "Wayne Enterprises", "url" -> "www.lol.com", "requestsPerDay" -> "200", "requestsPerMinute" -> "10",
@@ -71,7 +70,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     }
     val application = new Application(mockDynamo, kong, messagesApi, null, false)
 
-    val result: Future[Result] = application.createKey.apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
+    val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
     contentAsString(result) should include("A new user has been successfully added")
   }
+  */
 }
