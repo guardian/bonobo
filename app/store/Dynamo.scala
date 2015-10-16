@@ -1,6 +1,6 @@
 package store
 
-import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec, UpdateItemSpec }
+import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec }
 import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
 import com.amazonaws.services.dynamodbv2.document._
 import models._
@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 
 trait DB {
 
-  val limit = 4
+  val limit = 4 // items per page to be displayed
 
   def search(query: String, limit: Int = 20): List[KongKey]
 
@@ -116,7 +116,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     BonoboTable.putItem(item)
   }
 
-  // save stuff on the Kong table
   def saveKongKey(kongKey: KongKey): Unit = {
     val item = toKongItem(kongKey)
     KongTable.putItem(item)
@@ -124,7 +123,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def updateKongKey(kongKey: KongKey): Unit = {
     KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt),
-      new AttributeUpdate("name").put(kongKey.name),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
@@ -142,6 +140,7 @@ object Dynamo {
   def toItem(bonoboKey: BonoboUser): Item = {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
+      .withString("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
       .withString("company", bonoboKey.company)
       .withString("email", bonoboKey.email)
@@ -150,6 +149,7 @@ object Dynamo {
 
   def fromItem(item: Item): BonoboUser = {
     BonoboUser(
+      bonoboId = item.getString("id"),
       name = item.getString("name"),
       company = item.getString("company"),
       email = item.getString("email"),
@@ -160,9 +160,8 @@ object Dynamo {
   def toKongItem(kongKey: KongKey): Item = {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
-      .withString("id", kongKey.id)
+      .withString("bonoboId", kongKey.bonoboId)
       .withString("key", kongKey.key)
-      .withString("name", kongKey.name)
       .withInt("requests_per_day", kongKey.requestsPerDay)
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
@@ -172,9 +171,8 @@ object Dynamo {
 
   def fromKongItem(item: Item): KongKey = {
     KongKey(
-      id = item.getString("id"),
+      bonoboId = item.getString("bonoboId"),
       key = item.getString("key"),
-      name = item.getString("name"),
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),

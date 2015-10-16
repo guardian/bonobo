@@ -44,10 +44,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
-      val newBonoboUser = BonoboUser.apply(formData)
+      val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveBonoboUser(newBonoboUser)
 
-      val newKongKey = KongKey.apply(consumer, formData, rateLimits)
+      val newKongKey = KongKey(consumer, formData, rateLimits)
       dynamo.saveKongKey(newKongKey)
 
       Ok(views.html.createUser(message = "A new user has been successfully added", createUserForm, request.user.firstName))
@@ -87,7 +87,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKey(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveKey(id)
-    val filledForm = editUserForm.fill(EditFormData(result.key, result.name, result.requestsPerDay,
+    val filledForm = editUserForm.fill(EditFormData(result.key, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
@@ -101,7 +101,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def updateKongKey(newFormData: EditFormData): Result = {
-      val updatedKey = new KongKey(consumerId, newFormData.key, newFormData.name,
+      val updatedKey = new KongKey(consumerId, newFormData.key,
         newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
       dynamo.updateKongKey(updatedKey)
 
@@ -164,13 +164,12 @@ object Application {
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
-  case class EditFormData(key: String, name: String, requestsPerDay: Int,
+  case class EditFormData(key: String, requestsPerDay: Int,
     requestsPerMinute: Int, tier: String, status: String)
 
   val editUserForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
-      "name" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
