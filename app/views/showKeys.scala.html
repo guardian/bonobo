@@ -18,11 +18,10 @@
                 @for(key <- keys) {
                     <tr>
                         <td>@key.key</td>
-                        <td>@key.name</td>
                         <td>@key.tier</td>
                         <td>@key.status</td>
                         <td>@key.createdAt</td>
-                        <td><a href="@routes.Application.editKey(key.id)" class="text-info">Edit</a></td>
+                        <td><a href="@routes.Application.editKey(key.bonoboId)" class="text-info">Edit</a></td>
                     </tr>
                 }
                 </tbody>
