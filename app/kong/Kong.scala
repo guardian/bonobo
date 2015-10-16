@@ -25,7 +25,7 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult]
+  def registerUser(username: String, rateLimit: RateLimits, key: Option[String]): Future[UserCreationResult]
 
   def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
@@ -40,12 +40,12 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   val RateLimitingPluginName = "ratelimiting"
 
-  def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult] = {
+  def registerUser(username: String, rateLimit: RateLimits, key: Option[String]): Future[UserCreationResult] = {
 
     for {
       consumer <- createConsumer(username)
       _ <- setRateLimit(consumer.id, rateLimit)
-      key <- createKey(consumer.id)
+      key <- createKey(consumer.id, key)
     } yield UserCreationResult(consumer.id, new DateTime(consumer.created_at), key)
   }
 
