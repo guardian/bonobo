@@ -1,11 +1,11 @@
 @(message: String, form: Form[controllers.Application.CreateFormData], firstName: String)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@main("Create key", firstName) {
+@main("Create user", firstName) {
     <h4>@message</h4>
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
-            @b3.form(routes.Application.createKey) {
+            @b3.form(routes.Application.createUser) {
                 @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name" )
                 @b3.email( form("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
                 @b3.text( form("company"), '_label -> "Company", 'placeholder -> "Company" )

@@ -28,10 +28,10 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
   val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
 
   val dynamo = {
-    val bonoboBonoboTable = configuration.getString("xyz") getOrElse "Bonobo-Users"
-    val bonoboKongTable = configuration.getString("whatever") getOrElse ("Bonobo-Keys")
+    val usersTable = configuration.getString("aws.dynamo.usersTableName") getOrElse "Bonobo-Users"
+    val keysTable = configuration.getString("aws.dynamo.keysTableName") getOrElse ("Bonobo-Keys")
     val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(awsCreds).withRegion(awsRegion)
-    new Dynamo(new DynamoDB(client), bonoboBonoboTable, bonoboKongTable)
+    new Dynamo(new DynamoDB(client), usersTable, keysTable)
   }
 
   val kong = {

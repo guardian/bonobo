@@ -36,11 +36,11 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     )
   }
 
-  def createKeyForm = maybeAuth { implicit request =>
-    Ok(views.html.createKey(message = "", createForm, request.user.firstName))
+  def createNewUserForm = maybeAuth { implicit request =>
+    Ok(views.html.createUser(message = "", createUserForm, request.user.firstName))
   }
 
-  def createKey = maybeAuth.async { implicit request =>
+  def createUser = maybeAuth.async { implicit request =>
 
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
 
@@ -50,15 +50,15 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = KongKey.apply(consumer, formData, rateLimits)
       dynamo.saveOnKong(newKongKey)
 
-      Ok(views.html.createKey(message = "A new user has been successfully added", createForm, request.user.firstName))
+      Ok(views.html.createUser(message = "A new user has been successfully added", createUserForm, request.user.firstName))
     }
 
     def displayError(message: String): Result = {
-      Ok(views.html.createKey(message, createForm, request.user.firstName))
+      Ok(views.html.createUser(message, createUserForm, request.user.firstName))
     }
 
     def handleInvalidForm(form: Form[CreateFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createKey(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
+      Future.successful(Ok(views.html.createUser(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
     }
 
     def handleValidForm(createFormData: CreateFormData): Future[Result] = {
@@ -74,7 +74,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         case GenericFailure(message) => displayError(message)
       }
     }
-    createForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
@@ -87,7 +87,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKey(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveKey(id)
-    val filledForm = editForm.fill(EditFormData(result.key, result.name, result.requestsPerDay,
+    val filledForm = editUserForm.fill(EditFormData(result.key, result.name, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
@@ -105,7 +105,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
       dynamo.updateKongKey(updatedKey)
 
-      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
+      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
     }
 
     def handleValidForm(newFormData: EditFormData): Future[Result] = {
@@ -140,11 +140,11 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateKongKey(newFormData)
-        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editForm.fill(newFormData), request.user.firstName))
+        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
       }
     }
 
-    editForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    editUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def healthcheck = Action { Ok("OK") }
@@ -153,7 +153,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 object Application {
   case class CreateFormData(email: String, name: String, company: String, url: String, tier: String)
 
-  val createForm: Form[CreateFormData] = Form(
+  val createUserForm: Form[CreateFormData] = Form(
     mapping(
       "email" -> nonEmptyText,
       "name" -> nonEmptyText,
@@ -166,7 +166,7 @@ object Application {
   case class EditFormData(key: String, name: String, requestsPerDay: Int,
     requestsPerMinute: Int, tier: String, status: String)
 
-  val editForm: Form[EditFormData] = Form(
+  val editUserForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
       "name" -> nonEmptyText,
