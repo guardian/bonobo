@@ -39,6 +39,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   import Kong._
 
   val RateLimitingPluginName = "rate-limiting"
+  val KeyAuthPluginName = "key-auth"
 
   def registerUser(username: String, rateLimit: RateLimits, key: Option[String]): Future[UserCreationResult] = {
 
@@ -81,7 +82,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = {
     val key: String = customKey getOrElse java.util.UUID.randomUUID.toString
-    ws.url(s"$serverUrl/consumers/$consumerId/key-auth").post(Map(
+    ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").post(Map(
       "key" -> Seq(key))).flatMap {
       response =>
         response.status match {
@@ -129,7 +130,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   def getKeyIdForGivenUser(consumerId: String): Future[String] = {
-    ws.url(s"$serverUrl/consumers/$consumerId/key-auth").get().flatMap {
+    ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").get().flatMap {
       response =>
         response.json.validate[KongListConsumerKeysResponse] match {
           case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => Future.successful(head.id)
@@ -142,7 +143,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   def deleteKey(consumerId: String): Future[Happy.type] = {
     getKeyIdForGivenUser(consumerId) flatMap {
       keyId =>
-        ws.url(s"$serverUrl/consumers/$consumerId/key-auth/$keyId").delete().flatMap {
+        ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName/$keyId").delete().flatMap {
           response =>
             response.status match {
               case 204 => Future.successful(Happy)
