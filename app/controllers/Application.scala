@@ -87,6 +87,30 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
   }
 
+  def editUser(id: String) = maybeAuth { implicit request =>
+    val result = dynamo.retrieveUser(id)
+    val filledForm = newEditUserForm.fill(NewEditUser(result.email, result.name, result.company, result.url))
+    Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName)) // TODO check the last arg
+  }
+
+  def updateUser(id: String) = maybeAuth.async { implicit request =>
+
+    def handleInvalidForm(form: Form[NewEditUser]): Future[Result] = {
+      Future.successful(Ok(views.html.editUser(message = "Plase correct the highlighted fields", id, form, request.user.firstName)))
+    }
+
+    def handleValidForm(form: NewEditUser): Future[Result] = {
+
+      // TODO see if I can resuse the CreateForm companion object here
+      val updatedUser = new BonoboUser(id, form.email, form.name, form.company, form.url)
+      dynamo.updateBonoboUser(updatedUser)
+
+      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id, newEditUserForm.fill(form), request.user.firstName)))
+    }
+
+    newEditUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
+  }
+
   def editKey(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveKey(id)
     val filledForm = editUserForm.fill(EditFormData(result.key, result.requestsPerDay,
@@ -96,13 +120,14 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def updateKey(consumerId: String) = maybeAuth.async { implicit request =>
 
-    val oldKey = dynamo.retrieveKey(consumerId)
+    val oldKey = dynamo.retrieveKey(consumerId) // TODO do we really need that?
 
     def handleInvalidForm(form: Form[EditFormData]): Future[Result] = {
       Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
     }
 
     def updateKongKey(newFormData: EditFormData): Result = {
+      // TODO: use a companion object here
       val updatedKey = new KongKey(consumerId, newFormData.key,
         newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
       dynamo.updateKongKey(updatedKey)
@@ -166,9 +191,9 @@ object Application {
     )(CreateFormData.apply)(CreateFormData.unapply)
   )
 
-  case class EditFormData(key: String, requestsPerDay: Int,
-    requestsPerMinute: Int, tier: String, status: String)
+  case class EditFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
 
+  // TODO: rename this to be editKeyForm
   val editUserForm: Form[EditFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
@@ -177,6 +202,18 @@ object Application {
       "tier" -> nonEmptyText,
       "status" -> nonEmptyText
     )(EditFormData.apply)(EditFormData.unapply)
+  )
+
+  // TODO: rename this NewEditFormUser -> EditFormUser
+  case class NewEditUser(email: String, name: String, company: String, url: String)
+
+  val newEditUserForm: Form[NewEditUser] = Form(
+    mapping(
+      "email" -> nonEmptyText,
+      "name" -> nonEmptyText,
+      "company" -> nonEmptyText,
+      "url" -> nonEmptyText
+    )(NewEditUser.apply)(NewEditUser.unapply)
   )
 
   case class SearchFormData(query: String)

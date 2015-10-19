@@ -24,6 +24,10 @@ trait DB {
 
   def retrieveKey(id: String): KongKey
 
+  def retrieveUser(id: String): BonoboUser
+
+  def updateBonoboUser(bonoboUser: BonoboUser): Unit
+
   def updateKongKey(kongKey: KongKey): Unit
 
   def deleteKongKey(createdAt: String): Unit
@@ -174,9 +178,27 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     fromKongItem(item)
   }
 
+  def retrieveUser(id: String): BonoboUser = {
+    val query = new QuerySpec()
+      .withKeyConditionExpression("id = :i")
+      //.withFilterExpression("bonoboId = :i")
+      .withValueMap(new ValueMap().withString(":i", id))
+    val item = BonoboTable.query(query).asScala.toList.head
+    fromBonoboItem(item)
+  }
+
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
-    val item = toItem(bonoboUser)
+    val item = toBonoboItem(bonoboUser)
     BonoboTable.putItem(item)
+  }
+
+  def updateBonoboUser(bonoboUser: BonoboUser): Unit = {
+    BonoboTable.updateItem(new PrimaryKey("id", bonoboUser.bonoboId),
+      new AttributeUpdate("email").put(bonoboUser.email),
+      new AttributeUpdate("name").put(bonoboUser.name),
+      new AttributeUpdate("company").put(bonoboUser.company),
+      new AttributeUpdate("url").put(bonoboUser.url)
+    )
   }
 
   def saveKongKey(kongKey: KongKey): Unit = {
@@ -200,7 +222,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
 object Dynamo {
 
-  def toItem(bonoboKey: BonoboUser): Item = {
+  def toBonoboItem(bonoboKey: BonoboUser): Item = {
     new Item()
       .withPrimaryKey("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
@@ -209,7 +231,7 @@ object Dynamo {
       .withString("url", bonoboKey.url)
   }
 
-  def fromItem(item: Item): BonoboUser = {
+  def fromBonoboItem(item: Item): BonoboUser = {
     BonoboUser(
       bonoboId = item.getString("id"),
       name = item.getString("name"),
