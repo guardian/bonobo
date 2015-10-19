@@ -65,11 +65,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
           .withKeyConditionExpression(":h = hashkey")
           .withValueMap(new ValueMap().withString(":h", "hashkey"))
           .withMaxResultSize(limit)
+          .withScanIndexForward(false)
         case other => new QuerySpec()
           .withKeyConditionExpression(":h = hashkey")
           .withValueMap(new ValueMap().withString(":h", "hashkey"))
           .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", other))
           .withMaxResultSize(limit)
+          .withScanIndexForward(false)
       }
     }
     val keysQuery = createQuerySpec(afterRange)
@@ -77,28 +79,25 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
     if (keys.length == 0) (List.empty, false)
     else {
-      def getUserForKey(key: String): BonoboUser = {
+      def getUserForKey(id: String): BonoboUser = {
         val userQuery = new QuerySpec()
-          .withKeyConditionExpression(":h = hashkey")
-          .withValueMap(new ValueMap().withString(":h", "hashkey"))
+          .withKeyConditionExpression(":i = id")
+          .withValueMap(new ValueMap().withString(":i", id))
           .withMaxResultSize(1)
         BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
       }
 
       val users: List[BonoboUser] = keys.map {
-        kongKey => getUserForKey(kongKey.key)
+        kongKey => getUserForKey(kongKey.bonoboId)
       }
-      println("Number of users " + users.length)
       val result: List[BonoboInfo] = keys.flatMap { key =>
         val bonoboId = key.bonoboId
         val maybeUser = users.find(_.bonoboId == bonoboId)
         maybeUser map { BonoboInfo(key, _) } orElse None //TODO: Log that user doesn't exist
       }
-      println("Number of results " + result.length)
 
       val testQuery = createQuerySpec(keys.last.createdAt.toString) //TODO: improve query using COUNT
-      val testResult = KongTable.query(testQuery).asScala.toList
-      testResult.length match {
+      KongTable.query(testQuery).asScala.size match {
         case 0 => (result, false)
         case _ => (result, true)
       }
@@ -110,23 +109,22 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       new QuerySpec()
         .withKeyConditionExpression(":h = hashkey")
         .withValueMap(new ValueMap().withString(":h", "hashkey"))
-        .withScanIndexForward(false)
         .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", range))
         .withMaxResultSize(limit)
     }
     val keysQuery = createQuerySpec(beforeRange)
     val keys = KongTable.query(keysQuery).asScala.toList.map(fromKongItem).reverse
 
-    def getUserForKey(key: String): BonoboUser = {
+    def getUserForKey(id: String): BonoboUser = {
       val userQuery = new QuerySpec()
-        .withKeyConditionExpression(":h = hashkey")
-        .withValueMap(new ValueMap().withString(":h", "hashkey"))
+        .withKeyConditionExpression(":i = id")
+        .withValueMap(new ValueMap().withString(":i", id))
         .withMaxResultSize(1)
       BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
     }
 
     val users: List[BonoboUser] = keys.map {
-      kongKey => getUserForKey(kongKey.key)
+      kongKey => getUserForKey(kongKey.bonoboId)
     }
 
     val result: List[BonoboInfo] = keys.flatMap { key =>
@@ -136,8 +134,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
 
     val testQuery = createQuerySpec(keys.head.createdAt.toString) //TODO: improve query using COUNT
-    val testResult = KongTable.query(testQuery).asScala.toList.reverse
-    testResult.length match {
+    KongTable.query(testQuery).asScala.size match {
       case 0 => (result, false)
       case _ => (result, true)
     }
@@ -180,8 +177,7 @@ object Dynamo {
 
   def toItem(bonoboKey: BonoboUser): Item = {
     new Item()
-      .withPrimaryKey("hashkey", "hashkey")
-      .withString("id", bonoboKey.bonoboId)
+      .withPrimaryKey("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
       .withString("company", bonoboKey.company)
       .withString("email", bonoboKey.email)
