@@ -1,7 +1,8 @@
 package controllers
 
-import models.{ KongKey, RateLimits, BonoboUser, UserCreationResult }
+import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
+import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -29,7 +30,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         Ok(views.html.index("Invalid search"))
       },
       searchFormData => {
-        val keys: List[KongKey] = dynamo.search(searchFormData.query)
+        val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
         Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, request.user.firstName))
       }
@@ -78,7 +79,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
-    val (keys, hasNext) = dynamo.getKeys(direction, range)
+    val (keys, hasNext): (List[BonoboInfo], Boolean) = dynamo.getKeys(direction, range)
     range match {
       case "" => Ok(views.html.showKeys(keys, pageTitle = "All keys", "", hasNext, request.user.firstName))
       case _ => Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext, request.user.firstName))
