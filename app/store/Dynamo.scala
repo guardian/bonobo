@@ -139,8 +139,7 @@ object Dynamo {
 
   def toItem(bonoboKey: BonoboUser): Item = {
     new Item()
-      .withPrimaryKey("hashkey", "hashkey")
-      .withString("id", bonoboKey.bonoboId)
+      .withPrimaryKey("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
       .withString("company", bonoboKey.company)
       .withString("email", bonoboKey.email)
