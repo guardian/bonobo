@@ -105,7 +105,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   def retrieveKey(id: String): KongKey = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
-      .withFilterExpression("id = :i")
+      .withFilterExpression("bonoboId = :i")
       .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
     val item = KongTable.query(query).asScala.toList.head
     fromKongItem(item)
