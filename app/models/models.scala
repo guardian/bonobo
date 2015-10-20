@@ -34,8 +34,8 @@ object KongKey {
     new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
       tier, "Active", new DateTime(consumer.createdAt))
   }
-  def apply(consumerId: String, form: EditKeyFormData, createdAt: String): KongKey = {
-    new KongKey(consumerId, form.key, form.requestsPerDay, form.requestsPerMinute, form.tier, form.status, new DateTime(createdAt))
+  def apply(consumerId: String, form: EditKeyFormData, createdAt: DateTime): KongKey = {
+    new KongKey(consumerId, form.key, form.requestsPerDay, form.requestsPerMinute, form.tier, form.status, createdAt)
   }
 }
 

@@ -53,7 +53,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withKeyConditionExpression(":i = id")
       .withValueMap(new ValueMap().withString(":i", id))
       .withMaxResultSize(1)
-    BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
+    BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).head
   }
 
   private def getKeyWithId(id: String): KongKey = {
@@ -162,7 +162,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
-    val users = BonoboTable.scan(userScan).asScala.toList.map(fromItem)
+    val users = BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem)
     val keysForUsersSearch = getKeysForUsers(users)
     val resultForUsersSearch = matchKeysWithUsers(keysForUsersSearch, users)
 
@@ -206,7 +206,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   }
 
   def updateKongKey(kongKey: KongKey): Unit = {
-    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt),
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt.toString),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
