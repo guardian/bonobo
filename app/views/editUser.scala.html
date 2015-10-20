@@ -1,4 +1,4 @@
-@(message: String, id: String, form: Form[controllers.Application.EditUserFormData], firstName: String)(implicit messages: Messages)
+@(message: String, id: String, form: Form[controllers.Application.EditUserFormData], firstName: String, keys: List[KongKey])(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit user", firstName) {
@@ -13,5 +13,36 @@
       @b3.submit('class -> "btn btn-primary"){ Save }
     }
     </div>
+  </div>
+
+  <div>
+    <h4>Keys for the current user</h4>
+
+    <table class="table table-responsive table-striped">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Tier</th>
+          <th>Requests per minute</th>
+          <th>Requests per day</th>
+          <th>Created At</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+      @for(key <- keys) {
+        <tr>
+          <td>@key.key</td>
+          <td>@key.tier</td>
+          <td>@key.requestsPerMinute</td>
+          <td>@key.requestsPerDay</td>
+          <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
+          <td>@key.status</td>
+          <td><a href="@routes.Application.editKey(key.bonoboId)" class="text-info">Edit key</a></td>
+        </tr>
+      }
+      </tbody>
+    </table>
+
   </div>
 }
