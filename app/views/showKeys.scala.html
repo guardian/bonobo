@@ -1,6 +1,9 @@
-@(keys: List[BonoboInfo], pageTitle: String, lastDirection: String, hasNext: Boolean, firstName: String)(implicit messages: Messages)
+@(keys: List[BonoboInfo], pageTitle: String, lastDirection: String, hasNext: Boolean, totalKeys: Long, firstName: String)(implicit messages: Messages)
 
 @main(pageTitle, firstName){
+    <div class="row">
+        <p class="col-md-12">Total number of keys: <strong>@totalKeys</strong></p>
+    </div>
     <div class="row">
         <div class="col-md-12">
             <table class="table table-responsive table-striped">

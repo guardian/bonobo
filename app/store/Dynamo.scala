@@ -20,6 +20,8 @@ trait DB {
 
   def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean)
 
+  def getNumberOfKeys: Long
+
   def retrieveKey(id: String): KongKey
 
   def updateKongKey(kongKey: KongKey): Unit
@@ -58,6 +60,28 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
+  private def getUserWithId(id: String): BonoboUser = {
+    val userQuery = new QuerySpec()
+      .withKeyConditionExpression(":i = id")
+      .withValueMap(new ValueMap().withString(":i", id))
+      .withMaxResultSize(1)
+    BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
+  }
+
+  private def getUsersForKeys(keys: List[KongKey]): List[BonoboUser] = {
+    keys.map {
+      kongKey => getUserWithId(kongKey.bonoboId)
+    }
+  }
+
+  private def matchKeysWithUsers(keys: List[KongKey], users: List[BonoboUser]): List[BonoboInfo] = {
+    keys.flatMap { key =>
+      val bonoboId = key.bonoboId
+      val maybeUser = users.find(_.bonoboId == bonoboId)
+      maybeUser map { BonoboInfo(key, _) } orElse None //TODO: Log that user doesn't exist
+    }
+  }
+
   private def getKeysAfter(afterRange: String): (List[BonoboInfo], Boolean) = {
     def createQuerySpec(range: String): QuerySpec = {
       range match {
@@ -79,22 +103,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
     if (keys.length == 0) (List.empty, false)
     else {
-      def getUserForKey(id: String): BonoboUser = {
-        val userQuery = new QuerySpec()
-          .withKeyConditionExpression(":i = id")
-          .withValueMap(new ValueMap().withString(":i", id))
-          .withMaxResultSize(1)
-        BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
-      }
-
-      val users: List[BonoboUser] = keys.map {
-        kongKey => getUserForKey(kongKey.bonoboId)
-      }
-      val result: List[BonoboInfo] = keys.flatMap { key =>
-        val bonoboId = key.bonoboId
-        val maybeUser = users.find(_.bonoboId == bonoboId)
-        maybeUser map { BonoboInfo(key, _) } orElse None //TODO: Log that user doesn't exist
-      }
+      val users = getUsersForKeys(keys)
+      val result = matchKeysWithUsers(keys, users)
 
       val testQuery = createQuerySpec(keys.last.createdAt.toString) //TODO: improve query using COUNT
       KongTable.query(testQuery).asScala.size match {
@@ -114,24 +124,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
     val keysQuery = createQuerySpec(beforeRange)
     val keys = KongTable.query(keysQuery).asScala.toList.map(fromKongItem).reverse
-
-    def getUserForKey(id: String): BonoboUser = {
-      val userQuery = new QuerySpec()
-        .withKeyConditionExpression(":i = id")
-        .withValueMap(new ValueMap().withString(":i", id))
-        .withMaxResultSize(1)
-      BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
-    }
-
-    val users: List[BonoboUser] = keys.map {
-      kongKey => getUserForKey(kongKey.bonoboId)
-    }
-
-    val result: List[BonoboInfo] = keys.flatMap { key =>
-      val bonoboId = key.bonoboId
-      val maybeUser = users.find(_.bonoboId == bonoboId)
-      maybeUser map { BonoboInfo(key, _) } orElse None //TODO: Log that user doesn't exist
-    }
+    val users = getUsersForKeys(keys)
+    val result = matchKeysWithUsers(keys, users)
 
     val testQuery = createQuerySpec(keys.head.createdAt.toString) //TODO: improve query using COUNT
     KongTable.query(testQuery).asScala.size match {
@@ -139,6 +133,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       case _ => (result, true)
     }
   }
+
+  def getNumberOfKeys: Long = KongTable.describe().getItemCount
 
   def retrieveKey(id: String): KongKey = {
     val query = new QuerySpec()
