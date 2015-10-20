@@ -36,22 +36,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
 
-  def search(query: String, limit: Int = 20): List[BonoboInfo] = {
-    val scan = new ScanSpec()
-      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s OR #5 = :s")
-      .withNameMap(new NameMap()
-        .`with`("#1", "key")
-        .`with`("#2", "email")
-        .`with`("#3", "name")
-        .`with`("#4", "company")
-        .`with`("#5", "url")
-      )
-      .withValueMap(new ValueMap().withString(":s", query))
-      .withMaxResultSize(limit)
-    KongTable.scan(scan).asScala.toList.map(fromKongItem)
-    ???
-  }
-
   def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean) = {
     direction match {
       case "previous" => getKeysBefore(range)
@@ -68,9 +52,25 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     BonoboTable.query(userQuery).asScala.toList.map(fromItem).head
   }
 
+  private def getKeyWithId(id: String): KongKey = {
+    val keyQuery = new QuerySpec()
+      .withKeyConditionExpression(":h = hashkey")
+      .withFilterExpression(":i = bonoboId")
+      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+      .withMaxResultSize(1)
+      .withScanIndexForward(false)
+    KongTable.query(keyQuery).asScala.toList.map(fromKongItem).head
+  }
+
   private def getUsersForKeys(keys: List[KongKey]): List[BonoboUser] = {
     keys.map {
       kongKey => getUserWithId(kongKey.bonoboId)
+    }
+  }
+
+  private def getKeysForUsers(users: List[BonoboUser]): List[KongKey] = {
+    users.map {
+      user => getKeyWithId(user.bonoboId)
     }
   }
 
@@ -135,6 +135,35 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   }
 
   def getNumberOfKeys: Long = KongTable.describe().getItemCount
+
+  def search(query: String, limit: Int = 20): List[BonoboInfo] = {
+    val keysScan = new ScanSpec()
+      .withFilterExpression("#1 = :s")
+      .withNameMap(new NameMap()
+        .`with`("#1", "key")
+      )
+      .withValueMap(new ValueMap().withString(":s", query))
+      .withMaxResultSize(limit)
+    val keys = KongTable.scan(keysScan).asScala.toList.map(fromKongItem)
+    val usersForKeysSearch = getUsersForKeys(keys)
+    val resultForKeysSearch = matchKeysWithUsers(keys, usersForKeysSearch)
+
+    val userScan = new ScanSpec()
+      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s")
+      .withNameMap(new NameMap()
+        .`with`("#1", "email")
+        .`with`("#2", "name")
+        .`with`("#3", "company")
+        .`with`("#4", "url")
+      )
+      .withValueMap(new ValueMap().withString(":s", query))
+      .withMaxResultSize(limit)
+    val users = BonoboTable.scan(userScan).asScala.toList.map(fromItem)
+    val keysForUsersSearch = getKeysForUsers(users)
+    val resultForUsersSearch = matchKeysWithUsers(keysForUsersSearch, users)
+
+    resultForKeysSearch ++ resultForUsersSearch
+  }
 
   def retrieveKey(id: String): KongKey = {
     val query = new QuerySpec()
