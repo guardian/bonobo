@@ -12,11 +12,9 @@ case class BonoboUser(bonoboId: String,
   url: String)
 
 object BonoboUser {
-  // companion object used when a new user is created
   def apply(id: String, formData: CreateUserFormData): BonoboUser = {
     new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
   }
-  // companion object used when a user is modified
   def apply(id: String, formData: EditUserFormData): BonoboUser = {
     new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
   }
@@ -32,12 +30,10 @@ case class KongKey(bonoboId: String,
   createdAt: DateTime)
 
 object KongKey {
-  // companion object used when a new user is created and a new key is created with him
   def apply(consumer: UserCreationResult, tier: String, rateLimits: RateLimits): KongKey = {
     new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
       tier, "Active", new DateTime(consumer.createdAt))
   }
-  // companion object used when a key is modified
   def apply(consumerId: String, form: EditKeyFormData, createdAt: String): KongKey = {
     new KongKey(consumerId, form.key, form.requestsPerDay, form.requestsPerMinute, form.tier, form.status, new DateTime(createdAt))
   }

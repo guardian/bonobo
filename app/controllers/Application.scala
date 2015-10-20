@@ -62,14 +62,14 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       Future.successful(Ok(views.html.createUser(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
     }
 
-    def handleValidForm(CreateUserFormData: CreateUserFormData): Future[Result] = {
-      val rateLimits: RateLimits = CreateUserFormData.tier match {
+    def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
+      val rateLimits: RateLimits = createUserFormData.tier match {
         case "Developer" => new RateLimits(720, 5000)
         case "Rights managed" => new RateLimits(720, 10000)
         case "Internal" => new RateLimits(720, 10000)
       }
-      kong.registerUser(CreateUserFormData.email, rateLimits, CreateUserFormData.key) map {
-        consumer => saveUserOnDB(consumer, CreateUserFormData, rateLimits)
+      kong.registerUser(createUserFormData.email, rateLimits, createUserFormData.key) map {
+        consumer => saveUserOnDB(consumer, createUserFormData, rateLimits)
       } recover {
         case ConflictFailure(message) => displayError("Conflict failure: " + message)
         case GenericFailure(message) => displayError(message)
