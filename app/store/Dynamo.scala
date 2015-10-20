@@ -181,7 +181,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   def retrieveUser(id: String): BonoboUser = {
     val query = new QuerySpec()
       .withKeyConditionExpression("id = :i")
-      //.withFilterExpression("bonoboId = :i")
       .withValueMap(new ValueMap().withString(":i", id))
     val item = BonoboTable.query(query).asScala.toList.head
     fromBonoboItem(item)
