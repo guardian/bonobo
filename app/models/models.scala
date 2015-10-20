@@ -1,10 +1,10 @@
 package models
 
-import controllers.Application.CreateFormData
+import controllers.Application.{ EditKeyFormData, CreateUserFormData, EditUserFormData }
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 
-/* model used saving the users in Bonobo */
+/* model used for saving the users on Bonobo */
 case class BonoboUser(bonoboId: String,
   email: String,
   name: String,
@@ -12,7 +12,12 @@ case class BonoboUser(bonoboId: String,
   url: String)
 
 object BonoboUser {
-  def apply(id: String, formData: CreateFormData): BonoboUser = {
+  // companion object used when a new user is created
+  def apply(id: String, formData: CreateUserFormData): BonoboUser = {
+    new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
+  }
+  // companion object used when a user is modified
+  def apply(id: String, formData: EditUserFormData): BonoboUser = {
     new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
   }
 }
@@ -27,9 +32,14 @@ case class KongKey(bonoboId: String,
   createdAt: DateTime)
 
 object KongKey {
-  def apply(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): KongKey = {
+  // companion object used when a new user is created and a new key is created with him
+  def apply(consumer: UserCreationResult, tier: String, rateLimits: RateLimits): KongKey = {
     new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
-      formData.tier, "Active", consumer.createdAt)
+      tier, "Active", new DateTime(consumer.createdAt))
+  }
+  // companion object used when a key is modified
+  def apply(consumerId: String, form: EditKeyFormData, createdAt: String): KongKey = {
+    new KongKey(consumerId, form.key, form.requestsPerDay, form.requestsPerMinute, form.tier, form.status, new DateTime(createdAt))
   }
 }
 

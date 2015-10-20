@@ -43,12 +43,12 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def createUser = maybeAuth.async { implicit request =>
 
-    def saveUserOnDB(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): Result = {
+    def saveUserOnDB(consumer: UserCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Result = {
 
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveBonoboUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer, formData, rateLimits)
+      val newKongKey = KongKey(consumer, formData.tier, rateLimits)
       dynamo.saveKongKey(newKongKey)
 
       Ok(views.html.createUser(message = "A new user has been successfully added", createUserForm, request.user.firstName))
@@ -58,18 +58,18 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       Ok(views.html.createUser(message, createUserForm, request.user.firstName))
     }
 
-    def handleInvalidForm(form: Form[CreateFormData]): Future[Result] = {
+    def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
       Future.successful(Ok(views.html.createUser(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
     }
 
-    def handleValidForm(createFormData: CreateFormData): Future[Result] = {
-      val rateLimits: RateLimits = createFormData.tier match {
+    def handleValidForm(CreateUserFormData: CreateUserFormData): Future[Result] = {
+      val rateLimits: RateLimits = CreateUserFormData.tier match {
         case "Developer" => new RateLimits(720, 5000)
         case "Rights managed" => new RateLimits(720, 10000)
         case "Internal" => new RateLimits(720, 10000)
       }
-      kong.registerUser(createFormData.email, rateLimits, createFormData.key) map {
-        consumer => saveUserOnDB(consumer, createFormData, rateLimits)
+      kong.registerUser(CreateUserFormData.email, rateLimits, CreateUserFormData.key) map {
+        consumer => saveUserOnDB(consumer, CreateUserFormData, rateLimits)
       } recover {
         case ConflictFailure(message) => displayError("Conflict failure: " + message)
         case GenericFailure(message) => displayError(message)
@@ -89,53 +89,52 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editUser(id: String) = maybeAuth { implicit request =>
     val result = dynamo.retrieveUser(id)
-    val filledForm = newEditUserForm.fill(NewEditUser(result.email, result.name, result.company, result.url))
-    Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName)) // TODO check the last arg
+    val filledForm = editUserForm.fill(EditUserFormData(result.email, result.name, result.company, result.url))
+    Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName))
   }
 
   def updateUser(id: String) = maybeAuth.async { implicit request =>
 
-    def handleInvalidForm(form: Form[NewEditUser]): Future[Result] = {
+    def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
       Future.successful(Ok(views.html.editUser(message = "Plase correct the highlighted fields", id, form, request.user.firstName)))
     }
 
-    def handleValidForm(form: NewEditUser): Future[Result] = {
+    def handleValidForm(form: EditUserFormData): Future[Result] = {
 
-      // TODO see if I can resuse the CreateForm companion object here
-      val updatedUser = new BonoboUser(id, form.email, form.name, form.company, form.url)
+      val updatedUser = BonoboUser(id, form)
       dynamo.updateBonoboUser(updatedUser)
 
-      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id, newEditUserForm.fill(form), request.user.firstName)))
+      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id, editUserForm.fill(form), request.user.firstName)))
     }
 
-    newEditUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
+    editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
   def editKey(id: String) = maybeAuth { implicit request =>
+
     val result = dynamo.retrieveKey(id)
-    val filledForm = editUserForm.fill(EditFormData(result.key, result.requestsPerDay,
+    val filledForm = editKeyForm.fill(EditKeyFormData(result.key, result.requestsPerDay,
       result.requestsPerMinute, result.tier, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
 
   def updateKey(consumerId: String) = maybeAuth.async { implicit request =>
 
-    val oldKey = dynamo.retrieveKey(consumerId) // TODO do we really need that?
+    val oldKey = dynamo.retrieveKey(consumerId)
 
-    def handleInvalidForm(form: Form[EditFormData]): Future[Result] = {
+    def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
       Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
     }
 
-    def updateKongKey(newFormData: EditFormData): Result = {
-      // TODO: use a companion object here
-      val updatedKey = new KongKey(consumerId, newFormData.key,
-        newFormData.requestsPerDay, newFormData.requestsPerMinute, newFormData.tier, newFormData.status, oldKey.createdAt)
+    def updateKongKey(newFormData: EditKeyFormData): Result = {
+
+      val updatedKey = KongKey(consumerId, newFormData, oldKey.createdAt)
       dynamo.updateKongKey(updatedKey)
 
-      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
+      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editKeyForm.fill(newFormData), request.user.firstName))
     }
 
-    def handleValidForm(newFormData: EditFormData): Future[Result] = {
+    def handleValidForm(newFormData: EditKeyFormData): Future[Result] = {
 
       def updateRateLimitsIfNecessary(): Future[Happy.type] = {
         if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
@@ -167,20 +166,20 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateKongKey(newFormData)
-        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editUserForm.fill(newFormData), request.user.firstName))
+        Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editKeyForm.fill(newFormData), request.user.firstName))
       }
     }
 
-    editUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+    editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def healthcheck = Action { Ok("OK") }
 }
 
 object Application {
-  case class CreateFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
+  case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
-  val createUserForm: Form[CreateFormData] = Form(
+  val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
       "email" -> nonEmptyText,
       "name" -> nonEmptyText,
@@ -188,32 +187,30 @@ object Application {
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
       "key" -> optional(text)
-    )(CreateFormData.apply)(CreateFormData.unapply)
+    )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
-  case class EditFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
 
-  // TODO: rename this to be editKeyForm
-  val editUserForm: Form[EditFormData] = Form(
+  val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
       "status" -> nonEmptyText
-    )(EditFormData.apply)(EditFormData.unapply)
+    )(EditKeyFormData.apply)(EditKeyFormData.unapply)
   )
 
-  // TODO: rename this NewEditFormUser -> EditFormUser
-  case class NewEditUser(email: String, name: String, company: String, url: String)
+  case class EditUserFormData(email: String, name: String, company: String, url: String)
 
-  val newEditUserForm: Form[NewEditUser] = Form(
+  val editUserForm: Form[EditUserFormData] = Form(
     mapping(
       "email" -> nonEmptyText,
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText
-    )(NewEditUser.apply)(NewEditUser.unapply)
+    )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
   case class SearchFormData(query: String)
