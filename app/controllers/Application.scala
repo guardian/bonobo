@@ -32,7 +32,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
-        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, dynamo.getNumberOfKeys, request.user.firstName))
+        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, keys.length, request.user.firstName))
       }
     )
   }
