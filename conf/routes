@@ -4,16 +4,16 @@
 
 # Home page
 GET         /                      controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
-GET         /keys                  controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
-GET         /keys/search           controllers.Application.search
+GET         /key                  controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
+GET         /key/search           controllers.Application.search
 
-GET         /users/create          controllers.Application.createNewUserForm
-POST        /users                 controllers.Application.createUser
-GET         /users/:id/edit        controllers.Application.editUser(id: String)
-POST        /users/:id             controllers.Application.updateUser(id: String)
+GET         /user/create          controllers.Application.createNewUserForm
+POST        /user                 controllers.Application.createUser
+GET         /user/:id/edit        controllers.Application.editUser(id: String)
+POST        /user/:id             controllers.Application.updateUser(id: String)
 
-GET         /keys/:id/edit         controllers.Application.editKey(id: String)
-POST        /keys/:id              controllers.Application.updateKey(id: String)
+GET         /key/:id/edit         controllers.Application.editKey(id: String)
+POST        /key/:id              controllers.Application.updateKey(id: String)
 
 GET         /healthcheck           controllers.Application.healthcheck
 

@@ -24,6 +24,8 @@ trait DB {
 
   def retrieveKey(id: String): KongKey
 
+  def getAllKeysWithId(id: String): List[KongKey]
+
   def retrieveUser(id: String): BonoboUser
 
   def updateBonoboUser(bonoboUser: BonoboUser): Unit
@@ -64,6 +66,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withMaxResultSize(1)
       .withScanIndexForward(false)
     KongTable.query(keyQuery).asScala.toList.map(fromKongItem).head
+  }
+
+  def getAllKeysWithId(id: String): List[KongKey] = {
+    val keyQuery = new QuerySpec()
+      .withKeyConditionExpression(":h = hashkey")
+      .withFilterExpression(":i = bonoboId")
+      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+    KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
   }
 
   private def getUsersForKeys(keys: List[KongKey]): List[BonoboUser] = {
