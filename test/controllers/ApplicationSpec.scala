@@ -23,15 +23,16 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
 
-      def search(query: String, limit: Port): List[KongKey] = ???
+      def search(query: String, limit: Port): List[BonoboInfo] = ???
       def saveBonoboUser(bonoboUser: BonoboUser): Unit = ???
       def saveKongKey(kongKey: KongKey): Unit = ???
+      def getNumberOfKeys: Long = 1
       def updateKongKey(kongKey: KongKey): Unit = ???
       def deleteKongKey(createdAt: String): Unit = ???
       def retrieveKey(id: String): KongKey = ???
 
-      def getKeys(direction: String, range: String): (List[KongKey], Boolean) = {
-        (List(KongKey("id", "my-new-key", 10, 1, "dev", "Active", "some date")), false)
+      def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean) = {
+        (List(BonoboInfo(KongKey("id", "my-new-key", 10, 1, "dev", "Active", new DateTime()), BonoboUser("id", "email", "name", "company", "url"))), false)
       }
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
