@@ -32,7 +32,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
-        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, request.user.firstName))
+        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, dynamo.getNumberOfKeys, request.user.firstName))
       }
     )
   }
@@ -80,9 +80,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
     val (keys, hasNext): (List[BonoboInfo], Boolean) = dynamo.getKeys(direction, range)
+    val totalKeys = dynamo.getNumberOfKeys
     range match {
-      case "" => Ok(views.html.showKeys(keys, pageTitle = "All keys", "", hasNext, request.user.firstName))
-      case _ => Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext, request.user.firstName))
+      case "" => Ok(views.html.showKeys(keys, pageTitle = "All keys", "", hasNext, totalKeys, request.user.firstName))
+      case _ => Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext, totalKeys, request.user.firstName))
     }
   }
 

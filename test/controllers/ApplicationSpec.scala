@@ -26,6 +26,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def search(query: String, limit: Port): List[BonoboInfo] = ???
       def saveBonoboUser(bonoboUser: BonoboUser): Unit = ???
       def saveKongKey(kongKey: KongKey): Unit = ???
+      def getNumberOfKeys: Long = 1
       def updateKongKey(kongKey: KongKey): Unit = ???
       def deleteKongKey(createdAt: String): Unit = ???
       def retrieveKey(id: String): KongKey = ???
