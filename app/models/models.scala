@@ -13,7 +13,6 @@ case class BonoboUser(bonoboId: String,
 
 object BonoboUser {
   def apply(id: String, formData: CreateFormData): BonoboUser = {
-
     new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
   }
 }
@@ -25,15 +24,17 @@ case class KongKey(bonoboId: String,
   requestsPerMinute: Int,
   tier: String,
   status: String,
-  createdAt: String)
+  createdAt: DateTime)
 
 object KongKey {
   def apply(consumer: UserCreationResult, formData: CreateFormData, rateLimits: RateLimits): KongKey = {
-
     new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
-      formData.tier, "Active", consumer.createdAt.toString)
+      formData.tier, "Active", consumer.createdAt)
   }
 }
+
+/* model used for show all keys table */
+case class BonoboInfo(kongKey: KongKey, bonoboUser: BonoboUser)
 
 /* model used to parse json after create user */
 case class KongCreateConsumerResponse(id: String, created_at: Long)
