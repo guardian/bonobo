@@ -2,7 +2,6 @@ package controllers
 
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
-import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -64,9 +63,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
       val rateLimits: RateLimits = createUserFormData.tier match {
-        case "Developer" => new RateLimits(720, 5000)
-        case "Rights managed" => new RateLimits(720, 10000)
-        case "Internal" => new RateLimits(720, 10000)
+        case "Developer" => Developer().rateLimits
+        case "Rights managed" => RightsManaged().rateLimits
+        case "Internal" => Internal().rateLimits
       }
       kong.registerUser(createUserFormData.email, rateLimits, createUserFormData.key) map {
         consumer => saveUserOnDB(consumer, createUserFormData, rateLimits)
