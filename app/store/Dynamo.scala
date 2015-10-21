@@ -154,7 +154,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val keysScan = new ScanSpec()
       .withFilterExpression("#1 = :s")
       .withNameMap(new NameMap()
-        .`with`("#1", "key")
+        .`with`("#1", "keyValue")
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
