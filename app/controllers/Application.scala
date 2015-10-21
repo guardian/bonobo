@@ -2,7 +2,6 @@ package controllers
 
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
-import org.joda.time.DateTime
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
@@ -63,11 +62,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
-      val rateLimits: RateLimits = createUserFormData.tier match {
-        case "Developer" => new RateLimits(720, 5000)
-        case "Rights managed" => new RateLimits(720, 10000)
-        case "Internal" => new RateLimits(720, 10000)
-      }
+      val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(createUserFormData.tier)
       kong.registerUser(createUserFormData.email, rateLimits, createUserFormData.key) map {
         consumer => saveUserOnDB(consumer, createUserFormData, rateLimits)
       } recover {
@@ -96,7 +91,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def updateUser(id: String) = maybeAuth.async { implicit request =>
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editUser(message = "Plase correct the highlighted fields", id, form, request.user.firstName)))
+      Future.successful(Ok(views.html.editUser(message = "Please correct the highlighted fields", id, form, request.user.firstName)))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
@@ -114,7 +109,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     val result = dynamo.retrieveKey(id)
     val filledForm = editKeyForm.fill(EditKeyFormData(result.key, result.requestsPerDay,
-      result.requestsPerMinute, result.tier, result.status))
+      result.requestsPerMinute, result.tier, defaultRequests = false, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
 
@@ -127,11 +122,16 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def updateKongKey(newFormData: EditKeyFormData): Result = {
+      val updatedKey = {
+        if (newFormData.defaultRequests) {
+          val defaultRateLimits = RateLimits.matchTierWithRateLimits(newFormData.tier)
+          KongKey(consumerId, newFormData, oldKey.createdAt, defaultRateLimits)
+        } else KongKey(consumerId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+      }
 
-      val updatedKey = KongKey(consumerId, newFormData, oldKey.createdAt)
       dynamo.updateKongKey(updatedKey)
 
-      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editKeyForm.fill(newFormData), request.user.firstName))
+      Ok(views.html.editKey(message = "The user has been successfully updated", consumerId, editKeyForm.fill(newFormData.copy(defaultRequests = false)), request.user.firstName))
     }
 
     def handleValidForm(newFormData: EditKeyFormData): Future[Result] = {
@@ -190,7 +190,7 @@ object Application {
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -198,6 +198,7 @@ object Application {
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
+      "defaultRequests" -> boolean,
       "status" -> nonEmptyText
     )(EditKeyFormData.apply)(EditKeyFormData.unapply)
   )
