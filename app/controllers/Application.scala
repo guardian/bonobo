@@ -134,8 +134,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         dynamo.saveKongKey(newKongKey)
 
         val userKeys = dynamo.getAllKeysWithId(userId)
+        val user = dynamo.retrieveUser(userId)
+        val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
 
-        Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, editUserForm, request.user.firstName, userKeys))
+        Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
       }
 
       val rateLimits: RateLimits = form.tier match {
