@@ -114,7 +114,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     val result = dynamo.retrieveKey(id)
     val filledForm = editKeyForm.fill(EditKeyFormData(result.key, result.requestsPerDay,
-      result.requestsPerMinute, result.tier, result.status))
+      result.requestsPerMinute, result.tier, Some(false), result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
 
@@ -190,7 +190,7 @@ object Application {
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, status: String)
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Option[Boolean], status: String)
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -198,6 +198,7 @@ object Application {
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText,
+      "defaultRequests" -> optional(boolean),
       "status" -> nonEmptyText
     )(EditKeyFormData.apply)(EditKeyFormData.unapply)
   )
