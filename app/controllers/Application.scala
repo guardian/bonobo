@@ -86,7 +86,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def editUser(id: String) = maybeAuth { implicit request =>
-    val consumer = dynamo.retrieveUser(id)
+    val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
     val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
 
@@ -134,7 +134,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         dynamo.saveKongKey(newKongKey)
 
         val userKeys = dynamo.getAllKeysWithId(userId)
-        val user = dynamo.retrieveUser(userId)
+        val user = dynamo.getUserWithId(userId)
         val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
 
         Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
@@ -219,7 +219,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         updateKongKey(newFormData)
 
         val userKeys = dynamo.getAllKeysWithId(consumerId)
-        val consumer = dynamo.retrieveUser(consumerId)
+        val consumer = dynamo.getUserWithId(consumerId)
         val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
 
         Ok(views.html.editUser(message = "The key has been successfully updated", consumerId, filledForm, request.user.firstName, userKeys))
