@@ -1,9 +1,17 @@
-var rateLimitsCheckbox = document.getElementById("defaultRequests_field");
+var rateLimitsRow = document.getElementById("defaultRequests_field");
+var rateLimitsCheckbox = document.getElementById("defaultRequests");
 
 document.addEventListener("DOMContentLoaded", function() {
-    rateLimitsCheckbox.style.display = "none";
+    rateLimitsRow.style.display = "none";
 });
 
 document.getElementById("tier").addEventListener("change", function() {
-    rateLimitsCheckbox.style.display = "block";
+    rateLimitsRow.style.display = "block";
+});
+function changeReadOnlyTo(bool) {
+    document.getElementById("requestsPerDay").readOnly = bool;
+    document.getElementById("requestsPerMinute").readOnly = bool;
+}
+rateLimitsCheckbox.addEventListener("change", function() {
+    rateLimitsCheckbox.checked ? changeReadOnlyTo(true) : changeReadOnlyTo(false)
 });
