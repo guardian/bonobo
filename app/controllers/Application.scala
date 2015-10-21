@@ -109,7 +109,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     val result = dynamo.retrieveKey(id)
     val filledForm = editKeyForm.fill(EditKeyFormData(result.key, result.requestsPerDay,
-      result.requestsPerMinute, result.tier, false, result.status))
+      result.requestsPerMinute, result.tier, defaultRequests = false, result.status))
     Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
   }
 
