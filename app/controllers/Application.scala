@@ -107,10 +107,52 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val updatedUser = BonoboUser(id, form)
       dynamo.updateBonoboUser(updatedUser)
 
-      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id, editUserForm.fill(form), request.user.firstName, userKeys)))
+      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id,
+        editUserForm.fill(form), request.user.firstName, userKeys)))
     }
 
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
+  }
+
+  def createNewKeyForm(userId: String) = maybeAuth { implicit request =>
+    Ok(views.html.createKey(message = "", userId, createKeyForm, request.user.firstName))
+  }
+
+  def createKey(userId: String) = maybeAuth.async { implicit request =>
+
+    val userKeys = dynamo.getAllKeysWithId(userId)
+
+    def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
+      Future.successful(Ok(views.html.createKey(message = "Plase correct the highlighted fields", userId, brokenKeyForm, request.user.firstName)))
+    }
+
+    def handleValidForm(form: CreateKeyFormData): Future[Result] = {
+
+      def saveNewKeyOnDB(consumer: UserCreationResult, form: CreateKeyFormData, rateLimits: RateLimits): Result = {
+
+        val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
+        dynamo.saveKongKey(newKongKey)
+
+        val userKeys = dynamo.getAllKeysWithId(userId)
+
+        Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, editUserForm, request.user.firstName, userKeys))
+      }
+
+      val rateLimits: RateLimits = form.tier match {
+        case "Developer" => new RateLimits(720, 5000)
+        case "Rights managed" => new RateLimits(720, 10000)
+        case "Internal" => new RateLimits(720, 10000)
+      }
+
+      kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
+        consumer => saveNewKeyOnDB(consumer, form, rateLimits)
+      } recover {
+        case ConflictFailure(message) => Ok(views.html.createKey("Conflict failure: " + message, userId, createKeyForm, request.user.firstName))
+        case GenericFailure(message) => Ok(views.html.createKey("Generic failure: " + message, userId, createKeyForm, request.user.firstName))
+      }
+    }
+
+    createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
   def editKey(id: String) = maybeAuth { implicit request =>
@@ -203,17 +245,6 @@ object Application {
 
   case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
 
-  val editKeyForm: Form[EditKeyFormData] = Form(
-    mapping(
-      "key" -> nonEmptyText,
-      "requestsPerDay" -> number,
-      "requestsPerMinute" -> number,
-      "tier" -> nonEmptyText,
-      "defaultRequests" -> boolean,
-      "status" -> nonEmptyText
-    )(EditKeyFormData.apply)(EditKeyFormData.unapply)
-  )
-
   case class EditUserFormData(email: String, name: String, company: String, url: String)
 
   val editUserForm: Form[EditUserFormData] = Form(
@@ -223,6 +254,27 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText
     )(EditUserFormData.apply)(EditUserFormData.unapply)
+  )
+
+  case class CreateKeyFormData(key: Option[String], tier: String, status: String)
+
+  val createKeyForm: Form[CreateKeyFormData] = Form(
+    mapping(
+      "key" -> optional(text),
+      "tier" -> nonEmptyText,
+      "status" -> nonEmptyText
+    )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
+  )
+
+  val editKeyForm: Form[EditKeyFormData] = Form(
+    mapping(
+      "key" -> nonEmptyText,
+      "requestsPerDay" -> number,
+      "requestsPerMinute" -> number,
+      "tier" -> nonEmptyText,
+      "defaultRequests" -> boolean,
+      "status" -> nonEmptyText
+    )(EditKeyFormData.apply)(EditKeyFormData.unapply)
   )
 
   case class SearchFormData(query: String)
