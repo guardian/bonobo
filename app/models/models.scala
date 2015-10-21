@@ -55,15 +55,15 @@ case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
 sealed trait Tier {
   def rateLimits: RateLimits = this match {
-    case Developer() => RateLimits(720, 500)
-    case RightsManaged() => RateLimits(720, 1000)
-    case Internal() => RateLimits(720, 1000)
+    case Developer => RateLimits(720, 5000)
+    case RightsManaged => RateLimits(720, 10000)
+    case Internal => RateLimits(720, 10000)
   }
 }
 
-case class Developer() extends Tier
-case class RightsManaged() extends Tier
-case class Internal() extends Tier
+object Developer extends Tier
+object RightsManaged extends Tier
+object Internal extends Tier
 
 case class KongPluginConfig(id: String)
 
