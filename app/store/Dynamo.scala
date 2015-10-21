@@ -22,7 +22,7 @@ trait DB {
 
   def getNumberOfKeys: Long
 
-  def retrieveKey(id: String): KongKey
+  def retrieveKey(key: String): KongKey
 
   def getAllKeysWithId(id: String): List[KongKey]
 
@@ -179,11 +179,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     resultForKeysSearch ++ resultForUsersSearch
   }
 
-  def retrieveKey(id: String): KongKey = {
+  def retrieveKey(keyValue: String): KongKey = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
-      .withFilterExpression("bonoboId = :i")
-      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+      .withFilterExpression("keyValue = :k")
+      .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
     val item = KongTable.query(query).asScala.toList.head
     fromKongItem(item)
   }
@@ -254,7 +254,7 @@ object Dynamo {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
       .withString("bonoboId", kongKey.bonoboId)
-      .withString("key", kongKey.key)
+      .withString("keyValue", kongKey.key)
       .withInt("requests_per_day", kongKey.requestsPerDay)
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
@@ -265,7 +265,7 @@ object Dynamo {
   def fromKongItem(item: Item): KongKey = {
     KongKey(
       bonoboId = item.getString("bonoboId"),
-      key = item.getString("key"),
+      key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),

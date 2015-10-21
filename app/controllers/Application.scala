@@ -155,18 +155,19 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editKey(id: String) = maybeAuth { implicit request =>
+  def editKey(keyValue: String) = maybeAuth { implicit request =>
 
-    val result = dynamo.retrieveKey(id)
-    val filledForm = editKeyForm.fill(EditKeyFormData(result.key, result.requestsPerDay,
-      result.requestsPerMinute, result.tier, defaultRequests = false, result.status))
+    val key = dynamo.retrieveKey(keyValue)
+    val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
+      key.requestsPerMinute, key.tier, defaultRequests = false, key.status))
 
-    Ok(views.html.editKey(message = "", id, filledForm, request.user.firstName))
+    Ok(views.html.editKey(message = "", keyValue, filledForm, request.user.firstName))
   }
 
-  def updateKey(consumerId: String) = maybeAuth.async { implicit request =>
+  def updateKey(keyValue: String) = maybeAuth.async { implicit request =>
 
-    val oldKey = dynamo.retrieveKey(consumerId)
+    val oldKey = dynamo.retrieveKey(keyValue)
+    val consumerId = oldKey.bonoboId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
       Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
