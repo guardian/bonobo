@@ -34,8 +34,8 @@ object KongKey {
     new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
       tier, "Active", new DateTime(consumer.createdAt))
   }
-  def apply(consumerId: String, form: EditKeyFormData, createdAt: DateTime): KongKey = {
-    new KongKey(consumerId, form.key, form.requestsPerDay, form.requestsPerMinute, form.tier, form.status, createdAt)
+  def apply(consumerId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
+    new KongKey(consumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
   }
 }
 
@@ -52,6 +52,28 @@ object KongCreateConsumerResponse {
 case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
+
+object RateLimits {
+  def matchTierWithRateLimits(tier: String): RateLimits = {
+    tier match {
+      case "Developer" => Developer.rateLimits
+      case "Rights managed" => RightsManaged.rateLimits
+      case "Internal" => Internal.rateLimits
+    }
+  }
+}
+
+sealed trait Tier {
+  def rateLimits: RateLimits = this match {
+    case Developer => RateLimits(720, 5000)
+    case RightsManaged => RateLimits(720, 10000)
+    case Internal => RateLimits(720, 10000)
+  }
+}
+
+object Developer extends Tier
+object RightsManaged extends Tier
+object Internal extends Tier
 
 case class KongPluginConfig(id: String)
 
