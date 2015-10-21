@@ -53,6 +53,18 @@ case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
+sealed trait Tier {
+  def rateLimits: RateLimits = this match {
+    case Developer() => RateLimits(720, 500)
+    case RightsManaged() => RateLimits(720, 1000)
+    case Internal() => RateLimits(720, 1000)
+  }
+}
+
+case class Developer() extends Tier
+case class RightsManaged() extends Tier
+case class Internal() extends Tier
+
 case class KongPluginConfig(id: String)
 
 object KongPluginConfig {
