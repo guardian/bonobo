@@ -1,8 +1,8 @@
-@(keyForm: Form[controllers.OpenForm.OpenCreateKeyFormData])(implicit messages: Messages, flash: Flash)
+@(keyForm: Form[controllers.OpenForm.OpenCreateKeyFormData], error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @mainOpenForm("Create a key") {
-    @flash.get("error").map { message => <p class="alert alert-danger">@message</p> }
+    @error.map { message => <p class="alert alert-danger">@message</p> }
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
         @b3.form(routes.OpenForm.createKeyOpenForm()) {
