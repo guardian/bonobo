@@ -145,8 +145,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
         consumer => saveNewKeyOnDB(consumer, form, rateLimits)
       } recover {
-        case ConflictFailure(message) => Ok(views.html.createKey("Conflict failure: " + message, userId, createKeyForm, request.user.firstName))
-        case GenericFailure(message) => Ok(views.html.createKey("Generic failure: " + message, userId, createKeyForm, request.user.firstName))
+        case ConflictFailure(message) => Conflict(views.html.createKey("Conflict failure: " + message, userId, createKeyForm, request.user.firstName))
+        case GenericFailure(message) => InternalServerError(views.html.createKey("Generic failure: " + message, userId, createKeyForm, request.user.firstName))
       }
     }
 
@@ -234,7 +234,7 @@ object Application {
 
   val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
-      "email" -> nonEmptyText,
+      "email" -> email,
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
@@ -247,7 +247,7 @@ object Application {
 
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
-      "email" -> nonEmptyText,
+      "email" -> email,
       "name" -> nonEmptyText,
       "company" -> nonEmptyText,
       "url" -> nonEmptyText
