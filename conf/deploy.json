@@ -1,5 +1,5 @@
 {
-  "defaultStacks": [ "content-api-bonobo" ],
+  "defaultStacks": [ "content-api" ],
   "packages": {
     "bonobo": {
       "type": "autoscaling",
