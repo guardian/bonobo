@@ -14,12 +14,12 @@ class OpenForm(val messagesApi: MessagesApi) extends Controller with I18nSupport
 
   def createKeyOpenForm = Action { implicit request =>
     def handleInvalidForm(form: Form[OpenCreateKeyFormData]): Result = {
-      Ok(views.html.openCreateKey(form)).flashing(Flash(Map("error" -> "Please correct the highlighted fields.")))
+      Ok(views.html.openCreateKey(form, Some("Please correct the highlighted fields.")))
     }
 
     def handleValidForm(formData: OpenCreateKeyFormData): Result = {
       formData.acceptTerms match {
-        case false => Ok(views.html.openCreateKey(createkeyForm.fill(formData))).flashing(Flash(Map("error" -> "You have to accept the Guardian Open Platform terms and conditions.")))
+        case false => Ok(views.html.openCreateKey(createkeyForm.fill(formData), Some("You have to accept the Guardian Open Platform terms and conditions.")))
         case true => Ok(views.html.openShowKey("key"))
       }
     }
