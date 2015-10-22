@@ -184,8 +184,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
-    val item = KongTable.query(query).asScala.toList.head
-    fromKongItem(item)
+    KongTable.query(query).asScala.toList.map(fromKongItem).head
   }
 
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {

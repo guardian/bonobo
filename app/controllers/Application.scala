@@ -140,11 +140,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
       }
 
-      val rateLimits: RateLimits = form.tier match {
-        case "Developer" => new RateLimits(720, 5000)
-        case "Rights managed" => new RateLimits(720, 10000)
-        case "Internal" => new RateLimits(720, 10000)
-      }
+      val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(form.tier)
 
       kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
         consumer => saveNewKeyOnDB(consumer, form, rateLimits)
@@ -233,6 +229,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 }
 
 object Application {
+
   case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
   val createUserForm: Form[CreateUserFormData] = Form(
@@ -245,8 +242,6 @@ object Application {
       "key" -> optional(text)
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
-
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
 
   case class EditUserFormData(email: String, name: String, company: String, url: String)
 
@@ -268,6 +263,8 @@ object Application {
       "status" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
+
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
