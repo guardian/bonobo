@@ -22,15 +22,17 @@ trait DB {
 
   def getNumberOfKeys: Long
 
-  def retrieveKey(id: String): KongKey
+  def retrieveKey(key: String): KongKey
 
-  def retrieveUser(id: String): BonoboUser
+  def getAllKeysWithId(id: String): List[KongKey]
 
   def updateBonoboUser(bonoboUser: BonoboUser): Unit
 
   def updateKongKey(kongKey: KongKey): Unit
 
   def deleteKongKey(createdAt: String): Unit
+
+  def getUserWithId(id: String): BonoboUser
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
@@ -48,7 +50,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  private def getUserWithId(id: String): BonoboUser = {
+  def getUserWithId(id: String): BonoboUser = {
     val userQuery = new QuerySpec()
       .withKeyConditionExpression(":i = id")
       .withValueMap(new ValueMap().withString(":i", id))
@@ -64,6 +66,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withMaxResultSize(1)
       .withScanIndexForward(false)
     KongTable.query(keyQuery).asScala.toList.map(fromKongItem).head
+  }
+
+  def getAllKeysWithId(id: String): List[KongKey] = {
+    val keyQuery = new QuerySpec()
+      .withKeyConditionExpression(":h = hashkey")
+      .withFilterExpression(":i = bonoboId")
+      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+    KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
   }
 
   private def getUsersForKeys(keys: List[KongKey]): List[BonoboUser] = {
@@ -144,7 +154,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val keysScan = new ScanSpec()
       .withFilterExpression("#1 = :s")
       .withNameMap(new NameMap()
-        .`with`("#1", "key")
+        .`with`("#1", "keyValue")
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
@@ -169,21 +179,12 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     resultForKeysSearch ++ resultForUsersSearch
   }
 
-  def retrieveKey(id: String): KongKey = {
+  def retrieveKey(keyValue: String): KongKey = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
-      .withFilterExpression("bonoboId = :i")
-      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
-    val item = KongTable.query(query).asScala.toList.head
-    fromKongItem(item)
-  }
-
-  def retrieveUser(id: String): BonoboUser = {
-    val query = new QuerySpec()
-      .withKeyConditionExpression("id = :i")
-      .withValueMap(new ValueMap().withString(":i", id))
-    val item = BonoboTable.query(query).asScala.toList.head
-    fromBonoboItem(item)
+      .withFilterExpression("keyValue = :k")
+      .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
+    KongTable.query(query).asScala.toList.map(fromKongItem).head
   }
 
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
@@ -244,7 +245,7 @@ object Dynamo {
     new Item()
       .withPrimaryKey("hashkey", "hashkey")
       .withString("bonoboId", kongKey.bonoboId)
-      .withString("key", kongKey.key)
+      .withString("keyValue", kongKey.key)
       .withInt("requests_per_day", kongKey.requestsPerDay)
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
@@ -255,7 +256,7 @@ object Dynamo {
   def fromKongItem(item: Item): KongKey = {
     KongKey(
       bonoboId = item.getString("bonoboId"),
-      key = item.getString("key"),
+      key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
