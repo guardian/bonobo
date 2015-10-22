@@ -4,6 +4,7 @@ import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
+import play.api.data.validation.Constraint
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.Logger
 import play.api.mvc.Security.AuthenticatedBuilder
@@ -238,7 +239,7 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
-      "key" -> optional(text)
+      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' ')))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -257,7 +258,7 @@ object Application {
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text),
+      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' '))),
       "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
