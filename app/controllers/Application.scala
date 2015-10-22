@@ -120,23 +120,24 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def createKey(userId: String) = maybeAuth.async { implicit request =>
 
+    def saveNewKeyOnDB(consumer: UserCreationResult, form: CreateKeyFormData, rateLimits: RateLimits): Result = {
+
+      val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
+      dynamo.saveKongKey(newKongKey)
+
+      val userKeys = dynamo.getAllKeysWithId(userId)
+      val user = dynamo.getUserWithId(userId)
+      val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
+
+      Ok(views.html.editUser(message = "A new key has been successfully added", userId, filledForm, request.user.firstName, userKeys))
+    }
+
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
+
       Future.successful(Ok(views.html.createKey(message = "Plase correct the highlighted fields", userId, brokenKeyForm, request.user.firstName)))
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-
-      def saveNewKeyOnDB(consumer: UserCreationResult, form: CreateKeyFormData, rateLimits: RateLimits): Result = {
-
-        val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
-        dynamo.saveKongKey(newKongKey)
-
-        val userKeys = dynamo.getAllKeysWithId(userId)
-        val user = dynamo.getUserWithId(userId)
-        val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
-
-        Ok(views.html.editUser(message = "A new key has been successfully added", userId, filledForm, request.user.firstName, userKeys))
-      }
 
       val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(form.tier)
 
@@ -252,13 +253,12 @@ object Application {
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
-  case class CreateKeyFormData(key: Option[String], tier: String, status: String)
+  case class CreateKeyFormData(key: Option[String], tier: String)
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
       "key" -> optional(text),
-      "tier" -> nonEmptyText,
-      "status" -> nonEmptyText
+      "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
 
