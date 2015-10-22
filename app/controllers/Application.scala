@@ -120,8 +120,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def createKey(userId: String) = maybeAuth.async { implicit request =>
 
-    val userKeys = dynamo.getAllKeysWithId(userId)
-
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
       Future.successful(Ok(views.html.createKey(message = "Plase correct the highlighted fields", userId, brokenKeyForm, request.user.firstName)))
     }
@@ -137,7 +135,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         val user = dynamo.getUserWithId(userId)
         val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
 
-        Ok(views.html.editUser(message = "A new key has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
+        Ok(views.html.editUser(message = "A new key has been successfully added", userId, filledForm, request.user.firstName, userKeys))
       }
 
       val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(form.tier)
