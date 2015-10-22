@@ -1,0 +1,20 @@
+@(keyForm: Form[controllers.OpenForm.OpenCreateKeyFormData])(implicit messages: Messages, flash: Flash)
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
+
+@mainOpenForm("Create a key") {
+    @flash.get("error").map { message => <p class="alert alert-danger">@message</p> }
+    <div class="row">
+        <div class="col-md-6 col-md-offset-2 column">
+        @b3.form(routes.OpenForm.createKeyOpenForm()) {
+            @b3.text(keyForm("name"), '_label -> "Name *")
+            @b3.email(keyForm("email"), '_label -> "Email address *")
+            @b3.text(keyForm("productName"), '_label -> "Product Name *")
+            @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
+            @b3.text(keyForm("companyName"), '_label -> "Company Name *")
+            @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+            @b3.checkbox(keyForm("acceptTerms"), '_label -> "I accept the Guardian Open Platform terms and conditions")
+            @b3.submit('class -> "btn btn-primary") { Register }
+        }
+        </div>
+    </div>
+}
