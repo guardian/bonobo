@@ -6,7 +6,6 @@ import play.api.data.Forms._
 import play.api.data._
 import play.api.data.validation.Constraint
 import play.api.i18n.{ I18nSupport, MessagesApi }
-import play.api.Logger
 import play.api.mvc.Security.AuthenticatedBuilder
 import play.api.mvc._
 import store._
