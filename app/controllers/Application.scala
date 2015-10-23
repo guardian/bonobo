@@ -51,10 +51,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = KongKey(consumer, formData.tier, rateLimits)
       dynamo.saveKongKey(newKongKey)
 
-      val userKeys = dynamo.getAllKeysWithId(consumer.id)
-      val filledForm = editUserForm.fill(EditUserFormData(formData.email, formData.name, formData.company, formData.url))
-
-      Ok(views.html.editUser(message = "A new user has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
+      Redirect("/user/" + consumer.id + "/edit")
     }
 
     def displayError(message: String): Result = {
@@ -100,7 +97,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
 
-      Future.successful(Ok(views.html.editUser(message = "Plase correct the highlighted fields", id, form, request.user.firstName, userKeys)))
+      Future.successful(Ok(views.html.editUser(message = "Please correct the highlighted fields", id, form, request.user.firstName, userKeys)))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
@@ -126,11 +123,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
       dynamo.saveKongKey(newKongKey)
 
-      val userKeys = dynamo.getAllKeysWithId(userId)
-      val user = dynamo.getUserWithId(userId)
-      val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
-
-      Ok(views.html.editUser(message = "A new key has been successfully added", userId, filledForm, request.user.firstName, userKeys))
+      Redirect("/user/" + userId + "/edit")
     }
 
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
@@ -168,7 +161,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val consumerId = oldKey.bonoboId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
+      Future.successful(Ok(views.html.editKey(message = "Please correct the highlighted fields.", keyValue, form, request.user.firstName)))
     }
 
     def updateKongKey(newFormData: EditKeyFormData): Unit = {
@@ -213,12 +206,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateKongKey(newFormData)
-
-        val userKeys = dynamo.getAllKeysWithId(consumerId)
-        val consumer = dynamo.getUserWithId(consumerId)
-        val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
-
-        Ok(views.html.editUser(message = "The key has been successfully updated", consumerId, filledForm, request.user.firstName, userKeys))
+        Redirect("/user/" + consumerId + "/edit")
       }
     }
 
