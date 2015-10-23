@@ -24,25 +24,34 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   private def maybeAuth: AuthenticatedBuilder[UserIdentity] = if (enableAuth) AuthAction else FakeAuthAction
 
+  def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
+    val (keys, hasNext): (List[BonoboInfo], Boolean) = dynamo.getKeys(direction, range)
+    val totalKeys = dynamo.getNumberOfKeys
+    val givenDirection = if ("".equals(range)) "" else direction
+    Ok(views.html.showKeys(keys, givenDirection, hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
+
+  }
+
   def search = maybeAuth { implicit request =>
     searchForm.bindFromRequest.fold(
       formWithErrors => {
-        Ok(views.html.index("Invalid search"))
+        Ok(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
       },
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
-        Ok(views.html.showKeys(keys, searchResultsMessage, lastDirection = "", hasNext = false, keys.length, request.user.firstName))
+        Ok(views.html.showKeys(keys, lastDirection = "", hasNext = false, keys.length, request.user.firstName, pageTitle = searchResultsMessage))
       }
     )
   }
 
+  val createUserPageTitle = "Create user"
+
   def createUserPage = maybeAuth { implicit request =>
-    Ok(views.html.createUser(message = "", createUserForm, request.user.firstName))
+    Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle))
   }
 
   def createUser = maybeAuth.async { implicit request =>
-
     def saveUserOnDB(consumer: UserCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Result = {
 
       val newBonoboUser = BonoboUser(consumer.id, formData)
@@ -52,15 +61,15 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = KongKey(bonoboId = consumer.id, consumer, rateLimits, formData.tier)
       dynamo.saveKongKey(newKongKey)
 
-      Redirect("/user/" + consumer.id + "/edit")
+      Redirect(routes.Application.editUserPage(consumer.id))
     }
 
-    def displayError(message: String): Result = {
-      Ok(views.html.createUser(message, createUserForm, request.user.firstName))
+    def displayError(errorMessage: String): Result = {
+      Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
     }
 
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createUser(message = "Please, correct the highlighted fields.", form, request.user.firstName)))
+      Future.successful(Ok(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
@@ -75,30 +84,22 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
-    val (keys, hasNext): (List[BonoboInfo], Boolean) = dynamo.getKeys(direction, range)
-    val totalKeys = dynamo.getNumberOfKeys
-    range match {
-      case "" => Ok(views.html.showKeys(keys, pageTitle = "All keys", "", hasNext, totalKeys, request.user.firstName))
-      case _ => Ok(views.html.showKeys(keys, pageTitle = "All keys", direction, hasNext, totalKeys, request.user.firstName))
-    }
-  }
+  val editUserPageTitle = "Edit user"
 
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
     val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
 
-    Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName, userKeys))
+    Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
   }
 
   def editUser(id: String) = maybeAuth.async { implicit request =>
-
     val userKeys = dynamo.getAllKeysWithId(id)
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
 
-      Future.successful(Ok(views.html.editUser(message = "Please correct the highlighted fields", id, form, request.user.firstName, userKeys)))
+      Future.successful(Ok(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
@@ -106,15 +107,16 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val updatedUser = BonoboUser(id, form)
       dynamo.updateBonoboUser(updatedUser)
 
-      Future.successful(Ok(views.html.editUser(message = "The user has been successfully updated", id,
-        editUserForm.fill(form), request.user.firstName, userKeys)))
+      Future.successful(Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated."))))
     }
 
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
+  val createKeyPageTitle = "Create key"
+
   def createKeyPage(userId: String) = maybeAuth { implicit request =>
-    Ok(views.html.createKey(message = "", userId, createKeyForm, request.user.firstName))
+    Ok(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle))
   }
 
   def createKey(userId: String) = maybeAuth.async { implicit request =>
@@ -124,12 +126,12 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = KongKey(userId, consumer, rateLimits, form.tier)
       dynamo.saveKongKey(newKongKey)
 
-      Redirect("/user/" + userId + "/edit")
+      Redirect(routes.Application.editUserPage(userId))
     }
 
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
 
-      Future.successful(Ok(views.html.createKey(message = "Plase correct the highlighted fields", userId, brokenKeyForm, request.user.firstName)))
+      Future.successful(Ok(views.html.createKey(userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
@@ -139,13 +141,15 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
         consumer => saveNewKeyOnDB(consumer, form, rateLimits)
       } recover {
-        case ConflictFailure(message) => Conflict(views.html.createKey("Conflict failure: " + message, userId, createKeyForm, request.user.firstName))
-        case GenericFailure(message) => InternalServerError(views.html.createKey("Generic failure: " + message, userId, createKeyForm, request.user.firstName))
+        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Conflict failure: " + message)))
+        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Generic failure: " + message)))
       }
     }
 
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
+
+  val editKeyPageTitle = "Edit key"
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
 
@@ -153,17 +157,17 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
       key.requestsPerMinute, key.tier, defaultRequests = false, key.status))
 
-    Ok(views.html.editKey(message = "", keyValue, filledForm, request.user.firstName))
+    Ok(views.html.editKey(key.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
   }
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
-
     val oldKey = dynamo.retrieveKey(keyValue)
     val bonoboId = oldKey.bonoboId
     val kongId = oldKey.kongId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(message = "Please correct the highlighted fields.", keyValue, form, request.user.firstName)))
+      val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some(invalidFormMessage)
+      Future.successful(Ok(views.html.editKey(bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
     }
 
     def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
@@ -208,7 +212,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateKongKeyOnDB(newFormData)
-        Redirect("/user/" + bonoboId + "/edit")
+        Redirect(routes.Application.editUserPage(bonoboId))
       }
     }
 
@@ -220,6 +224,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
 object Application {
 
+  val keyRegexPattern = """^[-a-zA-Z0-9]*$""".r.pattern
+  val invalidFormMessage = "Please correct the highlighted fields."
+
   case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
   val createUserForm: Form[CreateUserFormData] = Form(
@@ -229,7 +236,7 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
-      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' ')))
+      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -248,12 +255,14 @@ object Application {
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' '))),
+      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => keyRegexPattern.matcher(key).matches())),
       "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
 
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String) {
+    def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
+  }
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -263,7 +272,7 @@ object Application {
       "tier" -> nonEmptyText,
       "defaultRequests" -> boolean,
       "status" -> nonEmptyText
-    )(EditKeyFormData.apply)(EditKeyFormData.unapply)
+    )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
   )
 
   case class SearchFormData(query: String)
