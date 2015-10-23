@@ -162,7 +162,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val kongId = oldKey.kongId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(consumerId, form, request.user.firstName, pageTitle, error = Some("Please correct the highlighted fields."))))
+      val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some("Please correct the highlighted fields.")
+      Future.successful(Ok(views.html.editKey(consumerId, form, request.user.firstName, pageTitle, error = error)))
     }
 
     def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
@@ -252,7 +253,9 @@ object Application {
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
 
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String)
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: String, defaultRequests: Boolean, status: String) {
+    def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
+  }
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -262,7 +265,7 @@ object Application {
       "tier" -> nonEmptyText,
       "defaultRequests" -> boolean,
       "status" -> nonEmptyText
-    )(EditKeyFormData.apply)(EditKeyFormData.unapply)
+    )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
   )
 
   case class SearchFormData(query: String)
