@@ -229,7 +229,7 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
-      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' ')))
+      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => """^[-a-zA-Z0-9]*$""".r.pattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -248,7 +248,7 @@ object Application {
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' '))),
+      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => """^[-a-zA-Z0-9]*$""".r.pattern.matcher(key).matches())),
       "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
