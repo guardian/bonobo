@@ -10,12 +10,12 @@ GET         /key/search                controllers.Application.search
 GET         /key/create/:userId        controllers.Application.createKeyPage(userId: String)
 POST        /key/create/:userId        controllers.Application.createKey(userId: String)
 GET         /key/:id/edit              controllers.Application.editKeyPage(id: String)
-POST        /key/:id                   controllers.Application.editKey(id: String)
+POST        /key/:id/edit              controllers.Application.editKey(id: String)
 
 GET         /user/create               controllers.Application.createUserPage
-POST        /user                      controllers.Application.createUser
+POST        /user/create               controllers.Application.createUser
 GET         /user/:id/edit             controllers.Application.editUserPage(id: String)
-POST        /user/:id                  controllers.Application.editUser(id: String)
+POST        /user/:id/edit             controllers.Application.editUser(id: String)
 
 GET         /healthcheck               controllers.Application.healthcheck
 
