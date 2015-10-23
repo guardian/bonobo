@@ -33,12 +33,9 @@ case class KongKey(
   createdAt: DateTime)
 
 object KongKey {
-  def apply(consumer: UserCreationResult, tier: String, rateLimits: RateLimits): KongKey = {
-    new KongKey(consumer.id, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
-      tier, "Active", new DateTime(consumer.createdAt))
-  }
-  def apply(consumerId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
-    new KongKey(consumerId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
+
+  def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
+    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
   }
 
   def apply(bonoboId: String, consumer: UserCreationResult, rateLimits: RateLimits, tier: String): KongKey = {
