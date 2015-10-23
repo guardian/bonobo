@@ -22,7 +22,7 @@ trait DB {
 
   def getNumberOfKeys: Long
 
-  def retrieveKey(key: String): KongKey
+  def retrieveKey(key: String): Option[KongKey]
 
   def getAllKeysWithId(id: String): List[KongKey]
 
@@ -179,12 +179,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     resultForKeysSearch ++ resultForUsersSearch
   }
 
-  def retrieveKey(keyValue: String): KongKey = {
+  def retrieveKey(keyValue: String): Option[KongKey] = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
-    KongTable.query(query).asScala.toList.map(fromKongItem).head
+    val result = KongTable.query(query).asScala.toList.map(fromKongItem)
+    if (result.length == 0) None else Some(result.head)
   }
 
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
