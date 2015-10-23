@@ -11,7 +11,10 @@
       @b3.form(routes.Application.createKey(userId)) {
         @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Insert custom key")
         @b3.select(keyForm("tier"), options = Seq("Developer" -> "Developer", "Rights managed" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier")
-        @b3.submit('class -> "btn btn-primary") { Save }
+        @b3.free('_id -> "idFormGroup") {
+          <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save key</button>
+          <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
+        }
       }
       </div>
     </div>

@@ -152,7 +152,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
       key.requestsPerMinute, key.tier, defaultRequests = false, key.status))
 
-    Ok(views.html.editKey(keyValue, filledForm, request.user.firstName, pageTitle = "Edit key"))
+    Ok(views.html.editKey(key.bonoboId, filledForm, request.user.firstName, pageTitle = "Edit key"))
   }
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
@@ -162,7 +162,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val kongId = oldKey.kongId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(keyValue, form, request.user.firstName, pageTitle, error = Some("Please correct the highlighted fields."))))
+      Future.successful(Ok(views.html.editKey(consumerId, form, request.user.firstName, pageTitle, error = Some("Please correct the highlighted fields."))))
     }
 
     def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
