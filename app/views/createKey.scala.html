@@ -1,8 +1,9 @@
-@(message: String, userId: String, keyForm: Form[controllers.Application.CreateKeyFormData], firstName: String)(implicit messages: Messages)
+@(userId: String, keyForm: Form[controllers.Application.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Add a key for existing user", firstName) {
-  <h4>@message</h4>
+  @Renderer.renderTitle(pageTitle)
+  @Renderer.renderMessages(success, error)
   <div>
     <h4>Add a key for the current user</h4>
     <div class="row">
@@ -10,7 +11,10 @@
       @b3.form(routes.Application.createKey(userId)) {
         @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Insert custom key")
         @b3.select(keyForm("tier"), options = Seq("Developer" -> "Developer", "Rights managed" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier")
-        @b3.submit('class -> "btn btn-primary") { Save }
+        @b3.free('_id -> "idFormGroup") {
+          <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save key</button>
+          <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
+        }
       }
       </div>
     </div>
