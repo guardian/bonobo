@@ -5,7 +5,8 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 /* model used for saving the users on Bonobo */
-case class BonoboUser(bonoboId: String,
+case class BonoboUser(
+  bonoboId: String,
   email: String,
   name: String,
   company: String,
@@ -21,7 +22,9 @@ object BonoboUser {
 }
 
 /* model used for saving the keys on Kong */
-case class KongKey(bonoboId: String,
+case class KongKey(
+  bonoboId: String,
+  kongId: String,
   key: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,
@@ -31,12 +34,17 @@ case class KongKey(bonoboId: String,
 
 object KongKey {
   def apply(consumer: UserCreationResult, tier: String, rateLimits: RateLimits): KongKey = {
-    new KongKey(consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
+    new KongKey(consumer.id, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute,
       tier, "Active", new DateTime(consumer.createdAt))
   }
-  def apply(consumerId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
-    new KongKey(consumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
+  def apply(consumerId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
+    new KongKey(consumerId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
   }
+
+  def apply(bonoboId: String, consumer: UserCreationResult, rateLimits: RateLimits, tier: String): KongKey = {
+    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, "Active", consumer.createdAt)
+  }
+
 }
 
 /* model used for show all keys table */
