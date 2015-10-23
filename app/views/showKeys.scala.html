@@ -1,8 +1,8 @@
 @(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 
 @main("Keys", firstName){
-    @Helpers.renderTitle(pageTitle)
-    @Helpers.renderMessages(success, error)
+    @Renderer.renderTitle(pageTitle)
+    @Renderer.renderMessages(success, error)
     <div class="row">
         <p class="col-md-12">Total number of keys: <strong>@totalKeys</strong></p>
     </div>
