@@ -37,7 +37,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     )
   }
 
-  def createNewUserForm = maybeAuth { implicit request =>
+  def createUserPage = maybeAuth { implicit request =>
     Ok(views.html.createUser(message = "", createUserForm, request.user.firstName))
   }
 
@@ -83,7 +83,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
   }
 
-  def editUser(id: String) = maybeAuth { implicit request =>
+  def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
     val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
@@ -91,7 +91,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName, userKeys))
   }
 
-  def updateUser(id: String) = maybeAuth.async { implicit request =>
+  def editUser(id: String) = maybeAuth.async { implicit request =>
 
     val userKeys = dynamo.getAllKeysWithId(id)
 
@@ -112,7 +112,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  def createNewKeyForm(userId: String) = maybeAuth { implicit request =>
+  def createKeyPage(userId: String) = maybeAuth { implicit request =>
     Ok(views.html.createKey(message = "", userId, createKeyForm, request.user.firstName))
   }
 
@@ -146,7 +146,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editKey(keyValue: String) = maybeAuth { implicit request =>
+  def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
 
     val key = dynamo.retrieveKey(keyValue)
     val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
@@ -155,7 +155,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editKey(message = "", keyValue, filledForm, request.user.firstName))
   }
 
-  def updateKey(keyValue: String) = maybeAuth.async { implicit request =>
+  def editKey(keyValue: String) = maybeAuth.async { implicit request =>
 
     val oldKey = dynamo.retrieveKey(keyValue)
     val consumerId = oldKey.bonoboId
