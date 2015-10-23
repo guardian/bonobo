@@ -2,8 +2,8 @@
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Create user", firstName) {
-    @Helpers.renderTitle(pageTitle)
-    @Helpers.renderMessages(success, error)
+    @Renderer.renderTitle(pageTitle)
+    @Renderer.renderMessages(success, error)
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
             @b3.form(routes.Application.createUser) {

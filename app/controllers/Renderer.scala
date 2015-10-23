@@ -2,7 +2,7 @@ package controllers
 
 import scala.xml.{ Group, Node }
 
-object Helpers {
+object Renderer {
 
   def renderTitle(title: String): Node = {
     <div class="page-header">

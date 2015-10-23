@@ -2,8 +2,8 @@
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Add a key for existing user", firstName) {
-  @Helpers.renderTitle(pageTitle)
-  @Helpers.renderMessages(success, error)
+  @Renderer.renderTitle(pageTitle)
+  @Renderer.renderMessages(success, error)
   <div>
     <h4>Add a key for the current user</h4>
     <div class="row">
