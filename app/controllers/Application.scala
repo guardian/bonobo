@@ -120,7 +120,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def saveNewKeyOnDB(consumer: UserCreationResult, form: CreateKeyFormData, rateLimits: RateLimits): Result = {
 
-      val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
+      val newKongKey = KongKey(userId, consumer, rateLimits, form.tier)
       dynamo.saveKongKey(newKongKey)
 
       Redirect("/user/" + userId + "/edit")
@@ -158,18 +158,19 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
 
     val oldKey = dynamo.retrieveKey(keyValue)
-    val consumerId = oldKey.bonoboId
+    val bonoboId = oldKey.bonoboId
+    val kongId = oldKey.kongId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
       Future.successful(Ok(views.html.editKey(message = "Please correct the highlighted fields.", keyValue, form, request.user.firstName)))
     }
 
-    def updateKongKey(newFormData: EditKeyFormData): Unit = {
+    def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
       val updatedKey = {
         if (newFormData.defaultRequests) {
           val defaultRateLimits = RateLimits.matchTierWithRateLimits(newFormData.tier)
-          KongKey(consumerId, newFormData, oldKey.createdAt, defaultRateLimits)
-        } else KongKey(consumerId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits)
+        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
       }
       dynamo.updateKongKey(updatedKey)
     }
@@ -178,7 +179,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
       def updateRateLimitsIfNecessary(): Future[Happy.type] = {
         if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-          kong.updateUser(consumerId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+          kong.updateUser(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
         } else {
           Future.successful(Happy)
         }
@@ -186,7 +187,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
       def deactivateKeyIfNecessary(): Future[Happy.type] = {
         if (oldKey.status == "Active" && newFormData.status == "Inactive") {
-          kong.deleteKey(consumerId)
+          kong.deleteKey(kongId)
         } else {
           Future.successful(Happy)
         }
@@ -194,7 +195,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
       def activateKeyIfNecessary(): Future[String] = {
         if (oldKey.status == "Inactive" && newFormData.status == "Active") {
-          kong.createKey(consumerId, Some(oldKey.key))
+          kong.createKey(kongId, Some(oldKey.key))
         } else {
           Future.successful(oldKey.key)
         }
@@ -205,8 +206,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- deactivateKeyIfNecessary()
         _ <- activateKeyIfNecessary()
       } yield {
-        updateKongKey(newFormData)
-        Redirect("/user/" + consumerId + "/edit")
+        updateKongKeyOnDB(newFormData)
+        Redirect("/user/" + bonoboId + "/edit")
       }
     }
 
