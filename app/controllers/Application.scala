@@ -48,7 +48,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveBonoboUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer, formData.tier, rateLimits)
+      // when a user is created, bonoboId and kongId (taken from the consumer object) will be the same
+      val newKongKey = KongKey(bonoboId = consumer.id, consumer, rateLimits, formData.tier)
       dynamo.saveKongKey(newKongKey)
 
       Redirect("/user/" + consumer.id + "/edit")
