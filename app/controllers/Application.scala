@@ -35,7 +35,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def search = maybeAuth { implicit request =>
     searchForm.bindFromRequest.fold(
       formWithErrors => {
-        Ok(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
+        BadRequest(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
       },
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
@@ -69,7 +69,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
@@ -99,7 +99,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
 
-      Future.successful(Ok(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
@@ -130,19 +130,21 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
-
-      Future.successful(Ok(views.html.createKey(userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createKey(userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
+      if (dynamo.retrieveKey(form.key.get) != None) {
+        Future.successful(BadRequest(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some("Key already taken."))))
+      } else {
+        val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(form.tier)
 
-      val rateLimits: RateLimits = RateLimits.matchTierWithRateLimits(form.tier)
-
-      kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
-        consumer => saveNewKeyOnDB(consumer, form, rateLimits)
-      } recover {
-        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Conflict failure: " + message)))
-        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Generic failure: " + message)))
+        kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
+          consumer => saveNewKeyOnDB(consumer, form, rateLimits)
+        } recover {
+          case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Conflict failure: " + message)))
+          case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Generic failure: " + message)))
+        }
       }
     }
 
@@ -153,7 +155,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
 
-    val key = dynamo.retrieveKey(keyValue)
+    val key = dynamo.retrieveKey(keyValue).get
     val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
       key.requestsPerMinute, key.tier, defaultRequests = false, key.status))
 
@@ -161,13 +163,13 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
-    val oldKey = dynamo.retrieveKey(keyValue)
+    val oldKey = dynamo.retrieveKey(keyValue).get
     val bonoboId = oldKey.bonoboId
     val kongId = oldKey.kongId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
       val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some(invalidFormMessage)
-      Future.successful(Ok(views.html.editKey(bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
+      Future.successful(BadRequest(views.html.editKey(bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
     }
 
     def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
@@ -226,6 +228,7 @@ object Application {
 
   val keyRegexPattern = """^[-a-zA-Z0-9]*$""".r.pattern
   val invalidFormMessage = "Please correct the highlighted fields."
+  val invalidKeyMessage = "Invalid key: use only a-z, A-Z, 0-9 and dashes."
 
   case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: String, key: Option[String] = None)
 
@@ -236,7 +239,7 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
-      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => keyRegexPattern.matcher(key).matches()))
+      "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -255,7 +258,7 @@ object Application {
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text.verifying("Invalid key: use only a-z, A-Z, 0-9 and dashes", key => keyRegexPattern.matcher(key).matches())),
+      "key" -> optional(text.verifying (invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
       "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
