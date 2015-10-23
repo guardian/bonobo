@@ -7,16 +7,15 @@ GET         /                          controllers.Application.showKeys(directio
 GET         /key                       controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
 GET         /key/search                controllers.Application.search
 
-GET         /key/create/:userId        controllers.Application.createNewKeyForm(userId: String)
+GET         /key/create/:userId        controllers.Application.createKeyPage(userId: String)
 POST        /key/create/:userId        controllers.Application.createKey(userId: String)
+GET         /key/:id/edit              controllers.Application.editKeyPage(id: String)
+POST        /key/:id                   controllers.Application.editKey(id: String)
 
-GET         /key/:id/edit              controllers.Application.editKey(id: String)
-POST        /key/:id                   controllers.Application.updateKey(id: String)
-
-GET         /user/create               controllers.Application.createNewUserForm
+GET         /user/create               controllers.Application.createUserPage
 POST        /user                      controllers.Application.createUser
-GET         /user/:id/edit             controllers.Application.editUser(id: String)
-POST        /user/:id                  controllers.Application.updateUser(id: String)
+GET         /user/:id/edit             controllers.Application.editUserPage(id: String)
+POST        /user/:id                  controllers.Application.editUser(id: String)
 
 GET         /healthcheck               controllers.Application.healthcheck
 

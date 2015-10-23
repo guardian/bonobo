@@ -5,7 +5,7 @@
     <h4>@message</h4>
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
-        @b3.form(routes.Application.updateKey(keyValue)) {
+        @b3.form(routes.Application.editKey(keyValue)) {
             @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Key", 'readonly -> true )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
             @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )

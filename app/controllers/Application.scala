@@ -4,6 +4,7 @@ import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
 import play.api.data._
+import play.api.data.validation.Constraint
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.Logger
 import play.api.mvc.Security.AuthenticatedBuilder
@@ -36,7 +37,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     )
   }
 
-  def createNewUserForm = maybeAuth { implicit request =>
+  def createUserPage = maybeAuth { implicit request =>
     Ok(views.html.createUser(message = "", createUserForm, request.user.firstName))
   }
 
@@ -50,10 +51,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = KongKey(consumer, formData.tier, rateLimits)
       dynamo.saveKongKey(newKongKey)
 
-      val userKeys = dynamo.getAllKeysWithId(consumer.id)
-      val filledForm = editUserForm.fill(EditUserFormData(formData.email, formData.name, formData.company, formData.url))
-
-      Ok(views.html.editUser(message = "A new user has been successfully added", consumer.id, filledForm, request.user.firstName, userKeys))
+      Redirect("/user/" + consumer.id + "/edit")
     }
 
     def displayError(message: String): Result = {
@@ -85,7 +83,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
   }
 
-  def editUser(id: String) = maybeAuth { implicit request =>
+  def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
     val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
@@ -93,13 +91,13 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editUser(message = "", id, filledForm, request.user.firstName, userKeys))
   }
 
-  def updateUser(id: String) = maybeAuth.async { implicit request =>
+  def editUser(id: String) = maybeAuth.async { implicit request =>
 
     val userKeys = dynamo.getAllKeysWithId(id)
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
 
-      Future.successful(Ok(views.html.editUser(message = "Plase correct the highlighted fields", id, form, request.user.firstName, userKeys)))
+      Future.successful(Ok(views.html.editUser(message = "Please correct the highlighted fields", id, form, request.user.firstName, userKeys)))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
@@ -114,7 +112,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  def createNewKeyForm(userId: String) = maybeAuth { implicit request =>
+  def createKeyPage(userId: String) = maybeAuth { implicit request =>
     Ok(views.html.createKey(message = "", userId, createKeyForm, request.user.firstName))
   }
 
@@ -125,11 +123,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       val newKongKey = new KongKey(userId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, "Active", consumer.createdAt)
       dynamo.saveKongKey(newKongKey)
 
-      val userKeys = dynamo.getAllKeysWithId(userId)
-      val user = dynamo.getUserWithId(userId)
-      val filledForm = editUserForm.fill(EditUserFormData(user.email, user.name, user.company, user.url))
-
-      Ok(views.html.editUser(message = "A new key has been successfully added", userId, filledForm, request.user.firstName, userKeys))
+      Redirect("/user/" + userId + "/edit")
     }
 
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
@@ -152,7 +146,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editKey(keyValue: String) = maybeAuth { implicit request =>
+  def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
 
     val key = dynamo.retrieveKey(keyValue)
     val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
@@ -161,13 +155,13 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editKey(message = "", keyValue, filledForm, request.user.firstName))
   }
 
-  def updateKey(keyValue: String) = maybeAuth.async { implicit request =>
+  def editKey(keyValue: String) = maybeAuth.async { implicit request =>
 
     val oldKey = dynamo.retrieveKey(keyValue)
     val consumerId = oldKey.bonoboId
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.editKey(message = "Please, correct the highlighted fields.", consumerId, form, request.user.firstName)))
+      Future.successful(Ok(views.html.editKey(message = "Please correct the highlighted fields.", keyValue, form, request.user.firstName)))
     }
 
     def updateKongKey(newFormData: EditKeyFormData): Unit = {
@@ -212,12 +206,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         _ <- activateKeyIfNecessary()
       } yield {
         updateKongKey(newFormData)
-
-        val userKeys = dynamo.getAllKeysWithId(consumerId)
-        val consumer = dynamo.getUserWithId(consumerId)
-        val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
-
-        Ok(views.html.editUser(message = "The key has been successfully updated", consumerId, filledForm, request.user.firstName, userKeys))
+        Redirect("/user/" + consumerId + "/edit")
       }
     }
 
@@ -238,7 +227,7 @@ object Application {
       "company" -> nonEmptyText,
       "url" -> nonEmptyText,
       "tier" -> nonEmptyText,
-      "key" -> optional(text)
+      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' ')))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -257,7 +246,7 @@ object Application {
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text),
+      "key" -> optional(text.verifying("Invalid key - do not use spaces", key => !key.contains(' '))),
       "tier" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
