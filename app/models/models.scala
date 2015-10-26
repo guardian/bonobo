@@ -58,15 +58,6 @@ case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
-object RateLimits {
-  def matchTierWithRateLimits(tier: String): RateLimits = {
-    Tier.withName(tier) match {
-      case Some(t) => t.rateLimit
-      case None => RateLimits(0, 0)
-    }
-  }
-}
-
 sealed trait Tier {
   def rateLimit: RateLimits
   def friendlyName: String
