@@ -116,7 +116,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val keysQuery = createQuerySpec(afterRange)
     val keys: List[KongKey] = KongTable.query(keysQuery).asScala.toList.map(fromKongItem)
 
-    if (keys.length == 0) (List.empty, false)
+    if (keys.isEmpty) (List.empty, false)
     else {
       val users = getUsersForKeys(keys)
       val result = matchKeysWithUsers(keys, users)
