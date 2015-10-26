@@ -56,7 +56,7 @@
           "Statement": [{
             "Effect": "Allow",
             "Action": [ "dynamodb:*" ],
-            "Resource": "arn:aws:dynamodb:*:***REMOVED***:table/bonobo-DEV-keys"
+            "Resource": { "Fn::Join": [ "", [ "arn:aws:dynamodb:*:***REMOVED***:table/bonobo-", { "Ref": "Stage" }, "-*" ] ] }
           }]
         },
         "Roles": [{"Ref": "RootRole" }]
