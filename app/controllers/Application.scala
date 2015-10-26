@@ -134,18 +134,27 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-      if (dynamo.retrieveKey(form.key.get).isDefined) {
-        Future.successful(BadRequest(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some("Key already taken."))))
-      } else {
+
+      def saveUser: Future[Result] = {
         val rateLimits: RateLimits = form.tier.rateLimit
 
         kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
           consumer => saveNewKeyOnDB(consumer, form, rateLimits)
         } recover {
-          case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Conflict failure: " + message)))
-          case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some("Generic failure: " + message)))
+          case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
+          case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
         }
       }
+
+      form.key match {
+        case Some(value) => {
+          if (dynamo.retrieveKey(value).isDefined)
+            Future.successful(BadRequest(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some("Key already taken."))))
+          else saveUser
+        }
+        case None => saveUser
+      }
+
     }
 
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
@@ -154,8 +163,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   private val editKeyPageTitle = "Edit key"
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
-    val key = dynamo.retrieveKey(keyValue)
-    key match {
+    dynamo.retrieveKey(keyValue) match {
       case Some(value) => {
         val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.requestsPerDay,
           value.requestsPerMinute, value.tier, defaultRequests = false, value.status))
