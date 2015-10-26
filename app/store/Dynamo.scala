@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
 import com.amazonaws.services.dynamodbv2.document._
 import models._
 import org.joda.time.DateTime
+import play.api.Logger
 
 import scala.collection.JavaConverters._
 
@@ -22,7 +23,7 @@ trait DB {
 
   def getNumberOfKeys: Long
 
-  def retrieveKey(key: String): KongKey
+  def retrieveKey(key: String): Option[KongKey]
 
   def getAllKeysWithId(id: String): List[KongKey]
 
@@ -179,12 +180,12 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     resultForKeysSearch ++ resultForUsersSearch
   }
 
-  def retrieveKey(keyValue: String): KongKey = {
+  def retrieveKey(keyValue: String): Option[KongKey] = {
     val query = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
-    KongTable.query(query).asScala.toList.map(fromKongItem).head
+    KongTable.query(query).asScala.toList.map(fromKongItem).headOption
   }
 
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
@@ -211,7 +212,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
-      new AttributeUpdate("tier").put(kongKey.tier)
+      new AttributeUpdate("tier").put(kongKey.tier.toString)
     )
   }
 
@@ -250,11 +251,17 @@ object Dynamo {
       .withInt("requests_per_day", kongKey.requestsPerDay)
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
-      .withString("tier", kongKey.tier)
+      .withString("tier", kongKey.tier.toString)
       .withString("createdAt", kongKey.createdAt.toString)
   }
 
   def fromKongItem(item: Item): KongKey = {
+    def toTier(tier: String): Tier = {
+      Tier.withName(tier).getOrElse {
+        Logger.warn(s"Invalid tier in DynamoDB: $tier")
+        Developer
+      }
+    }
     KongKey(
       bonoboId = item.getString("bonoboId"),
       kongId = item.getString("kongId"),
@@ -262,7 +269,7 @@ object Dynamo {
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
-      tier = item.getString("tier"),
+      tier = toTier(item.getString("tier")),
       createdAt = new DateTime(item.getString("createdAt"))
     )
   }

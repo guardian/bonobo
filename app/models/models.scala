@@ -28,7 +28,7 @@ case class KongKey(
   key: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,
-  tier: String,
+  tier: Tier,
   status: String,
   createdAt: DateTime)
 
@@ -38,7 +38,7 @@ object KongKey {
     new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
   }
 
-  def apply(bonoboId: String, consumer: UserCreationResult, rateLimits: RateLimits, tier: String): KongKey = {
+  def apply(bonoboId: String, consumer: UserCreationResult, rateLimits: RateLimits, tier: Tier): KongKey = {
     new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, "Active", consumer.createdAt)
   }
 
@@ -58,27 +58,34 @@ case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
-object RateLimits {
-  def matchTierWithRateLimits(tier: String): RateLimits = {
-    tier match {
-      case "Developer" => Developer.rateLimits
-      case "Rights managed" => RightsManaged.rateLimits
-      case "Internal" => Internal.rateLimits
-    }
-  }
-}
-
 sealed trait Tier {
-  def rateLimits: RateLimits = this match {
-    case Developer => RateLimits(720, 5000)
-    case RightsManaged => RateLimits(720, 10000)
-    case Internal => RateLimits(720, 10000)
-  }
+  def rateLimit: RateLimits
+  def friendlyName: String
 }
 
-object Developer extends Tier
-object RightsManaged extends Tier
-object Internal extends Tier
+object Tier {
+  def withName(tier: String): Option[Tier] = tier match {
+    case "Developer" => Some(Developer)
+    case "RightsManaged" => Some(RightsManaged)
+    case "Internal" => Some(Internal)
+    case _ => None
+  }
+
+  def isValid(tier: String): Boolean = withName(tier).isDefined
+}
+
+case object Developer extends Tier {
+  def rateLimit: RateLimits = RateLimits(720, 5000)
+  def friendlyName: String = "Developer"
+}
+case object RightsManaged extends Tier {
+  def rateLimit: RateLimits = RateLimits(720, 10000)
+  def friendlyName: String = "Rights managed"
+}
+case object Internal extends Tier {
+  def rateLimit: RateLimits = RateLimits(720, 10000)
+  def friendlyName: String = "Internal"
+}
 
 case class KongPluginConfig(id: String)
 
