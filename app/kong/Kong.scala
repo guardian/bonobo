@@ -12,14 +12,39 @@ import scala.concurrent.Future
 
 object Kong {
 
-  case object KeyCreationFailed extends RuntimeException("KeyCreationFailed", null, true, false)
-
   case object Happy
+  case class ConflictFailure(message: String) extends RuntimeException(message, null, true, false)
+  case class GenericFailure(message: String) extends RuntimeException(message, null, true, false)
 
-  case class ConflictFailure(message: String) extends Exception(message)
+  /* model used to parse json after create user */
+  case class KongCreateConsumerResponse(id: String, created_at: Long)
 
-  case class GenericFailure(message: String) extends Exception(message)
+  object KongCreateConsumerResponse {
+    implicit val consumerRead = Json.reads[KongCreateConsumerResponse]
+  }
 
+  /* These are used to extract the key.id from the json response of kong.getKeyIdForGivenUser(),
+     which looks like this: { "data" : [ { "id": "<value>", ... }, ... ] }
+   */
+
+  case class KongListConsumerKeysResponse(data: List[KongKeyResponse])
+
+  case class KongKeyResponse(id: String)
+
+  object KongKeyResponse {
+    implicit val keyRead = Json.reads[KongKeyResponse]
+  }
+
+  object KongListConsumerKeysResponse {
+    implicit val keyRead = Json.reads[KongListConsumerKeysResponse]
+
+  }
+
+  case class KongPluginConfig(id: String)
+
+  object KongPluginConfig {
+    implicit val pluginsRead = Json.reads[KongPluginConfig]
+  }
 }
 
 trait Kong {
@@ -59,11 +84,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
             case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
           }
           case 409 => Future.failed(ConflictFailure(response.toString))
-          case other => {
-            val errorMsg = s"Kong responded with status $other - ${response.body} when attempting to create a new user"
-            Logger.error(errorMsg)
-            Future.failed(GenericFailure(errorMsg))
-          }
+          case other =>
+            fail(s"Kong responded with status $other - ${response.body} when attempting to create a new user")
         }
     }
   }
@@ -78,11 +100,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         response.status match {
           case 201 => Future.successful(())
           case 409 => Future.failed(ConflictFailure(response.body))
-          case other => {
-            val errorMsg = s"Kong responded with status $other - ${response.body} when trying to set the rate limit for user $consumerId"
-            Logger.error(errorMsg)
-            Future.failed(GenericFailure(errorMsg))
-          }
+          case other =>
+            fail(s"Kong responded with status $other - ${response.body} when trying to set the rate limit for user $consumerId")
         }
     }
   }
@@ -95,11 +114,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         response.status match {
           case 201 => Future.successful(key)
           case 409 => Future.failed(ConflictFailure("Key already taken - use a different value as a key"))
-          case other => {
-            val errorMsg = s"Kong responded with status $other - ${response.body} when trying to create a key for user $consumerId"
-            Logger.error(errorMsg)
-            Future.failed(KeyCreationFailed)
-          }
+          case other =>
+            fail(s"Kong responded with status $other - ${response.body} when trying to create a key for user $consumerId")
         }
     }
   }
@@ -128,11 +144,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
             response.status match {
               case 200 => Future.successful(Happy)
               case 409 => Future.failed(ConflictFailure(response.body))
-              case other => {
-                val errorMsg = s"Kong resopnded with status $other - ${response.body} when trying to update the rate limit for user $id"
-                Logger.error(errorMsg)
-                Future.failed(GenericFailure(errorMsg))
-              }
+              case other =>
+                fail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for user $id")
             }
         }
     }
@@ -156,13 +169,15 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
           response =>
             response.status match {
               case 204 => Future.successful(Happy)
-              case other => {
-                val errorMsg = s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for user $consumerId"
-                Logger.error(errorMsg)
-                Future.failed(GenericFailure(errorMsg))
-              }
+              case other =>
+                fail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for user $consumerId")
             }
         }
     }
+  }
+
+  private def fail[A](errorMsg: String): Future[A] = {
+    Logger.warn(errorMsg)
+    Future.failed[A](GenericFailure(errorMsg))
   }
 }
