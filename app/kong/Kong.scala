@@ -76,7 +76,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       "config.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
       response =>
         response.status match {
-          case 201 => Future.successful()
+          case 201 => Future.successful(())
           case 409 => Future.failed(ConflictFailure(response.body))
           case other => {
             val errorMsg = s"Kong responded with status $other - ${response.body} when trying to set the rate limit for user $consumerId"
