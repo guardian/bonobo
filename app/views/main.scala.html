@@ -1,4 +1,4 @@
-@(title: String, firstName: String)(content: Html)
+@(title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -34,6 +34,8 @@
             </div>
         </nav>
         <div class="container" role="main" style="margin-top: 35px;">
+            @renderTitle(pageTitle)
+            @renderMessage(success, error)
             @content
         </div>
     </body>
