@@ -59,26 +59,4 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
-
-  /* TODO: this test is pretty useless but I'll leave it here as a reference for now */
-  /*
-  "insertNewKey" should "insert a new key" in {
-    val myRequest = Map("id" -> "1234", "key" -> "123", "name" -> "Bruce Wayne", "email" -> "batman@ddd.com",
-      "company" -> "Wayne Enterprises", "url" -> "www.lol.com", "requestsPerDay" -> "200", "requestsPerMinute" -> "10",
-      "tier" -> "Internal", "status" -> "active", "created_at" -> "1231321123")
-
-    val kong = new Kong {
-      def registerUser(username: String, rateLimit: RateLimits): Future[UserCreationResult] = {
-        Future.successful(UserCreationResult(id = "31231231", createdAt = new DateTime(1444830845000L), "my-random-key"))
-      }
-      def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type] = ???
-      def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = ???
-      def deleteKey(consumerId: String): Future[Happy.type] = ???
-    }
-    val application = new Application(mockDynamo, kong, messagesApi, null, false)
-
-    val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest.toSeq: _*))
-    contentAsString(result) should include("A new user has been successfully added")
-  }
-  */
 }
