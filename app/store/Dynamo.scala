@@ -11,15 +11,13 @@ import scala.collection.JavaConverters._
 
 trait DB {
 
-  val limit = 4 // items per page to be displayed
-
   def search(query: String, limit: Int = 20): List[BonoboInfo]
 
   def saveBonoboUser(bonoboKey: BonoboUser): Unit
 
   def saveKongKey(kongKey: KongKey): Unit
 
-  def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean)
+  def getKeys(direction: String, range: String): ResultsPage[BonoboInfo]
 
   def getNumberOfKeys: Long
 
@@ -43,11 +41,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
 
-  def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean) = {
+  def getKeys(direction: String, range: String): ResultsPage[BonoboInfo] = {
     direction match {
       case "previous" => getKeysBefore(range)
       case "next" => getKeysAfter(range)
-      case _ => (List.empty, false)
+      case _ => ResultsPage(List.empty, hasNext = false)
     }
   }
 
@@ -97,7 +95,9 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  private def getKeysAfter(afterRange: String): (List[BonoboInfo], Boolean) = {
+  // TODO refactor to remove duplication between getKeysAfter and getKeysBefore
+
+  private def getKeysAfter(afterRange: String): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: String): QuerySpec = {
       range match {
         case "" => new QuerySpec()
@@ -116,20 +116,20 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val keysQuery = createQuerySpec(afterRange)
     val keys: List[KongKey] = KongTable.query(keysQuery).asScala.toList.map(fromKongItem)
 
-    if (keys.isEmpty) (List.empty, false)
+    if (keys.isEmpty) ResultsPage(List.empty, hasNext = false)
     else {
       val users = getUsersForKeys(keys)
       val result = matchKeysWithUsers(keys, users)
 
       val testQuery = createQuerySpec(keys.last.createdAt.toString) //TODO: improve query using COUNT
       KongTable.query(testQuery).asScala.size match {
-        case 0 => (result, false)
-        case _ => (result, true)
+        case 0 => ResultsPage(result, hasNext = false)
+        case _ => ResultsPage(result, hasNext = true)
       }
     }
   }
 
-  private def getKeysBefore(beforeRange: String): (List[BonoboInfo], Boolean) = {
+  private def getKeysBefore(beforeRange: String): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: String): QuerySpec = {
       new QuerySpec()
         .withKeyConditionExpression(":h = hashkey")
@@ -144,8 +144,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
     val testQuery = createQuerySpec(keys.head.createdAt.toString) //TODO: improve query using COUNT
     KongTable.query(testQuery).asScala.size match {
-      case 0 => (result, false)
-      case _ => (result, true)
+      case 0 => ResultsPage(result, hasNext = false)
+      case _ => ResultsPage(result, hasNext = true)
     }
   }
 
@@ -222,6 +222,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 }
 
 object Dynamo {
+
+  val limit = 4 // items per page to be displayed
 
   def toBonoboItem(bonoboKey: BonoboUser): Item = {
     new Item()

@@ -46,6 +46,8 @@ object KongKey {
 /* model used for show all keys table */
 case class BonoboInfo(kongKey: KongKey, bonoboUser: BonoboUser)
 
+case class ResultsPage[A](items: List[A], hasNext: Boolean)
+
 case class UserCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
