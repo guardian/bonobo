@@ -1,9 +1,7 @@
 @(userId: String, keyForm: Form[controllers.Application.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@main("Add a key for existing user", firstName) {
-  @Renderer.renderTitle(pageTitle)
-  @Renderer.renderMessages(success, error)
+@main("Add a key for existing user", firstName, pageTitle, success, error) {
   <div>
     <h4>Add a key for the current user</h4>
     <div class="row">
