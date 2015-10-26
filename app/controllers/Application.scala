@@ -154,12 +154,15 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   private val editKeyPageTitle = "Edit key"
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
-
-    val key = dynamo.retrieveKey(keyValue).get
-    val filledForm = editKeyForm.fill(EditKeyFormData(key.key, key.requestsPerDay,
-      key.requestsPerMinute, key.tier, defaultRequests = false, key.status))
-
-    Ok(views.html.editKey(key.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
+    val key = dynamo.retrieveKey(keyValue)
+    key match {
+      case Some(value) => {
+        val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.requestsPerDay,
+          value.requestsPerMinute, value.tier, defaultRequests = false, value.status))
+        Ok(views.html.editKey(value.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
+      }
+      case None => NotFound
+    }
   }
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
