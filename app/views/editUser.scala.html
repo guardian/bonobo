@@ -34,7 +34,7 @@
       @for(key <- keys) {
         <tr>
           <td>@key.key</td>
-          <td>@key.tier</td>
+          <td>@key.tier.friendlyName</td>
           <td>@key.requestsPerMinute</td>
           <td>@key.requestsPerDay</td>
           <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
