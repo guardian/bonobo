@@ -10,7 +10,7 @@
             @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Key", 'readonly -> true )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
             @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
-            @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "Rights managed" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
+            @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "RightsManaged" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
             @b3.checkbox( form("defaultRequests"), '_label -> "Use default rate limits" )
             @b3.select( form("status"), options = Seq("Active" -> "Active", "Inactive" -> "Inactive"), '_label -> "Status" )
             @b3.free('_id -> "idFormGroup") {
