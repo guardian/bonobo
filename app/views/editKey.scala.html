@@ -1,9 +1,7 @@
 @(userId: String, form: Form[controllers.Application.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@main("Edit key", firstName) {
-    @Renderer.renderTitle(pageTitle)
-    @Renderer.renderMessages(success, error)
+@main("Edit key", firstName, pageTitle, success, error) {
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
