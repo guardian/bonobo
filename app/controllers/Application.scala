@@ -23,10 +23,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   private def maybeAuth: AuthenticatedBuilder[UserIdentity] = if (enableAuth) AuthAction else FakeAuthAction
 
   def showKeys(direction: String, range: String) = maybeAuth { implicit request =>
-    val (keys, hasNext): (List[BonoboInfo], Boolean) = dynamo.getKeys(direction, range)
+    val resultsPage = dynamo.getKeys(direction, range)
     val totalKeys = dynamo.getNumberOfKeys
     val givenDirection = if ("".equals(range)) "" else direction
-    Ok(views.html.showKeys(keys, givenDirection, hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
+    Ok(views.html.showKeys(resultsPage.items, givenDirection, resultsPage.hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
 
   }
 

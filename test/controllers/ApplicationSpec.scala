@@ -1,6 +1,5 @@
 package controllers
 
-import kong.Kong.Happy
 import models._
 import org.joda.time.DateTime
 import org.scalatest._
@@ -31,8 +30,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def deleteKongKey(createdAt: String): Unit = ???
       def retrieveKey(id: String): Option[KongKey] = ???
 
-      def getKeys(direction: String, range: String): (List[BonoboInfo], Boolean) = {
-        (List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime()), BonoboUser("id", "email", "name", "company", "url"))), false)
+      def getKeys(direction: String, range: String): ResultsPage[BonoboInfo] = {
+        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime()), BonoboUser("id", "email", "name", "company", "url"))), false)
       }
 
       def retrieveUser(id: String): BonoboUser = ???
