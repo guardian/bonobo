@@ -95,23 +95,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  // TODO refactor to remove duplication between getKeysAfter and getKeysBefore
-
   private def getKeysAfter(afterRange: Option[Long]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[Long]): QuerySpec = {
-      range match {
-        case None => new QuerySpec()
-          .withKeyConditionExpression(":h = hashkey")
-          .withValueMap(new ValueMap().withString(":h", "hashkey"))
-          .withMaxResultSize(limit)
-          .withScanIndexForward(false)
-        case Some(value) => new QuerySpec()
-          .withKeyConditionExpression(":h = hashkey")
-          .withValueMap(new ValueMap().withString(":h", "hashkey"))
-          .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value))
-          .withMaxResultSize(limit)
-          .withScanIndexForward(false)
-      }
+      val querySpec = new QuerySpec()
+        .withKeyConditionExpression(":h = hashkey")
+        .withValueMap(new ValueMap().withString(":h", "hashkey"))
+        .withMaxResultSize(limit)
+        .withScanIndexForward(false)
+      range.fold(querySpec) { value => querySpec.withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value)) }
     }
     val keysQuery = createQuerySpec(afterRange)
     val keys: List[KongKey] = KongTable.query(keysQuery).asScala.toList.map(fromKongItem)
@@ -131,17 +122,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   private def getKeysBefore(beforeRange: Option[Long]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[Long]): QuerySpec = {
-      range match {
-        case None => new QuerySpec()
-          .withKeyConditionExpression(":h = hashkey")
-          .withValueMap(new ValueMap().withString(":h", "hashkey"))
-          .withMaxResultSize(limit)
-        case Some(value) => new QuerySpec()
-          .withKeyConditionExpression(":h = hashkey")
-          .withValueMap(new ValueMap().withString(":h", "hashkey"))
-          .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value))
-          .withMaxResultSize(limit)
-      }
+      val querySpec = new QuerySpec()
+        .withKeyConditionExpression(":h = hashkey")
+        .withValueMap(new ValueMap().withString(":h", "hashkey"))
+        .withMaxResultSize(limit)
+      range.fold(querySpec) { value => querySpec.withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value)) }
     }
     val keysQuery = createQuerySpec(beforeRange)
     val keys = KongTable.query(keysQuery).asScala.toList.map(fromKongItem).reverse
