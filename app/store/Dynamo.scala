@@ -208,7 +208,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   }
 
   def updateKongKey(kongKey: KongKey): Unit = {
-    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt.toString),
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt.getMillis),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
@@ -254,7 +254,7 @@ object Dynamo {
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
       .withString("tier", kongKey.tier.toString)
-      .withString("createdAt", kongKey.createdAt.getMillis.toString)
+      .withLong("createdAt", kongKey.createdAt.getMillis)
   }
 
   def fromKongItem(item: Item): KongKey = {
