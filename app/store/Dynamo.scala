@@ -17,7 +17,7 @@ trait DB {
 
   def saveKongKey(kongKey: KongKey): Unit
 
-  def getKeys(direction: String, range: String): ResultsPage[BonoboInfo]
+  def getKeys(direction: String, range: Option[Long]): ResultsPage[BonoboInfo]
 
   def getNumberOfKeys: Long
 
@@ -41,7 +41,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
 
-  def getKeys(direction: String, range: String): ResultsPage[BonoboInfo] = {
+  def getKeys(direction: String, range: Option[Long]): ResultsPage[BonoboInfo] = {
     direction match {
       case "previous" => getKeysBefore(range)
       case "next" => getKeysAfter(range)
@@ -97,18 +97,18 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   // TODO refactor to remove duplication between getKeysAfter and getKeysBefore
 
-  private def getKeysAfter(afterRange: String): ResultsPage[BonoboInfo] = {
-    def createQuerySpec(range: String): QuerySpec = {
+  private def getKeysAfter(afterRange: Option[Long]): ResultsPage[BonoboInfo] = {
+    def createQuerySpec(range: Option[Long]): QuerySpec = {
       range match {
-        case "" => new QuerySpec()
+        case None => new QuerySpec()
           .withKeyConditionExpression(":h = hashkey")
           .withValueMap(new ValueMap().withString(":h", "hashkey"))
           .withMaxResultSize(limit)
           .withScanIndexForward(false)
-        case other => new QuerySpec()
+        case Some(value) => new QuerySpec()
           .withKeyConditionExpression(":h = hashkey")
           .withValueMap(new ValueMap().withString(":h", "hashkey"))
-          .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", other))
+          .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value))
           .withMaxResultSize(limit)
           .withScanIndexForward(false)
       }
@@ -121,7 +121,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       val users = getUsersForKeys(keys)
       val result = matchKeysWithUsers(keys, users)
 
-      val testQuery = createQuerySpec(keys.last.createdAt.toString) //TODO: improve query using COUNT
+      val testQuery = createQuerySpec(Some(keys.last.createdAt.getMillis)) //TODO: improve query using COUNT
       KongTable.query(testQuery).asScala.size match {
         case 0 => ResultsPage(result, hasNext = false)
         case _ => ResultsPage(result, hasNext = true)
@@ -129,20 +129,26 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  private def getKeysBefore(beforeRange: String): ResultsPage[BonoboInfo] = {
-    def createQuerySpec(range: String): QuerySpec = {
-      new QuerySpec()
-        .withKeyConditionExpression(":h = hashkey")
-        .withValueMap(new ValueMap().withString(":h", "hashkey"))
-        .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", range))
-        .withMaxResultSize(limit)
+  private def getKeysBefore(beforeRange: Option[Long]): ResultsPage[BonoboInfo] = {
+    def createQuerySpec(range: Option[Long]): QuerySpec = {
+      range match {
+        case None => new QuerySpec()
+          .withKeyConditionExpression(":h = hashkey")
+          .withValueMap(new ValueMap().withString(":h", "hashkey"))
+          .withMaxResultSize(limit)
+        case Some(value) => new QuerySpec()
+          .withKeyConditionExpression(":h = hashkey")
+          .withValueMap(new ValueMap().withString(":h", "hashkey"))
+          .withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "createdAt", value))
+          .withMaxResultSize(limit)
+      }
     }
     val keysQuery = createQuerySpec(beforeRange)
     val keys = KongTable.query(keysQuery).asScala.toList.map(fromKongItem).reverse
     val users = getUsersForKeys(keys)
     val result = matchKeysWithUsers(keys, users)
 
-    val testQuery = createQuerySpec(keys.head.createdAt.toString) //TODO: improve query using COUNT
+    val testQuery = createQuerySpec(Some(keys.head.createdAt.getMillis)) //TODO: improve query using COUNT
     KongTable.query(testQuery).asScala.size match {
       case 0 => ResultsPage(result, hasNext = false)
       case _ => ResultsPage(result, hasNext = true)
@@ -208,7 +214,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   }
 
   def updateKongKey(kongKey: KongKey): Unit = {
-    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt.toString),
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "createdAt", kongKey.createdAt.getMillis),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
@@ -254,7 +260,7 @@ object Dynamo {
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
       .withString("tier", kongKey.tier.toString)
-      .withString("createdAt", kongKey.createdAt.toString)
+      .withLong("createdAt", kongKey.createdAt.getMillis)
   }
 
   def fromKongItem(item: Item): KongKey = {
@@ -272,7 +278,7 @@ object Dynamo {
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
       tier = toTier(item.getString("tier")),
-      createdAt = new DateTime(item.getString("createdAt"))
+      createdAt = new DateTime(item.getString("createdAt").toLong)
     )
   }
 }
