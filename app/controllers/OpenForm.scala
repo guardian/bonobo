@@ -8,29 +8,30 @@ import play.api.mvc._
 class OpenForm(val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import OpenForm._
 
-  def showCreateKeyOpenForm = Action { implicit request =>
-    Ok(views.html.openCreateKey(createkeyForm))
+  def createKeyPage = Action { implicit request =>
+    Ok(views.html.openCreateKey(createKeyForm))
   }
 
-  def createKeyOpenForm = Action { implicit request =>
+  def createKey = Action { implicit request =>
     def handleInvalidForm(form: Form[OpenCreateKeyFormData]): Result = {
-      Ok(views.html.openCreateKey(form, Some("Please correct the highlighted fields.")))
+      Ok(views.html.openCreateKey(form, error = Some("Please correct the highlighted fields.")))
     }
 
     def handleValidForm(formData: OpenCreateKeyFormData): Result = {
-      formData.acceptTerms match {
-        case false => Ok(views.html.openCreateKey(createkeyForm.fill(formData), Some("You have to accept the Guardian Open Platform terms and conditions.")))
-        case true => Ok(views.html.openShowKey("key"))
-      }
+      Redirect(routes.OpenForm.showKey)
     }
-    createkeyForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
+    createKeyForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
+  }
+
+  def showKey = Action {
+    Ok(views.html.openShowKey("key"))
   }
 }
 
 object OpenForm {
   case class OpenCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, CompanyUrl: String, acceptTerms: Boolean)
 
-  val createkeyForm: Form[OpenCreateKeyFormData] = Form(
+  val createKeyForm: Form[OpenCreateKeyFormData] = Form(
     mapping(
       "name" -> nonEmptyText,
       "email" -> email,
@@ -38,7 +39,7 @@ object OpenForm {
       "productUrl" -> nonEmptyText,
       "companyName" -> nonEmptyText,
       "companyUrl" -> text,
-      "acceptTerms" -> boolean
+      "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(OpenCreateKeyFormData.apply)(OpenCreateKeyFormData.unapply)
   )
 }
