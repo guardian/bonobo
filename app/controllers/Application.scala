@@ -52,6 +52,53 @@ trait ApplicationLogic {
     checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
   }
 
+  def updateKey(oldKey: KongKey, newFormData: EditKeyFormData): Future[Unit] = {
+    val bonoboId = oldKey.bonoboId
+    val kongId = oldKey.kongId
+
+    def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
+      val updatedKey = {
+        if (newFormData.defaultRequests) {
+          val defaultRateLimits = newFormData.tier.rateLimit
+          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits)
+        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+      }
+      dynamo.updateKongKey(updatedKey)
+    }
+
+    def updateRateLimitsIfNecessary(): Future[Happy.type] = {
+      if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
+        kong.updateConsumer(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+      } else {
+        Future.successful(Happy)
+      }
+    }
+
+    def deactivateKeyIfNecessary(): Future[Happy.type] = {
+      if (oldKey.status == "Active" && newFormData.status == "Inactive") {
+        kong.deleteKey(kongId)
+      } else {
+        Future.successful(Happy)
+      }
+    }
+
+    def activateKeyIfNecessary(): Future[String] = {
+      if (oldKey.status == "Inactive" && newFormData.status == "Active") {
+        kong.createKey(kongId, Some(oldKey.key))
+      } else {
+        Future.successful(oldKey.key)
+      }
+    }
+
+    for {
+      _ <- updateRateLimitsIfNecessary()
+      _ <- deactivateKeyIfNecessary()
+      _ <- activateKeyIfNecessary()
+    } yield {
+      updateKongKeyOnDB(newFormData)
+    }
+  }
+
   private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: Future[A]): Future[A] = key match {
     case Some(value) =>
       if (dynamo.retrieveKey(value).isDefined)
@@ -175,74 +222,30 @@ class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, 
   }
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
-
-    def handleValidForm(newFormData: EditKeyFormData): Future[Result] = {
+    def retrievingKeyFromDynamo(f: KongKey => Future[Result]): Future[Result] = {
       val oldKey = dynamo.retrieveKey(keyValue)
       oldKey match {
-        case Some(value) => _editKey(value, newFormData)
+        case Some(key) => f(key)
         case None => Future.successful(NotFound)
+      }
+    }
+
+    def handleValidForm(newFormData: EditKeyFormData): Future[Result] = {
+      retrievingKeyFromDynamo { key =>
+        updateKey(key, newFormData).map { _ =>
+          Redirect(routes.Application.editUserPage(key.bonoboId))
+        }
       }
     }
 
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
-      val oldKey = dynamo.retrieveKey(keyValue)
-      oldKey match {
-        case Some(value) => {
-          val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some(invalidFormMessage)
-          Future.successful(BadRequest(views.html.editKey(value.bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
-        }
-        case None => Future.successful(NotFound)
+      retrievingKeyFromDynamo { key =>
+        val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some(invalidFormMessage)
+        Future.successful(BadRequest(views.html.editKey(key.bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
       }
     }
 
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
-  }
-
-  private def _editKey(oldKey: KongKey, newFormData: EditKeyFormData): Future[Result] = {
-    val bonoboId = oldKey.bonoboId
-    val kongId = oldKey.kongId
-    def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
-      val updatedKey = {
-        if (newFormData.defaultRequests) {
-          val defaultRateLimits = newFormData.tier.rateLimit
-          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits)
-        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
-      }
-      dynamo.updateKongKey(updatedKey)
-    }
-
-    def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
-      } else {
-        Future.successful(Happy)
-      }
-    }
-
-    def deactivateKeyIfNecessary(): Future[Happy.type] = {
-      if (oldKey.status == "Active" && newFormData.status == "Inactive") {
-        kong.deleteKey(kongId)
-      } else {
-        Future.successful(Happy)
-      }
-    }
-
-    def activateKeyIfNecessary(): Future[String] = {
-      if (oldKey.status == "Inactive" && newFormData.status == "Active") {
-        kong.createKey(kongId, Some(oldKey.key))
-      } else {
-        Future.successful(oldKey.key)
-      }
-    }
-
-    for {
-      _ <- updateRateLimitsIfNecessary()
-      _ <- deactivateKeyIfNecessary()
-      _ <- activateKeyIfNecessary()
-    } yield {
-      updateKongKeyOnDB(newFormData)
-      Redirect(routes.Application.editUserPage(bonoboId))
-    }
   }
 
   def healthcheck = Action { Ok("OK") }
