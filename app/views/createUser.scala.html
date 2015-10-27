@@ -1,4 +1,4 @@
-@(form: Form[controllers.Application.CreateUserFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@(form: Form[controllers.Forms.CreateUserFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Create user", firstName, pageTitle, success, error) {
@@ -9,7 +9,7 @@
                 @b3.email( form("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
                 @b3.text( form("company"), '_label -> "Company", 'placeholder -> "Company" )
                 @b3.text( form("url"), '_label -> "URL", 'placeholder -> "URL" )
-                @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "RightsManaged" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
+                @b3.select( form("tier"), options = Seq(Developer.toString -> Developer.friendlyName, RightsManaged.toString -> RightsManaged.friendlyName, Internal.toString -> Internal.friendlyName), '_label -> "Tier" )
                 @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Insert custom key (optional)" )
                 @b3.submit('class -> "btn btn-primary"){ Save }
             }
