@@ -121,7 +121,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       val users = getUsersForKeys(keys)
       val result = matchKeysWithUsers(keys, users)
 
-      val testQuery = createQuerySpec(keys.last.createdAt.toString) //TODO: improve query using COUNT
+      val testQuery = createQuerySpec(keys.last.createdAt.getMillis.toString) //TODO: improve query using COUNT
       KongTable.query(testQuery).asScala.size match {
         case 0 => ResultsPage(result, hasNext = false)
         case _ => ResultsPage(result, hasNext = true)
@@ -142,7 +142,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val users = getUsersForKeys(keys)
     val result = matchKeysWithUsers(keys, users)
 
-    val testQuery = createQuerySpec(keys.head.createdAt.toString) //TODO: improve query using COUNT
+    val testQuery = createQuerySpec(keys.head.createdAt.getMillis.toString) //TODO: improve query using COUNT
     KongTable.query(testQuery).asScala.size match {
       case 0 => ResultsPage(result, hasNext = false)
       case _ => ResultsPage(result, hasNext = true)
@@ -254,7 +254,7 @@ object Dynamo {
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
       .withString("status", kongKey.status)
       .withString("tier", kongKey.tier.toString)
-      .withString("createdAt", kongKey.createdAt.toString)
+      .withString("createdAt", kongKey.createdAt.getMillis.toString)
   }
 
   def fromKongItem(item: Item): KongKey = {
@@ -272,7 +272,7 @@ object Dynamo {
       requestsPerMinute = item.getInt("requests_per_minute"),
       status = item.getString("status"),
       tier = toTier(item.getString("tier")),
-      createdAt = new DateTime(item.getString("createdAt"))
+      createdAt = new DateTime(item.getString("createdAt").toLong)
     )
   }
 }
