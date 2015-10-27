@@ -132,7 +132,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private def getKeysBefore(beforeRange: Option[Long]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[Long]): QuerySpec = {
       range match {
-        case None => ???
+        case None => new QuerySpec()
+          .withKeyConditionExpression(":h = hashkey")
+          .withValueMap(new ValueMap().withString(":h", "hashkey"))
+          .withMaxResultSize(limit)
         case Some(value) => new QuerySpec()
           .withKeyConditionExpression(":h = hashkey")
           .withValueMap(new ValueMap().withString(":h", "hashkey"))
