@@ -16,14 +16,14 @@ object Kong {
   case class ConflictFailure(message: String) extends RuntimeException(message, null, true, false)
   case class GenericFailure(message: String) extends RuntimeException(message, null, true, false)
 
-  /* model used to parse json after create user */
+  /* model used to parse json after create consumer */
   case class KongCreateConsumerResponse(id: String, created_at: Long)
 
   object KongCreateConsumerResponse {
     implicit val consumerRead = Json.reads[KongCreateConsumerResponse]
   }
 
-  /* These are used to extract the key.id from the json response of kong.getKeyIdForGivenUser(),
+  /* These are used to extract the key.id from the json response of kong.getKeyIdForGivenConsumer(),
      which looks like this: { "data" : [ { "id": "<value>", ... }, ... ] }
    */
 
@@ -50,9 +50,9 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def registerUser(username: String, rateLimit: RateLimits, key: Option[String]): Future[UserCreationResult]
+  def createConsumerAndKey(rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult]
 
-  def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type]
+  def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
 
@@ -66,16 +66,16 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   val RateLimitingPluginName = "rate-limiting"
   val KeyAuthPluginName = "key-auth"
 
-  def registerUser(username: String, rateLimit: RateLimits, key: Option[String]): Future[UserCreationResult] = {
-
+  def createConsumerAndKey(rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
     for {
-      consumer <- createConsumer(username)
+      consumer <- createConsumer()
       _ <- setRateLimit(consumer.id, rateLimit)
       key <- createKey(consumer.id, key)
-    } yield UserCreationResult(consumer.id, new DateTime(consumer.created_at), key)
+    } yield ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
   }
 
-  private def createConsumer(username: String): Future[KongCreateConsumerResponse] = {
+  private def createConsumer(): Future[KongCreateConsumerResponse] = {
+    val username = java.util.UUID.randomUUID.toString
     ws.url(s"$serverUrl/consumers").post(Map("username" -> Seq(username))).flatMap {
       response =>
         response.status match {
@@ -83,9 +83,9 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
             case JsSuccess(json, _) => Future.successful(json)
             case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
           }
-          case 409 => Future.failed(ConflictFailure(response.toString))
+          case 409 => Future.failed(ConflictFailure(s"Consumer with username $username already exists"))
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when attempting to create a new user")
+            fail(s"Kong responded with status $other - ${response.body} when attempting to create a new consumer")
         }
     }
   }
@@ -101,7 +101,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
           case 201 => Future.successful(())
           case 409 => Future.failed(ConflictFailure(response.body))
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when trying to set the rate limit for user $consumerId")
+            fail(s"Kong responded with status $other - ${response.body} when trying to set the rate limit for consumer $consumerId")
         }
     }
   }
@@ -115,7 +115,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
           case 201 => Future.successful(key)
           case 409 => Future.failed(ConflictFailure("Key already taken - use a different value as a key"))
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when trying to create a key for user $consumerId")
+            fail(s"Kong responded with status $other - ${response.body} when trying to create a key for consumer $consumerId")
         }
     }
   }
@@ -132,7 +132,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       }
   }
 
-  def updateUser(id: String, newRateLimit: RateLimits): Future[Happy.type] = {
+  def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type] = {
     getPluginId(id) flatMap {
       pluginId =>
         ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
@@ -145,13 +145,13 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
               case 200 => Future.successful(Happy)
               case 409 => Future.failed(ConflictFailure(response.body))
               case other =>
-                fail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for user $id")
+                fail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for consumer $id")
             }
         }
     }
   }
 
-  def getKeyIdForGivenUser(consumerId: String): Future[String] = {
+  def getKeyIdForGivenConsumer(consumerId: String): Future[String] = {
     ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").get().flatMap {
       response =>
         response.json.validate[KongListConsumerKeysResponse] match {
@@ -163,14 +163,14 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   def deleteKey(consumerId: String): Future[Happy.type] = {
-    getKeyIdForGivenUser(consumerId) flatMap {
+    getKeyIdForGivenConsumer(consumerId) flatMap {
       keyId =>
         ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName/$keyId").delete().flatMap {
           response =>
             response.status match {
               case 204 => Future.successful(Happy)
               case other =>
-                fail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for user $consumerId")
+                fail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for consumer $consumerId")
             }
         }
     }
