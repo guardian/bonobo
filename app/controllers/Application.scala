@@ -14,7 +14,62 @@ import kong.Kong._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller with AuthActions with I18nSupport {
+trait ApplicationLogic {
+  import Application._
+
+  def dynamo: DB
+  def kong: Kong
+
+  def createNewUser(form: CreateUserFormData): Future[String] = {
+    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
+      val newBonoboUser = BonoboUser(consumer.id, formData)
+      dynamo.saveBonoboUser(newBonoboUser)
+
+      // when a user is created, bonoboId and kongId (taken from the consumer object) will be the same
+      saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier)
+    }
+
+    def createConsumerAndKey: Future[String] = {
+      val rateLimits: RateLimits = form.tier.rateLimit
+      kong.createConsumerAndKey(rateLimits, form.key) map {
+        consumer =>
+          saveUserAndKeyOnDB(consumer, form, rateLimits)
+          consumer.id
+      }
+    }
+
+    checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
+  }
+
+  def createNewKey(userId: String, form: CreateKeyFormData): Future[Unit] = {
+    def createConsumerAndKey: Future[Unit] = {
+      val rateLimits: RateLimits = form.tier.rateLimit
+      kong.createConsumerAndKey(rateLimits, form.key) map {
+        consumer => saveKeyOnDB(userId, consumer, rateLimits, form.tier)
+      }
+    }
+
+    checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
+  }
+
+  private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: Future[A]): Future[A] = key match {
+    case Some(value) =>
+      if (dynamo.retrieveKey(value).isDefined)
+        Future.failed(ConflictFailure("Key already taken."))
+      else f
+    case None => f
+  }
+
+  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): Unit = {
+    val newKongKey = KongKey(userId, consumer, rateLimits, tier)
+    dynamo.saveKongKey(newKongKey)
+  }
+}
+
+class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+    with ApplicationLogic
+    with AuthActions
+    with I18nSupport {
 
   import Application._
 
@@ -27,7 +82,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val totalKeys = dynamo.getNumberOfKeys
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.showKeys(resultsPage.items, givenDirection, resultsPage.hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
-
   }
 
   def search = maybeAuth { implicit request =>
@@ -43,46 +97,25 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     )
   }
 
-  private val createUserPageTitle = "Create user"
-
   def createUserPage = maybeAuth { implicit request =>
     Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle))
   }
 
   def createUser = maybeAuth.async { implicit request =>
-    def saveUserOnDB(consumer: UserCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Result = {
-
-      val newBonoboUser = BonoboUser(consumer.id, formData)
-      dynamo.saveBonoboUser(newBonoboUser)
-
-      // when a user is created, bonoboId and kongId (taken from the consumer object) will be the same
-      val newKongKey = KongKey(bonoboId = consumer.id, consumer, rateLimits, formData.tier)
-      dynamo.saveKongKey(newKongKey)
-
-      Redirect(routes.Application.editUserPage(consumer.id))
-    }
-
-    def displayError(errorMessage: String): Result = {
-      Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-    }
-
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
       Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
-      val rateLimits: RateLimits = createUserFormData.tier.rateLimit
-      kong.registerUser(createUserFormData.email, rateLimits, createUserFormData.key) map {
-        consumer => saveUserOnDB(consumer, createUserFormData, rateLimits)
+      createNewUser(createUserFormData) map { consumerId =>
+        Redirect(routes.Application.editUserPage(consumerId))
       } recover {
-        case ConflictFailure(message) => displayError("Conflict failure: " + message)
-        case GenericFailure(message) => displayError(message)
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
-
-  private val editUserPageTitle = "Edit user"
 
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
@@ -96,12 +129,10 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     val userKeys = dynamo.getAllKeysWithId(id)
 
     def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
-
       Future.successful(BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: EditUserFormData): Future[Result] = {
-
       val updatedUser = BonoboUser(id, form)
       dynamo.updateBonoboUser(updatedUser)
 
@@ -111,54 +142,26 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  private val createKeyPageTitle = "Create key"
-
   def createKeyPage(userId: String) = maybeAuth { implicit request =>
     Ok(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle))
   }
 
   def createKey(userId: String) = maybeAuth.async { implicit request =>
-
-    def saveNewKeyOnDB(consumer: UserCreationResult, form: CreateKeyFormData, rateLimits: RateLimits): Result = {
-
-      val newKongKey = KongKey(userId, consumer, rateLimits, form.tier)
-      dynamo.saveKongKey(newKongKey)
-
-      Redirect(routes.Application.editUserPage(userId))
-    }
-
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
       Future.successful(BadRequest(views.html.createKey(userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-
-      def saveUser: Future[Result] = {
-        val rateLimits: RateLimits = form.tier.rateLimit
-
-        kong.registerUser(java.util.UUID.randomUUID.toString, rateLimits, form.key) map {
-          consumer => saveNewKeyOnDB(consumer, form, rateLimits)
-        } recover {
-          case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
-          case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
-        }
+      createNewKey(userId, form) map { _ =>
+        Redirect(routes.Application.editUserPage(userId))
+      } recover {
+        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
+        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
       }
-
-      form.key match {
-        case Some(value) => {
-          if (dynamo.retrieveKey(value).isDefined)
-            Future.successful(BadRequest(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some("Key already taken."))))
-          else saveUser
-        }
-        case None => saveUser
-      }
-
     }
 
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
-
-  private val editKeyPageTitle = "Edit key"
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
     dynamo.retrieveKey(keyValue) match {
@@ -210,7 +213,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
       if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-        kong.updateUser(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+        kong.updateConsumer(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
       } else {
         Future.successful(Happy)
       }
@@ -251,6 +254,10 @@ object Application {
   val invalidFormMessage = "Please correct the highlighted fields."
   val invalidKeyMessage = "Invalid key: use only a-z, A-Z, 0-9 and dashes."
   val invalidTierMessage = "Invalid tier"
+  val createUserPageTitle = "Create user"
+  val editUserPageTitle = "Edit user"
+  val createKeyPageTitle = "Create key"
+  val editKeyPageTitle = "Edit key"
 
   case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: Tier, key: Option[String] = None)
 
