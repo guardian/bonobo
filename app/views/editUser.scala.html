@@ -1,4 +1,4 @@
-@(id: String, form: Form[controllers.Application.EditUserFormData], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@(id: String, form: Form[controllers.Forms.EditUserFormData], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit user", firstName, pageTitle, success, error) {

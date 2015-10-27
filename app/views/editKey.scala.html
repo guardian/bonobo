@@ -1,4 +1,4 @@
-@(userId: String, form: Form[controllers.Application.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@(userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit key", firstName, pageTitle, success, error) {
@@ -8,9 +8,9 @@
             @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Key", 'readonly -> true )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
             @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
-            @b3.select( form("tier"), options = Seq("Developer" -> "Developer", "RightsManaged" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier" )
+            @b3.select( form("tier"), options = Seq(Developer.toString -> Developer.friendlyName, RightsManaged.toString -> RightsManaged.friendlyName, Internal.toString -> Internal.friendlyName), '_label -> "Tier" )
             @b3.checkbox( form("defaultRequests"), '_label -> "Use default rate limits" )
-            @b3.select( form("status"), options = Seq("Active" -> "Active", "Inactive" -> "Inactive"), '_label -> "Status" )
+            @b3.select( form("status"), options = Seq(KongKey.Active -> "Active", KongKey.Inactive -> "Inactive"), '_label -> "Status" )
             @b3.free('_id -> "idFormGroup") {
                 <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save changes</button>
                 <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
