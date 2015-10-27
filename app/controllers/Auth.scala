@@ -34,7 +34,7 @@ class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with 
           // Redirect a user back there now if it exists
           val redirect = session.get(LOGIN_ORIGIN_KEY) match {
             case Some(url) => Redirect(url)
-            case None => Redirect(routes.Application.showKeys())
+            case None => Redirect(routes.Application.showKeys(range = None))
           }
           // Store the JSON representation of the identity in the session - this is checked by AuthAction later
           redirect.withSession {
