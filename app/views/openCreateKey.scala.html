@@ -1,11 +1,10 @@
-@(keyForm: Form[controllers.OpenForm.OpenCreateKeyFormData], error: Option[String] = None)(implicit messages: Messages)
+@(keyForm: Form[controllers.OpenForm.OpenCreateKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@mainOpenForm("Create a key") {
-    @error.map { message => <p class="alert alert-danger">@message</p> }
+@mainOpenForm("Create a key", success, error) {
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
-        @b3.form(routes.OpenForm.createKeyOpenForm()) {
+        @b3.form(routes.OpenForm.createKey()) {
             @b3.text(keyForm("name"), '_label -> "Name *")
             @b3.email(keyForm("email"), '_label -> "Email address *")
             @b3.text(keyForm("productName"), '_label -> "Product Name *")
