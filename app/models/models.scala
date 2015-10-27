@@ -1,6 +1,6 @@
 package models
 
-import controllers.Application.{ EditKeyFormData, CreateUserFormData, EditUserFormData }
+import controllers.Forms.{ EditKeyFormData, CreateUserFormData, EditUserFormData }
 import org.joda.time.DateTime
 
 /* model used for saving the users on Bonobo */
@@ -32,13 +32,15 @@ case class KongKey(
   createdAt: DateTime)
 
 object KongKey {
+  val Active = "Active"
+  val Inactive = "Inactive"
 
   def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
     new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
   }
 
   def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, "Active", consumer.createdAt)
+    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt)
   }
 
 }

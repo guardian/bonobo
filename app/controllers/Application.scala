@@ -1,5 +1,6 @@
 package controllers
 
+import logic.ApplicationLogic
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
 import play.api.data.Forms._
@@ -14,115 +15,18 @@ import kong.Kong._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait ApplicationLogic {
-  import Application._
-
-  def dynamo: DB
-  def kong: Kong
-
-  def createNewUser(form: CreateUserFormData): Future[String] = {
-    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
-      val newBonoboUser = BonoboUser(consumer.id, formData)
-      dynamo.saveBonoboUser(newBonoboUser)
-
-      // when a user is created, bonoboId and kongId (taken from the consumer object) will be the same
-      saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier)
-    }
-
-    def createConsumerAndKey: Future[String] = {
-      val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(rateLimits, form.key) map {
-        consumer =>
-          saveUserAndKeyOnDB(consumer, form, rateLimits)
-          consumer.id
-      }
-    }
-
-    checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
-  }
-
-  def createNewKey(userId: String, form: CreateKeyFormData): Future[Unit] = {
-    def createConsumerAndKey: Future[Unit] = {
-      val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(rateLimits, form.key) map {
-        consumer => saveKeyOnDB(userId, consumer, rateLimits, form.tier)
-      }
-    }
-
-    checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
-  }
-
-  def updateKey(oldKey: KongKey, newFormData: EditKeyFormData): Future[Unit] = {
-    val bonoboId = oldKey.bonoboId
-    val kongId = oldKey.kongId
-
-    def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
-      val updatedKey = {
-        if (newFormData.defaultRequests) {
-          val defaultRateLimits = newFormData.tier.rateLimit
-          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits)
-        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
-      }
-      dynamo.updateKongKey(updatedKey)
-    }
-
-    def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
-      } else {
-        Future.successful(Happy)
-      }
-    }
-
-    def deactivateKeyIfNecessary(): Future[Happy.type] = {
-      if (oldKey.status == "Active" && newFormData.status == "Inactive") {
-        kong.deleteKey(kongId)
-      } else {
-        Future.successful(Happy)
-      }
-    }
-
-    def activateKeyIfNecessary(): Future[String] = {
-      if (oldKey.status == "Inactive" && newFormData.status == "Active") {
-        kong.createKey(kongId, Some(oldKey.key))
-      } else {
-        Future.successful(oldKey.key)
-      }
-    }
-
-    for {
-      _ <- updateRateLimitsIfNecessary()
-      _ <- deactivateKeyIfNecessary()
-      _ <- activateKeyIfNecessary()
-    } yield {
-      updateKongKeyOnDB(newFormData)
-    }
-  }
-
-  private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: Future[A]): Future[A] = key match {
-    case Some(value) =>
-      if (dynamo.retrieveKey(value).isDefined)
-        Future.failed(ConflictFailure("Key already taken."))
-      else f
-    case None => f
-  }
-
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): Unit = {
-    val newKongKey = KongKey(userId, consumer, rateLimits, tier)
-    dynamo.saveKongKey(newKongKey)
-  }
-}
-
-class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
-    with ApplicationLogic
+class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
   import Application._
+  import Forms._
 
   object FakeAuthAction extends AuthenticatedBuilder[UserIdentity](userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)))
 
   private def maybeAuth: AuthenticatedBuilder[UserIdentity] = if (enableAuth) AuthAction else FakeAuthAction
+
+  private val logic = new ApplicationLogic(dynamo, kong)
 
   def showKeys(direction: String, range: Option[Long]) = maybeAuth { implicit request =>
     val resultsPage = dynamo.getKeys(direction, range)
@@ -154,7 +58,7 @@ class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, 
     }
 
     def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
-      createNewUser(createUserFormData) map { consumerId =>
+      logic.createUser(createUserFormData) map { consumerId =>
         Redirect(routes.Application.editUserPage(consumerId))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
@@ -199,7 +103,7 @@ class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, 
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-      createNewKey(userId, form) map { _ =>
+      logic.createKey(userId, form) map { _ =>
         Redirect(routes.Application.editUserPage(userId))
       } recover {
         case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
@@ -232,7 +136,7 @@ class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, 
 
     def handleValidForm(newFormData: EditKeyFormData): Future[Result] = {
       retrievingKeyFromDynamo { key =>
-        updateKey(key, newFormData).map { _ =>
+        logic.updateKey(key, newFormData).map { _ =>
           Redirect(routes.Application.editUserPage(key.bonoboId))
         }
       }
@@ -251,7 +155,24 @@ class Application(val dynamo: DB, val kong: Kong, val messagesApi: MessagesApi, 
   def healthcheck = Action { Ok("OK") }
 }
 
+object Forms {
+
+  case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: Tier, key: Option[String] = None)
+
+  case class EditUserFormData(email: String, name: String, company: String, url: String)
+
+  case class CreateKeyFormData(key: Option[String], tier: Tier)
+
+  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: Tier, defaultRequests: Boolean, status: String) {
+    def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
+  }
+
+  case class SearchFormData(query: String)
+
+}
+
 object Application {
+  import Forms._
 
   val keyRegexPattern = """^[-a-zA-Z0-9]*$""".r.pattern
   val invalidFormMessage = "Please correct the highlighted fields."
@@ -261,8 +182,6 @@ object Application {
   val editUserPageTitle = "Edit user"
   val createKeyPageTitle = "Create key"
   val editKeyPageTitle = "Edit key"
-
-  case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: Tier, key: Option[String] = None)
 
   val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
@@ -275,8 +194,6 @@ object Application {
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
-  case class EditUserFormData(email: String, name: String, company: String, url: String)
-
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
       "email" -> email,
@@ -286,18 +203,12 @@ object Application {
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
-  case class CreateKeyFormData(key: Option[String], tier: Tier)
-
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString)
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
-
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: Tier, defaultRequests: Boolean, status: String) {
-    def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
-  }
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -309,8 +220,6 @@ object Application {
       "status" -> nonEmptyText
     )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
   )
-
-  case class SearchFormData(query: String)
 
   val searchForm = Form(
     mapping(
