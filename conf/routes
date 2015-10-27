@@ -3,8 +3,8 @@
 # ~~~~
 
 # Home page
-GET         /                          controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
-GET         /key                       controllers.Application.showKeys(direction: String ?= "next", range: String ?= "")
+GET         /                          controllers.Application.showKeys(direction: String ?= "next", range: Option[Long] ?= None)
+GET         /key                       controllers.Application.showKeys(direction: String ?= "next", range: Option[Long] ?= None)
 GET         /key/search                controllers.Application.search
 
 GET         /key/create/:userId        controllers.Application.createKeyPage(userId: String)
