@@ -1,21 +1,29 @@
 package integration.fixtures
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider
-import com.amazonaws.auth.{AWSCredentialsProviderChain, EnvironmentVariableCredentialsProvider, InstanceProfileCredentialsProvider, SystemPropertiesCredentialsProvider}
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
-import org.scalatest.Suite
+import com.amazonaws.services.dynamodbv2.model.TableStatus
+import util.AWSConstants._
+
+import scala.annotation.tailrec
+import scala.util.Random
 
 trait DynamoDbFixture {
 
-  /* Find a way to not duplicate this */
-  private val awsCreds = new AWSCredentialsProviderChain(
-    new EnvironmentVariableCredentialsProvider(),
-    new SystemPropertiesCredentialsProvider(),
-    new ProfileCredentialsProvider("capi"),
-    new ProfileCredentialsProvider(),
-    new InstanceProfileCredentialsProvider()
-  )
+  val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(Regions.fromName("eu-west-1"))
 
-  val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(awsCreds).withRegion(Regions.fromName("eu-west-1"))
+  def randomTableName(prefix: String): String = s"$prefix-${Random.alphanumeric.take(10).mkString}"
+
+  @tailrec
+  final def waitForTableToBecomeActive(tableName: String): Unit = {
+    // Seriously, polling is the only way to do this :(
+    Option(client.describeTable(tableName).getTable) match {
+      case Some(desc) if desc.getTableStatus == TableStatus.ACTIVE.toString => ()
+      case _ =>
+        println(s"Waiting for $tableName to become ACTIVE ...")
+        Thread.sleep(1000L)
+        waitForTableToBecomeActive(tableName)
+    }
+  }
+
 }
