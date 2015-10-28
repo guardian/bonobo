@@ -10,14 +10,14 @@ import scala.util.Random
 
 trait DynamoDbFixture {
 
-  val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(Regions.fromName("eu-west-1"))
+  val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(Regions.fromName("eu-west-1"))
 
   def randomTableName(prefix: String): String = s"$prefix-${Random.alphanumeric.take(10).mkString}"
 
   @tailrec
   final def waitForTableToBecomeActive(tableName: String): Unit = {
     // Seriously, polling is the only way to do this :(
-    Option(client.describeTable(tableName).getTable) match {
+    Option(dynamoClient.describeTable(tableName).getTable) match {
       case Some(desc) if desc.getTableStatus == TableStatus.ACTIVE.toString => ()
       case _ =>
         println(s"Waiting for $tableName to become ACTIVE ...")

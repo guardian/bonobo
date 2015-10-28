@@ -21,7 +21,7 @@ trait BonoboUserTableFixture extends DynamoDbFixture with BeforeAndAfterAll { th
         .withWriteCapacityUnits(5L))
 
     println(s"Creating users table $usersTableName")
-    client.createTable(createTableRequest)
+    dynamoClient.createTable(createTableRequest)
     waitForTableToBecomeActive(usersTableName)
 
     super.beforeAll()
@@ -31,7 +31,7 @@ trait BonoboUserTableFixture extends DynamoDbFixture with BeforeAndAfterAll { th
     try super.afterAll()
     finally {
       println(s"Deleting users table $usersTableName")
-      client.deleteTable(usersTableName)
+      dynamoClient.deleteTable(usersTableName)
     }
   }
 }
