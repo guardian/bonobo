@@ -6,7 +6,7 @@ import scala.collection.JavaConverters._
 
 trait BonoboUserTableFixture extends DynamoDbFixture with BeforeAndAfterAll { this: Suite =>
 
-  val usersTableName = randomTableName("Integration-test-bonobo-users")
+  val usersTableName = randomTableName("integration-test-bonobo-users")
 
   override def beforeAll() {
     val attributeDefinitions: List[AttributeDefinition] = new AttributeDefinition().withAttributeName("id").withAttributeType("S") :: Nil
