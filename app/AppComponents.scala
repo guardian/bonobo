@@ -1,5 +1,3 @@
-import com.amazonaws.auth.profile.ProfileCredentialsProvider
-import com.amazonaws.auth.{ AWSCredentialsProviderChain, EnvironmentVariableCredentialsProvider, InstanceProfileCredentialsProvider, SystemPropertiesCredentialsProvider }
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
@@ -13,24 +11,20 @@ import play.api.ApplicationLoader.Context
 import play.api.BuiltInComponentsFromContext
 import play.api.routing.Router
 import router.Routes
+
+import util.AWSConstants._
 import store.Dynamo
 import kong.KongClient
 
 class AppComponents(context: Context) extends BuiltInComponentsFromContext(context) with NingWSComponents {
-  val awsCreds = new AWSCredentialsProviderChain(
-    new EnvironmentVariableCredentialsProvider(),
-    new SystemPropertiesCredentialsProvider(),
-    new ProfileCredentialsProvider("capi"),
-    new ProfileCredentialsProvider(),
-    new InstanceProfileCredentialsProvider()
-  )
+  import AppComponents._
 
   val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
 
   val dynamo = {
     val usersTable = configuration.getString("aws.dynamo.usersTableName") getOrElse "Bonobo-Users"
-    val keysTable = configuration.getString("aws.dynamo.keysTableName") getOrElse ("Bonobo-Keys")
-    val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(awsCreds).withRegion(awsRegion)
+    val keysTable = configuration.getString("aws.dynamo.keysTableName") getOrElse "Bonobo-Keys"
+    val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(awsRegion)
     new Dynamo(new DynamoDB(client), usersTable, keysTable)
   }
 
@@ -60,4 +54,8 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
   val openFormController = new OpenForm(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, openFormController, authController, assets)
+}
+
+object AppComponents {
+
 }
