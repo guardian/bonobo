@@ -61,8 +61,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       logic.createUser(createUserFormData) map { consumerId =>
         Redirect(routes.Application.editUserPage(consumerId))
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
@@ -106,8 +106,8 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       logic.createKey(userId, form) map { _ =>
         Redirect(routes.Application.editUserPage(userId))
       } recover {
-        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
-        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
+        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
+        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
       }
     }
 
@@ -138,6 +138,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       retrievingKeyFromDynamo { key =>
         logic.updateKey(key, newFormData).map { _ =>
           Redirect(routes.Application.editUserPage(key.bonoboId))
+        } recover {
+          case ConflictFailure(message) => Conflict(views.html.editKey(key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Conflict failure: $message")))
+          case GenericFailure(message) => InternalServerError(views.html.editKey(key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Generic failure: $message")))
         }
       }
     }
