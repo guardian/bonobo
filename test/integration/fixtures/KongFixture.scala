@@ -53,13 +53,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    // Create Cassandra container
-    if ("docker ps -a -q -f name=cassandra".!!.trim.isEmpty)
-      "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
+    "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
+    println(s"Created Cassandra container")
 
-    // Create Kong container if it doesn't exist
-    if ("docker ps -a -q -f name=kong".!!.trim.isEmpty)
-      "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong".!
+    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong".!
+    println(s"Created Kong container")
 
     "docker start cassandra".!
     println(s"Started Cassandra container")
@@ -82,6 +80,12 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
       "docker kill cassandra".!!
       println("Killed Cassandra container")
+
+      "docker rm kong".!!
+      println("Removed Kong container")
+
+      "docker rm cassandra".!!
+      println("Removed Cassandra container")
     }
   }
 
