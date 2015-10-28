@@ -28,7 +28,7 @@ trait BonoboKeysTableFixture extends DynamoDbFixture with BeforeAndAfterAll { th
         .withWriteCapacityUnits(1L))
 
     println(s"Creating keys table $keysTableName")
-    client.createTable(createTableRequest)
+    dynamoClient.createTable(createTableRequest)
     waitForTableToBecomeActive(keysTableName)
 
     super.beforeAll()
@@ -38,7 +38,7 @@ trait BonoboKeysTableFixture extends DynamoDbFixture with BeforeAndAfterAll { th
     try super.afterAll()
     finally {
       println(s"Deleting keys table $keysTableName")
-      client.deleteTable(keysTableName)
+      dynamoClient.deleteTable(keysTableName)
     }
   }
 }
