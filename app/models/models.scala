@@ -9,18 +9,20 @@ case class BonoboUser(
   bonoboId: String,
   email: String,
   name: String,
-  company: String,
-  url: String)
+  productName: String,
+  productUrl: String,
+  companyName: String,
+  companyUrl: Option[String])
 
 object BonoboUser {
   def apply(id: String, formData: CreateUserFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
   }
   def apply(id: String, formData: EditUserFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
   }
   def apply(id: String, formData: OpenCreateKeyFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.CompanyUrl)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
   }
 }
 

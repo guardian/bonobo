@@ -52,7 +52,7 @@ object OpenForm {
       "productName" -> nonEmptyText,
       "productUrl" -> nonEmptyText,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> text,
+      "companyUrl" -> optional(text),
       "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(OpenCreateKeyFormData.apply)(OpenCreateKeyFormData.unapply)
   )

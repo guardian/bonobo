@@ -30,8 +30,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def deleteKongKey(createdAt: String): Unit = ???
       def retrieveKey(id: String): Option[KongKey] = ???
 
-      def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo] = {
-        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime(), "rangekey"), BonoboUser("id", "email", "name", "company", "url"))), false)
+      def getKeys(direction: String, range: Option[Long]): ResultsPage[BonoboInfo] = {
+        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime(), "rangekey"), BonoboUser("id", "name", "email", "product name", "product url", "company name", Some("company url")))), false)
       }
 
       def retrieveUser(id: String): BonoboUser = ???
@@ -40,6 +40,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def getAllKeysWithId(id: String): List[KongKey] = ???
       def getUserWithId(id: String): BonoboUser = ???
       def getKeyForUser(userId: String): String = ???
+      def getKeyForEmail(email: String): Option[BonoboUser] = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())
