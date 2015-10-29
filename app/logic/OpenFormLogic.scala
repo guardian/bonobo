@@ -24,18 +24,18 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveBonoboUser(newBonoboUser)
 
-      saveKeyOnDB(userId = consumer.id, consumer, Developer)
+      val newKongKey = KongKey(consumer.id, consumer, Developer.rateLimit, Developer)
+      dynamo.saveKongKey(newKongKey)
     }
 
-    kong.createConsumerAndKey(Developer.rateLimit, None) map {
-      consumer =>
-        saveUserAndKeyOnDB(consumer, form)
-        consumer.id
+    if (dynamo.getKeyForEmail(form.email).isDefined)
+      Future.failed(ConflictFailure("Email already taken. You cannot have more than one key associated with an email."))
+    else {
+      kong.createConsumerAndKey(Developer.rateLimit, key = None) map {
+        consumer =>
+          saveUserAndKeyOnDB(consumer, form)
+          consumer.id
+      }
     }
-  }
-
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, tier: Tier): Unit = {
-    val newKongKey = KongKey(userId, consumer, tier.rateLimit, tier)
-    dynamo.saveKongKey(newKongKey)
   }
 }

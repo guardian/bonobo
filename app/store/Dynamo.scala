@@ -34,6 +34,8 @@ trait DB {
   def getUserWithId(id: String): BonoboUser
 
   def getKeyForUser(userId: String): String
+
+  def getKeyForEmail(email: String): Option[BonoboUser]
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
@@ -215,6 +217,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def getKeyForUser(userId: String): String = {
     getKeyWithId(userId).key
+  }
+
+  def getKeyForEmail(email: String): Option[BonoboUser] = {
+    val keyScan = new ScanSpec()
+      .withFilterExpression(":e = email")
+      .withValueMap(new ValueMap().withString(":e", email))
+      .withMaxResultSize(1)
+    BonoboTable.scan(keyScan).asScala.toList.map(fromBonoboItem).headOption
   }
 }
 
