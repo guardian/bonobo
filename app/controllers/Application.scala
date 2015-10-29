@@ -71,7 +71,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
-    val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
+    val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
 
     Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
   }
@@ -160,9 +160,9 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
 object Forms {
 
-  case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: Tier, key: Option[String] = None)
+  case class CreateUserFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String], tier: Tier, key: Option[String] = None)
 
-  case class EditUserFormData(email: String, name: String, company: String, url: String)
+  case class EditUserFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String])
 
   case class CreateKeyFormData(key: Option[String], tier: Tier)
 
@@ -172,7 +172,7 @@ object Forms {
 
   case class SearchFormData(query: String)
 
-  case class OpenCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, CompanyUrl: String, acceptTerms: Boolean)
+  case class OpenCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String], acceptTerms: Boolean)
 
 }
 
@@ -190,10 +190,12 @@ object Application {
 
   val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
-      "email" -> email,
       "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText,
+      "email" -> email,
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
+      "companyName" -> nonEmptyText,
+      "companyUrl" -> optional(text),
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
@@ -201,10 +203,12 @@ object Application {
 
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
-      "email" -> email,
       "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText
+      "email" -> email,
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
+      "companyName" -> nonEmptyText,
+      "companyUrl" -> optional(text)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
