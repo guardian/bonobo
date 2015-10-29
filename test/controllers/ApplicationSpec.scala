@@ -39,6 +39,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getAllKeysWithId(id: String): List[KongKey] = ???
       def getUserWithId(id: String): BonoboUser = ???
+      def getKeyForUser(userId: String): String = ???
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())

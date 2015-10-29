@@ -57,7 +57,7 @@ class AppComponents(context: Context) extends BuiltInComponentsFromContext(conte
   val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   val appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, true)
   val authController = new Auth(googleAuthConfig, wsApi)
-  val openFormController = new OpenForm(messagesApi)
+  val openFormController = new OpenForm(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, openFormController, authController, assets)
 }
