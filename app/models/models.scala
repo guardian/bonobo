@@ -1,8 +1,7 @@
 package models
 
 import java.util.UUID
-
-import controllers.Forms.{ EditKeyFormData, CreateUserFormData, EditUserFormData }
+import controllers.Forms.{ OpenCreateKeyFormData, EditKeyFormData, CreateUserFormData, EditUserFormData }
 import org.joda.time.DateTime
 
 /* model used for saving the users on Bonobo */
@@ -19,6 +18,9 @@ object BonoboUser {
   }
   def apply(id: String, formData: EditUserFormData): BonoboUser = {
     new BonoboUser(id, formData.email, formData.name, formData.company, formData.url)
+  }
+  def apply(id: String, formData: OpenCreateKeyFormData): BonoboUser = {
+    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.CompanyUrl)
   }
 }
 

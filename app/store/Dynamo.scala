@@ -32,6 +32,8 @@ trait DB {
   def deleteKongKey(rangeKey: String): Unit
 
   def getUserWithId(id: String): BonoboUser
+
+  def getKeyForUser(userId: String): String
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
@@ -209,6 +211,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def deleteKongKey(rangeKey: String): Unit = {
     BonoboTable.deleteItem(new PrimaryKey("hashkey", "hashkey", "rangekey", rangeKey))
+  }
+
+  def getKeyForUser(userId: String): String = {
+    getKeyWithId(userId).key
   }
 }
 

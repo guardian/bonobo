@@ -19,7 +19,7 @@ POST        /user/:id/edit             controllers.Application.editUser(id: Stri
 
 GET         /create                    controllers.OpenForm.createKeyPage
 POST        /create                    controllers.OpenForm.createKey
-GET         /show                      controllers.OpenForm.showKey
+GET         /show                      controllers.OpenForm.showKey(userId: String)
 
 GET         /healthcheck               controllers.Application.healthcheck
 

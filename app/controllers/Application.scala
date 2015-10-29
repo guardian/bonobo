@@ -172,6 +172,8 @@ object Forms {
 
   case class SearchFormData(query: String)
 
+  case class OpenCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, CompanyUrl: String, acceptTerms: Boolean)
+
 }
 
 object Application {
