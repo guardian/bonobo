@@ -76,18 +76,18 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
   }
 
-  def editUser(id: String) = maybeAuth.async { implicit request =>
+  def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getAllKeysWithId(id)
 
-    def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
+    def handleInvalidForm(form: Form[EditUserFormData]): Result = {
+      BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
 
-    def handleValidForm(form: EditUserFormData): Future[Result] = {
-      val updatedUser = BonoboUser(id, form)
-      dynamo.updateBonoboUser(updatedUser)
-
-      Future.successful(Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated."))))
+    def handleValidForm(form: EditUserFormData): Result = {
+      logic.updateUser(id, form) match {
+        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
+        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+      }
     }
 
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)

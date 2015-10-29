@@ -1,6 +1,6 @@
 package logic
 
-import controllers.Forms.{ EditKeyFormData, CreateKeyFormData, CreateUserFormData }
+import controllers.Forms.{ EditUserFormData, EditKeyFormData, CreateKeyFormData, CreateUserFormData }
 import kong.Kong
 import kong.Kong.{ ConflictFailure, Happy }
 import models._
@@ -50,7 +50,20 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       }
     }
 
-    checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
+    if (dynamo.getKeyForEmail(form.email).isDefined)
+      Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
+    else checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
+  }
+
+  def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
+    def updateUserOnDB = {
+      val updatedUser = BonoboUser(userId, form)
+      Right(dynamo.updateBonoboUser(updatedUser))
+    }
+
+    if (dynamo.getUserWithId(userId).email != form.email && dynamo.getKeyForEmail(form.email).isDefined)
+      Left(s"A user with the email ${form.email} already exists.")
+    else updateUserOnDB
   }
 
   /**
