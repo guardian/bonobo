@@ -195,10 +195,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       new AttributeUpdate("productName").put(bonoboUser.productName),
       new AttributeUpdate("productUrl").put(bonoboUser.productUrl),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyUrl").put(bonoboUser.companyUrl match {
-        case Some(url) => url
-        case None => ""
-      })
+      bonoboUser.companyUrl match {
+        case Some(url) => new AttributeUpdate("companyUrl").put(url)
+        case None => new AttributeUpdate("companyUrl").delete()
+      }
     )
   }
 
