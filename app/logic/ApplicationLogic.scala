@@ -82,8 +82,8 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       val updatedKey = {
         if (newFormData.defaultRequests) {
           val defaultRateLimits = newFormData.tier.rateLimit
-          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits)
-        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKongKey(updatedKey)
     }
