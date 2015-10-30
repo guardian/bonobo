@@ -4,7 +4,7 @@ import com.amazonaws.services.dynamodbv2.model._
 import org.scalatest.{ BeforeAndAfterAll, Suite }
 import scala.collection.JavaConverters._
 
-trait BonoboUserTableFixture extends DynamoDbFixture with BeforeAndAfterAll { this: Suite =>
+trait BonoboUserTableFixture extends DynamoDbClientFixture with BeforeAndAfterAll { this: Suite =>
 
   val usersTableName = randomTableName("integration-test-bonobo-users")
 

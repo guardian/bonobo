@@ -21,9 +21,10 @@ import play.api._
  * and destroyed after the last test in the file has run.
  */
 trait IntegrationSpecBase
-    extends DynamoDbFixture
-    with BonoboKeysTableFixture
+    extends BonoboKeysTableFixture
     with BonoboUserTableFixture
+    with DynamoDbClientFixture
+    with DynamoDbLocalServerFixture
     with KongFixture
     with OneAppPerSuite { self: Suite =>
 
