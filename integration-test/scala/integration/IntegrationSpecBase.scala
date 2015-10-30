@@ -27,8 +27,10 @@ trait IntegrationSpecBase
     with KongFixture
     with OneAppPerSuite { self: Suite =>
 
+  val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName)
+
   trait FakeDynamoComponent extends DynamoComponent {
-    val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName)
+    val dynamo = self.dynamo
   }
   trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
     val kong = new KongClient(wsClient, kongUrl, kongApiName)
@@ -43,11 +45,12 @@ trait IntegrationSpecBase
     def enableAuth = false
   }
 
-  override implicit lazy val app = {
-    val context = ApplicationLoader.createContext(
-      new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
-    )
-    new TestComponents(context).application
-  }
+  val context = ApplicationLoader.createContext(
+    new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
+  )
+  val components = new TestComponents(context)
+  val wsClient = components.wsClient
+
+  override implicit lazy val app = components.application
 
 }

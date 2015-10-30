@@ -23,6 +23,10 @@ trait DB {
 
   def retrieveKey(key: String): Option[KongKey]
 
+  def retrieveUser(userId: String): Option[BonoboUser]
+
+  def retrieveUserByEmail(email: String): Option[BonoboUser]
+
   def getAllKeysWithId(id: String): List[KongKey]
 
   def updateBonoboUser(bonoboUser: BonoboUser): Unit
@@ -177,10 +181,26 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def retrieveKey(keyValue: String): Option[KongKey] = {
     val query = new QuerySpec()
+      .withConsistentRead(true)
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
-    KongTable.query(query).asScala.toList.map(fromKongItem).headOption
+    val result = KongTable.query(query)
+    result.asScala.toList.map(fromKongItem).headOption
+  }
+
+  def retrieveUser(userId: String): Option[BonoboUser] = {
+    val query = new QuerySpec()
+      .withKeyConditionExpression("id = :k")
+      .withValueMap(new ValueMap().withString(":k", userId))
+    BonoboTable.query(query).asScala.toList.map(fromBonoboItem).headOption
+  }
+
+  def retrieveUserByEmail(email: String): Option[BonoboUser] = {
+    val scan = new ScanSpec()
+      .withFilterExpression("email = :k")
+      .withValueMap(new ValueMap().withString(":k", email))
+    BonoboTable.scan(scan).asScala.toList.map(fromBonoboItem).headOption
   }
 
   def saveBonoboUser(bonoboUser: BonoboUser): Unit = {
