@@ -10,7 +10,8 @@ import scala.util.Random
 
 trait DynamoDbFixture {
 
-  val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(Regions.fromName("eu-west-1"))
+  //val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(Regions.fromName("eu-west-1"))
+  val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withEndpoint("http://localhost:8000")
 
   def randomTableName(prefix: String): String = s"$prefix-${Random.alphanumeric.take(10).mkString}"
 
