@@ -28,7 +28,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   private val logic = new ApplicationLogic(dynamo, kong)
 
-  def showKeys(direction: String, range: Option[Long]) = maybeAuth { implicit request =>
+  def showKeys(direction: String, range: Option[String]) = maybeAuth { implicit request =>
     val resultsPage = dynamo.getKeys(direction, range)
     val totalKeys = dynamo.getNumberOfKeys
     val givenDirection = if (range.isDefined) direction else ""

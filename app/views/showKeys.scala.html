@@ -40,19 +40,19 @@
                 @if(lastDirection != "" || hasNext == true){
                     @if(lastDirection == "next" && hasNext == false) {
                         <div class="col-md-6">
-                            <a href="@routes.Application.showKeys(direction = "previous", range = Some(keys.head.kongKey.createdAt.getMillis))" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
+                            <a href="@routes.Application.showKeys(direction = "previous", range = Some(keys.head.kongKey.rangeKey))" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
                         </div>
                     } else {
                         @if((lastDirection == "previous" && hasNext == false) || lastDirection == "") {
                             <div class="col-md-6 col-md-offset-6">
-                                <a href="@routes.Application.showKeys("next", Some(keys.last.kongKey.createdAt.getMillis))" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
+                                <a href="@routes.Application.showKeys(direction = "next", range = Some(keys.last.kongKey.rangeKey))" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
                             </div>
                         } else {
                             <div class="col-md-6">
-                                <a href="@routes.Application.showKeys("previous", Some(keys.head.kongKey.createdAt.getMillis))" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
+                                <a href="@routes.Application.showKeys(direction = "previous", range = Some(keys.head.kongKey.rangeKey))" class="btn btn-primary col-md-4 pull-right"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</a>
                             </div>
                             <div class="col-md-6">
-                                <a href="@routes.Application.showKeys("next", Some(keys.last.kongKey.createdAt.getMillis))" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
+                                <a href="@routes.Application.showKeys(direction = "next", range = Some(keys.last.kongKey.rangeKey))" class="btn btn-primary col-md-4 pull-left">Next <span class="glyphicon glyphicon-chevron-right"></span></a>
                             </div>
                         }
 
