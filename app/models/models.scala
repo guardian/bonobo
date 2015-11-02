@@ -66,6 +66,7 @@ case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 sealed trait Tier {
   def rateLimit: RateLimits
   def friendlyName: String
+  def conciergeName: String
 }
 
 object Tier {
@@ -82,13 +83,16 @@ object Tier {
 case object Developer extends Tier {
   def rateLimit: RateLimits = RateLimits(720, 5000)
   def friendlyName: String = "Developer"
+  def conciergeName: String = "developer"
 }
 case object RightsManaged extends Tier {
   def rateLimit: RateLimits = RateLimits(720, 10000)
   def friendlyName: String = "Rights managed"
+  def conciergeName: String = "rights-managed"
 }
 case object Internal extends Tier {
   def rateLimit: RateLimits = RateLimits(720, 10000)
   def friendlyName: String = "Internal"
+  def conciergeName: String = "internal"
 }
 
