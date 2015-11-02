@@ -71,23 +71,23 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val consumer = dynamo.getUserWithId(id)
     val userKeys = dynamo.getAllKeysWithId(id)
-    val filledForm = editUserForm.fill(EditUserFormData(consumer.email, consumer.name, consumer.company, consumer.url))
+    val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
 
     Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
   }
 
-  def editUser(id: String) = maybeAuth.async { implicit request =>
+  def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getAllKeysWithId(id)
 
-    def handleInvalidForm(form: Form[EditUserFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage))))
+    def handleInvalidForm(form: Form[EditUserFormData]): Result = {
+      BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
 
-    def handleValidForm(form: EditUserFormData): Future[Result] = {
-      val updatedUser = BonoboUser(id, form)
-      dynamo.updateBonoboUser(updatedUser)
-
-      Future.successful(Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated."))))
+    def handleValidForm(form: EditUserFormData): Result = {
+      logic.updateUser(id, form) match {
+        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
+        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+      }
     }
 
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
@@ -158,22 +158,6 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   def healthcheck = Action { Ok("OK") }
 }
 
-object Forms {
-
-  case class CreateUserFormData(email: String, name: String, company: String, url: String, tier: Tier, key: Option[String] = None)
-
-  case class EditUserFormData(email: String, name: String, company: String, url: String)
-
-  case class CreateKeyFormData(key: Option[String], tier: Tier)
-
-  case class EditKeyFormData(key: String, requestsPerDay: Int, requestsPerMinute: Int, tier: Tier, defaultRequests: Boolean, status: String) {
-    def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
-  }
-
-  case class SearchFormData(query: String)
-
-}
-
 object Application {
   import Forms._
 
@@ -188,10 +172,12 @@ object Application {
 
   val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
-      "email" -> email,
       "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText,
+      "email" -> email,
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
+      "companyName" -> nonEmptyText,
+      "companyUrl" -> optional(text),
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
@@ -199,10 +185,12 @@ object Application {
 
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
-      "email" -> email,
       "name" -> nonEmptyText,
-      "company" -> nonEmptyText,
-      "url" -> nonEmptyText
+      "email" -> email,
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
+      "companyName" -> nonEmptyText,
+      "companyUrl" -> optional(text)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 

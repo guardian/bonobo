@@ -5,18 +5,19 @@
   <div class="row">
     <div class="col-md-6 col-md-offset-2 column">
     @b3.form(routes.Application.editUser(id)) {
-      @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
-      @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name")
-      @b3.text( form("company"), '_label -> "Company", 'placeholder -> "Company")
-      @b3.text( form("url"), '_label -> "Url", 'placeholder -> "Url")
+      @b3.text( form("name"), '_label -> "Name *", 'placeholder -> "Name")
+      @b3.text( form("email"), '_label -> "Email *", 'placeholder -> "Email")
+      @b3.text( form("productName"), '_label -> "Product name *", 'placeholder -> "Product name" )
+      @b3.text( form("productUrl"), '_label -> "Product URL *", 'placeholder -> "Product URL" )
+      @b3.text( form("companyName"), '_label -> "Company name *", 'placeholder -> "Company name" )
+      @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
       @b3.submit('class -> "btn btn-primary"){ Save }
     }
     </div>
   </div>
 
-  <div>
-    <h4>Keys for the current user</h4>
-
+  <div class="row">
+    <h4 class="text-primary">Keys for the current user</h4>
     <table class="table table-responsive table-striped">
       <thead>
         <tr>
@@ -44,7 +45,7 @@
     </table>
   </div>
 
-  <div>
+  <div class="row" style="padding-bottom: 20px">
     <a href="@routes.Application.createKeyPage(id)" class="btn btn-success">Create a new key for this user</a>
   </div>
 }
