@@ -28,5 +28,3 @@ routesGenerator := InjectedRoutesGenerator
 scalariformSettings
 
 testOptions in Test += Tests.Argument("-oF")
-
-
