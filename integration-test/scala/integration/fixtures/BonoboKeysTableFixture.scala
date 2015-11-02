@@ -11,12 +11,12 @@ trait BonoboKeysTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
   override def beforeAll() {
     val attributeDefinitions: List[AttributeDefinition] = List(
       new AttributeDefinition().withAttributeName("hashkey").withAttributeType("S"),
-      new AttributeDefinition().withAttributeName("createdAt").withAttributeType("N")
+      new AttributeDefinition().withAttributeName("rangekey").withAttributeType("S")
     )
 
     val keySchema: List[KeySchemaElement] = List(
       new KeySchemaElement().withAttributeName("hashkey").withKeyType(KeyType.HASH),
-      new KeySchemaElement().withAttributeName("createdAt").withKeyType(KeyType.RANGE)
+      new KeySchemaElement().withAttributeName("rangekey").withKeyType(KeyType.RANGE)
     )
 
     val createTableRequest: CreateTableRequest = new CreateTableRequest()

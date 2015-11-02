@@ -1,7 +1,6 @@
 package integration
 
-import org.scalatest.concurrent.{ PatienceConfiguration, Eventually, ScalaFutures }
-import org.scalatest.time._
+import org.scalatest.concurrent.{ Eventually, ScalaFutures }
 import org.scalatest.{ Matchers, OptionValues, FlatSpec }
 import play.api.test.Helpers._
 import play.api.test.FakeRequest
@@ -14,37 +13,44 @@ import play.api.libs.json._
 class CreateUserSpec extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
 
   /* HELPER FUNCTIONS */
-  def waitForDyanmo[A](key: String)(f: => A): A = {
-    eventually(PatienceConfiguration.Timeout(Span(9, Seconds)))(dynamo.retrieveKey(key) shouldBe defined)
-    f
-  }
 
   def checkConsumerExistsOnKong(consumerId: String): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/consumers/$consumerId").get().flatMap {
+    wsClient.url(s"$kongUrl/consumers/$consumerId").get().map {
       response =>
         (response.json \\ "id").headOption match {
-          case Some(JsString(id)) if id == consumerId => Future.successful(true)
-          case _ => Future.successful(false)
+          case Some(JsString(id)) if id == consumerId => true
+          case _ => false
         }
     }
   }
 
   def checkKeyExistsOnKong(consumerId: String): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().flatMap {
+    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
       response =>
         (response.json \\ "key").headOption match {
-          case Some(JsString(key)) => Future.successful(true)
-          case _ => Future.successful(false)
+          case Some(JsString(key)) => true
+          case _ => false
         }
     }
   }
 
-  def getKeyForConsumerId(consId: String): Future[String] = {
-    wsClient.url(s"$kongUrl/consumers/$consId/key-auth").get().flatMap {
+  def getKeyForConsumerId(consumerId: String): Future[String] = {
+    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
       response =>
         (response.json \\ "key").headOption match {
-          case Some(JsString(key)) => Future.successful(key)
+          case Some(JsString(key)) => key
           case _ => fail()
+        }
+    }
+  }
+
+  def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
+    wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
+      .withQueryString("consumer_id" -> consumerId).get().map {
+      response =>
+        (response.json \\ "day").headOption match {
+          case Some(JsNumber(config)) if config.toInt == day => true
+          case _ => false
         }
     }
   }
@@ -63,7 +69,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "key" -> "123124-13434-32323-3439"
     )).get
 
-    status(result) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
 
     val dynamoKongKey = dynamo.retrieveKey("123124-13434-32323-3439")
     val consumerId = dynamoKongKey.value.kongId
@@ -79,8 +85,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
     dynamoKongKey.value.bonoboId shouldBe dynamoKongKey.value.kongId
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    val dynamoUser = dynamo.retrieveUser(consumerId)
-    dynamoUser.value.bonoboId shouldBe dynamoKongKey.value.kongId
+    dynamo.retrieveUser(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
   behavior of "creating a new user without specifying a custom key"
@@ -95,7 +100,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "key" -> ""
     )).get
 
-    status(result) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
 
     val dynamoBonoboUser = dynamo.retrieveUserByEmail("random@email.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
@@ -105,12 +110,11 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
-    val dynamoKongKey = waitForDyanmo(keyValue)(dynamo.retrieveKey(keyValue))
+    val dynamoKongKey = dynamo.retrieveKey(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    val dynamoUser = dynamo.retrieveUser(consumerId)
-    dynamoUser.value.bonoboId shouldBe dynamoKongKey.value.kongId
+    dynamo.retrieveUser(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
   behavior of "adding a second key to an existing user"
@@ -125,20 +129,19 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "key" -> "the-dark-knight"
     )).get
 
-    status(result) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
 
-    val bonoboId = waitForDyanmo("the-dark-knight")(dynamo.retrieveKey("the-dark-knight").value.bonoboId)
+    val bonoboId = dynamo.retrieveKey("the-dark-knight").value.bonoboId
 
-    Thread.sleep(3000L) // this is needed because Dynamo doesn't like multiple writes one right after the other (...)
     val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
       "key" -> "the-dark-day"
     )).get
 
-    status(addKeyResult) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+    status(addKeyResult) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
 
-    val firstKongId = waitForDyanmo("the-dark-knight")(dynamo.retrieveKey("the-dark-knight").value.kongId)
-    val secondKongId = waitForDyanmo("the-dark-day")(dynamo.retrieveKey("the-dark-day").value.kongId)
+    val firstKongId = dynamo.retrieveKey("the-dark-knight").value.kongId
+    val secondKongId = dynamo.retrieveKey("the-dark-day").value.kongId
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(secondKongId), atMost = 10.seconds) shouldBe true
@@ -153,7 +156,6 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
   behavior of "making a key inactive"
 
   it should "delete the key from Kong and set it has inactive on Bonobo" in {
-    Thread.sleep(3000L)
     val createUserResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com",
       "name" -> "Bruce Wayne",
@@ -163,14 +165,13 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "key" -> "testing-inactive"
     )).get
 
-    status(createUserResult) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+    status(createUserResult) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
 
-    val consumerId = waitForDyanmo("testing-inactive")(dynamo.retrieveKey("testing-inactive").value.kongId)
+    val consumerId = dynamo.retrieveKey("testing-inactive").value.kongId
 
     // check the key exists on Kong
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
 
-    Thread.sleep(3000L)
     val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
       "requestsPerDay" -> "10000",
@@ -179,11 +180,85 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "status" -> "Inactive"
     )).get
 
-    status(makeKeyInactiveResult) should be(SEE_OTHER) // on success it redirects to the "edit key" page
+    status(makeKeyInactiveResult) shouldBe SEE_OTHER // on success it redirects to the "edit key" page
 
     // check the key doesn't exist on Kong anymore
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
 
+    // check the key is marked as inactive on Bonobo-Keys
+    dynamo.retrieveKey("testing-inactive").value.status shouldBe "Inactive"
+
+    // trying to create a new key with the same value as an inactive key should fail
+    val failUser = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "bruce.wayne@wayneenterprises.com-2",
+      "name" -> "Bruce Wayne-2",
+      "company" -> "Wayne Enterprises-2",
+      "url" -> "http://wayneenterprises.com.co.uk-2",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-inactive"
+    )).get
+
+    // check we return a conflict error, and that the key table is still inactive
+    status(failUser) shouldBe 409
+    dynamo.retrieveKey("testing-inactive").value.status shouldBe "Inactive"
+  }
+
+  behavior of "updating the rate limits for a key"
+
+  it should "update the rate limits on the Bonobo-Keys table, as well as the consumer on Kong" in {
+    val request = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "some-user@email.com",
+      "name" -> "some user",
+      "company" -> "some company",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-update-rate-limits"
+    )).get
+
+    status(request) shouldBe SEE_OTHER
+
+    val update = route(FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
+      "key" -> "some-key",
+      "requestsPerDay" -> "444",
+      "requestsPerMinute" -> "44",
+      "tier" -> "Internal",
+      "status" -> "active"
+    )).get
+
+    status(update) shouldBe SEE_OTHER
+
+    dynamo.retrieveKey("testing-update-rate-limits").value.requestsPerDay shouldBe 444
+
+    val consumerId = dynamo.retrieveKey("testing-update-rate-limits").value.kongId
+    Await.result(checkRateLimitsMatch(consumerId, 44, 444), atMost = 10.seconds) shouldBe true
+  }
+
+  behavior of "creating a duplicate key"
+
+  it should "fail" in {
+    val req1 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "user-1@email.com",
+      "name" -> "user-1",
+      "company" -> "some company",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-duplicate-keys"
+    )).get
+
+    status(req1) shouldBe SEE_OTHER
+
+    val req2 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "user-2@email.com",
+      "name" -> "user-2",
+      "company" -> "some company",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-duplicate-keys"
+    )).get
+
+    // check we return a conflict error, and not user is added on Bonobo-Keys
+    status(req2) shouldBe 409
+    dynamo.retrieveUserByEmail("user-2@email.com") should not be defined
   }
 }
 
