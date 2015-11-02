@@ -1,5 +1,7 @@
 package models
 
+import java.util.UUID
+
 import controllers.Forms.{ EditKeyFormData, CreateUserFormData, EditUserFormData }
 import org.joda.time.DateTime
 
@@ -29,18 +31,21 @@ case class KongKey(
   requestsPerMinute: Int,
   tier: Tier,
   status: String,
-  createdAt: DateTime)
+  createdAt: DateTime,
+  rangeKey: String)
 
 object KongKey {
   val Active = "Active"
   val Inactive = "Inactive"
 
-  def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits): KongKey = {
-    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt)
+  private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
+
+  def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
+    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, rangeKey)
   }
 
   def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt)
+    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, uniqueRangeKey(consumer.createdAt))
   }
 
 }
