@@ -43,7 +43,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     def createConsumerAndKey: Future[String] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(rateLimits, form.key) map {
+      kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form, rateLimits)
           consumer.id
@@ -73,7 +73,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   def createKey(userId: String, form: CreateKeyFormData): Future[Unit] = {
     def createConsumerAndKey: Future[Unit] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(rateLimits, form.key) map {
+      kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer => saveKeyOnDB(userId, consumer, rateLimits, form.tier)
       }
     }
@@ -99,6 +99,14 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
         } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKongKey(updatedKey)
+    }
+
+    def updateUsernameIfNecessary(): Future[Happy.type] = {
+      if (oldKey.tier != newFormData.tier) {
+        kong.updateConsumerUsername(kongId, newFormData.tier)
+      } else {
+        Future.successful(Happy)
+      }
     }
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
@@ -127,6 +135,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     for {
       _ <- updateRateLimitsIfNecessary()
+      _ <- updateUsernameIfNecessary()
       _ <- deactivateKeyIfNecessary()
       _ <- activateKeyIfNecessary()
     } yield {
