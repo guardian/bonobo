@@ -1,0 +1,19 @@
+@(keyForm: Form[controllers.Forms.OpenCreateKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@implicitFieldConstructor = @{ b3.vertical.fieldConstructor }
+
+@mainOpenForm("Create a key", success, error) {
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3 column">
+        @b3.form(routes.OpenForm.createKey()) {
+            @b3.text(keyForm("name"), '_label -> "Name *")
+            @b3.email(keyForm("email"), '_label -> "Email address *")
+            @b3.text(keyForm("productName"), '_label -> "Product Name *")
+            @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
+            @b3.text(keyForm("companyName"), '_label -> "Company Name *")
+            @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+            @b3.checkbox(keyForm("acceptTerms"), '_text -> "I accept the Guardian Open Platform terms and conditions")
+            @b3.submit('class -> "btn btn-primary btn-block") { Register }
+        }
+        </div>
+    </div>
+}

@@ -1,0 +1,14 @@
+@(key: String, success: Option[String] = None, error: Option[String] = None)
+
+@mainOpenForm("Show key", success, error) {
+    <div>
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3 column">
+                <p>Thank you and welcome to the open platform!</p>
+                <p>You have succesfully registered for a key - here is your key. This key is unique to you so please keep it secret.</p>
+                <h3>@key</h3>
+                <p>For further information on how to use our API, consult the documentation.</p>
+            </div>
+        </div>
+    </div>
+}
