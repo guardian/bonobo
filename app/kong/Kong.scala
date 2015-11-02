@@ -1,5 +1,7 @@
 package kong
 
+import java.util.UUID
+
 import models._
 import org.joda.time.DateTime
 
@@ -50,9 +52,11 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def createConsumerAndKey(rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult]
+  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult]
 
   def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type]
+
+  def updateConsumerUsername(id: String, tier: Tier): Future[Happy.type]
 
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
 
@@ -66,16 +70,16 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   val RateLimitingPluginName = "rate-limiting"
   val KeyAuthPluginName = "key-auth"
 
-  def createConsumerAndKey(rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
+  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
     for {
-      consumer <- createConsumer()
+      consumer <- createConsumer(tier)
       _ <- setRateLimit(consumer.id, rateLimit)
       key <- createKey(consumer.id, key)
     } yield ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
   }
 
-  private def createConsumer(): Future[KongCreateConsumerResponse] = {
-    val username = java.util.UUID.randomUUID.toString
+  private def createConsumer(tier: Tier): Future[KongCreateConsumerResponse] = {
+    val username = s"${UUID.randomUUID}:${tier.conciergeName}"
     ws.url(s"$serverUrl/consumers").post(Map("username" -> Seq(username))).flatMap {
       response =>
         response.status match {
@@ -147,6 +151,21 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
               case other =>
                 fail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for consumer $id")
             }
+        }
+    }
+  }
+
+  def updateConsumerUsername(consumerId: String, tier: Tier): Future[Happy.type] = {
+    val username = s"${UUID.randomUUID}:${tier.conciergeName}"
+    ws.url(s"$serverUrl/consumers/$consumerId").patch(Map(
+      "username" -> Seq(username)
+    )).flatMap {
+      response =>
+        response.status match {
+          case 200 => Future.successful(Happy)
+          case 409 => Future.failed(ConflictFailure(response.body))
+          case other =>
+            fail(s"Kong responded with status $other - ${response.body} when trying to update the username for consumer $consumerId")
         }
     }
   }

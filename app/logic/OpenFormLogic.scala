@@ -31,7 +31,7 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
     if (dynamo.getKeyForEmail(form.email).isDefined)
       Future.failed(ConflictFailure("Email already taken. You cannot have more than one key associated with an email."))
     else {
-      kong.createConsumerAndKey(Developer.rateLimit, key = None) map {
+      kong.createConsumerAndKey(Developer, Developer.rateLimit, key = None) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form)
           consumer.id
