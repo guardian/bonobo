@@ -132,7 +132,7 @@
           "Ref": "LaunchConfig"
         },
         "MinSize": "1",
-        "MaxSize": "1",
+        "MaxSize": "2",
         "DesiredCapacity": "1",
         "Tags": [
           {
