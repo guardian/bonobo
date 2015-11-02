@@ -63,13 +63,15 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "test@thetestcompany.com",
       "name" -> "Joe Bloggs",
-      "company" -> "The Test Company",
-      "url" -> "http://thetestcompany.co.uk",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
       "key" -> "123124-13434-32323-3439"
     )).get
 
-    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val dynamoKongKey = dynamo.retrieveKey("123124-13434-32323-3439")
     val consumerId = dynamoKongKey.value.kongId
@@ -92,17 +94,18 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
 
   it should "add a Bonobo user and a randomly generated key" in {
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
-      "email" -> "random@email.com",
-      "name" -> "Some Dudes",
-      "company" -> "The Guardian",
-      "url" -> "http://thetestcompany132123123.co.uk",
+      "email" -> "fsdlfkjsd@email.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
-      "key" -> ""
-    )).get
+      "key" -> "23492342-2342342")).get
 
-    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val dynamoBonoboUser = dynamo.retrieveUserByEmail("random@email.com")
+    val dynamoBonoboUser = dynamo.retrieveUserByEmail("fsdlfkjsd@email.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
 
     // check the consumerId in dynamo matches the one on Kong
@@ -119,17 +122,20 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
 
   behavior of "adding a second key to an existing user"
 
-  it should "add a new keyfor the existing user" in {
+  it should "add a new key for the existing user" in {
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com",
-      "name" -> "Bruce Wayne",
-      "company" -> "Wayne Enterprises",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
       "key" -> "the-dark-knight"
     )).get
 
-    status(result) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val bonoboId = dynamo.retrieveKey("the-dark-knight").value.bonoboId
 
@@ -138,7 +144,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "key" -> "the-dark-day"
     )).get
 
-    status(addKeyResult) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
+    status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
 
     val firstKongId = dynamo.retrieveKey("the-dark-knight").value.kongId
     val secondKongId = dynamo.retrieveKey("the-dark-day").value.kongId
@@ -157,15 +163,18 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
 
   it should "delete the key from Kong and set it has inactive on Bonobo" in {
     val createUserResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
-      "email" -> "bruce.wayne@wayneenterprises.com",
-      "name" -> "Bruce Wayne",
-      "company" -> "Wayne Enterprises",
+      "email" -> "sldkjfdslk@sdlkfjsl.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive"
     )).get
 
-    status(createUserResult) shouldBe SEE_OTHER // on success it redirects to the "edit user" page
+    status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
     val consumerId = dynamo.retrieveKey("testing-inactive").value.kongId
 
@@ -180,7 +189,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "status" -> "Inactive"
     )).get
 
-    status(makeKeyInactiveResult) shouldBe SEE_OTHER // on success it redirects to the "edit key" page
+    status(makeKeyInactiveResult) shouldBe 303 // on success it redirects to the "edit key" page
 
     // check the key doesn't exist on Kong anymore
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
@@ -191,8 +200,11 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
     // trying to create a new key with the same value as an inactive key should fail
     val failUser = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com-2",
-      "name" -> "Bruce Wayne-2",
-      "company" -> "Wayne Enterprises-2",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk-2",
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive"
@@ -208,14 +220,17 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
   it should "update the rate limits on the Bonobo-Keys table, as well as the consumer on Kong" in {
     val request = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "some-user@email.com",
-      "name" -> "some user",
-      "company" -> "some company",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-update-rate-limits"
     )).get
 
-    status(request) shouldBe SEE_OTHER
+    status(request) shouldBe 303
 
     val update = route(FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
       "key" -> "some-key",
@@ -225,7 +240,7 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
       "status" -> "active"
     )).get
 
-    status(update) shouldBe SEE_OTHER
+    status(update) shouldBe 303
 
     dynamo.retrieveKey("testing-update-rate-limits").value.requestsPerDay shouldBe 444
 
@@ -238,19 +253,25 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
   it should "fail" in {
     val req1 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
-      "name" -> "user-1",
-      "company" -> "some company",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys"
     )).get
 
-    status(req1) shouldBe SEE_OTHER
+    status(req1) shouldBe 303
 
     val req2 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-2@email.com",
-      "name" -> "user-2",
-      "company" -> "some company",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys"

@@ -3,9 +3,7 @@ package components
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import controllers.{ OpenForm, Auth, Application }
-import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
-import play.api.libs.ws.ning.NingWSComponents
+import controllers.OpenForm
 import com.gu.googleauth.GoogleAuthConfig
 import controllers.{ Application, Auth }
 import kong.{ Kong, KongClient }
@@ -33,7 +31,6 @@ trait GoogleAuthComponent { self: BuiltInComponents =>
       enforceValidity = true
     )
   }
-
 }
 
 trait DynamoComponent {
@@ -61,27 +58,6 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
     val apiName = confString("kong.apiName")
     new KongClient(wsClient, apiAddress, apiName)
   }
-
-  val googleAuthConfig = {
-    def missingKey(description: String) =
-      sys.error(s"$description missing. You can create an OAuth 2 client from the Credentials section of the Google dev console.")
-    GoogleAuthConfig(
-      clientId = configuration.getString("google.clientId") getOrElse missingKey("OAuth 2 client ID"),
-      clientSecret = configuration.getString("google.clientSecret") getOrElse missingKey("OAuth 2 client secret"),
-      redirectUrl = configuration.getString("google.redirectUrl") getOrElse missingKey("OAuth 2 callback URL"),
-      domain = Some("guardian.co.uk"),
-      maxAuthAge = Some(Duration.standardDays(90)),
-      enforceValidity = true
-    )
-  }
-
-  val messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  val appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, true)
-  val authController = new Auth(googleAuthConfig, wsApi)
-  val openFormController = new OpenForm(dynamo, kong, messagesApi)
-  val assets = new controllers.Assets(httpErrorHandler)
-  val router: Router = new Routes(httpErrorHandler, appController, openFormController, authController, assets)
-
 }
 
 trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent =>
@@ -89,8 +65,10 @@ trait ControllersComponent { self: BuiltInComponents with NingWSComponents with 
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   def appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
-  def assets = new controllers.Assets(httpErrorHandler)
-  def router: Router = new Routes(httpErrorHandler, appController, authController, assets)
+
+  val openFormController = new OpenForm(dynamo, kong, messagesApi)
+  val assets = new controllers.Assets(httpErrorHandler)
+  val router: Router = new Routes(httpErrorHandler, appController, openFormController, authController, assets)
 }
 
 class AppComponents(context: Context)
