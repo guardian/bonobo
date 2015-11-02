@@ -55,7 +55,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def getUserWithId(id: String): BonoboUser = {
     val userQuery = new QuerySpec()
-      .withKeyConditionExpression(":i = id")
+      .withKeyConditionExpression("id = :i")
       .withValueMap(new ValueMap().withString(":i", id))
       .withMaxResultSize(1)
     BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).head
@@ -63,8 +63,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   private def getKeyWithId(id: String): KongKey = {
     val keyQuery = new QuerySpec()
-      .withKeyConditionExpression(":h = hashkey")
-      .withFilterExpression(":i = bonoboId")
+      .withKeyConditionExpression("hashkey = :h")
+      .withFilterExpression("bonoboId = :i")
       .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
       .withMaxResultSize(1)
       .withScanIndexForward(false)
@@ -73,8 +73,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def getAllKeysWithId(id: String): List[KongKey] = {
     val keyQuery = new QuerySpec()
-      .withKeyConditionExpression(":h = hashkey")
-      .withFilterExpression(":i = bonoboId")
+      .withKeyConditionExpression("hashkey = :h")
+      .withFilterExpression("bonoboId = :i")
       .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
     KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
   }
@@ -102,7 +102,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private def getKeysAfter(afterRange: Option[String]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
-        .withKeyConditionExpression(":h = hashkey")
+        .withKeyConditionExpression("hashkey = :h")
         .withValueMap(new ValueMap().withString(":h", "hashkey"))
         .withMaxResultSize(limit)
         .withScanIndexForward(false)
@@ -127,7 +127,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
   private def getKeysBefore(beforeRange: Option[String]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
-        .withKeyConditionExpression(":h = hashkey")
+        .withKeyConditionExpression("hashkey = :h")
         .withValueMap(new ValueMap().withString(":h", "hashkey"))
         .withMaxResultSize(limit)
       range.fold(querySpec) { value => querySpec.withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "rangekey", value)) }
@@ -226,7 +226,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def getKeyForEmail(email: String): Option[BonoboUser] = {
     val keyScan = new ScanSpec()
-      .withFilterExpression(":e = email")
+      .withFilterExpression("email = :e")
       .withValueMap(new ValueMap().withString(":e", email))
       .withMaxResultSize(1)
     BonoboTable.scan(keyScan).asScala.toList.map(fromBonoboItem).headOption
@@ -260,7 +260,7 @@ object Dynamo {
       productName = item.getString("productName"),
       productUrl = item.getString("productUrl"),
       companyName = item.getString("companyName"),
-      companyUrl = Some(item.getString("companyUrl"))
+      companyUrl = Option(item.getString("companyUrl"))
     )
   }
 
