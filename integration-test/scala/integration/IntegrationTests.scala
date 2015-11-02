@@ -10,7 +10,7 @@ import scala.concurrent.{ Await, Future }
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
 
-class CreateUserSpec extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
+class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
 
   /* HELPER FUNCTIONS */
 
