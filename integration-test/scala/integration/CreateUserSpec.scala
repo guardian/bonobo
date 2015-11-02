@@ -29,6 +29,16 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
     }
   }
 
+  def checkKeyExistsOnKong(consumerId: String): Future[Boolean] = {
+    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().flatMap {
+      response =>
+        (response.json \\ "key").headOption match {
+          case Some(JsString(key)) => Future.successful(true)
+          case _ => Future.successful(false)
+        }
+    }
+  }
+
   def getKeyForConsumerId(consId: String): Future[String] = {
     wsClient.url(s"$kongUrl/consumers/$consId/key-auth").get().flatMap {
       response =>
@@ -138,6 +148,42 @@ class CreateUserSpec extends FlatSpec with Matchers with OptionValues with Integ
 
     // the bonoboId for the new key should be same as the bonoboId for the first one
     bonoboId shouldBe dynamo.retrieveKey("the-dark-day").value.bonoboId
+  }
+
+  behavior of "making a key inactive"
+
+  it should "delete the key from Kong and set it has inactive on Bonobo" in {
+    Thread.sleep(3000L)
+    val createUserResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "bruce.wayne@wayneenterprises.com",
+      "name" -> "Bruce Wayne",
+      "company" -> "Wayne Enterprises",
+      "url" -> "http://wayneenterprises.com.co.uk",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-inactive"
+    )).get
+
+    status(createUserResult) should be(SEE_OTHER) // on success it redirects to the "edit user" page
+
+    val consumerId = waitForDyanmo("testing-inactive")(dynamo.retrieveKey("testing-inactive").value.kongId)
+
+    // check the key exists on Kong
+    Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+
+    Thread.sleep(3000L)
+    val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
+      "key" -> "testing-inactive",
+      "requestsPerDay" -> "10000",
+      "requestsPerMinute" -> "720",
+      "tier" -> "RightsManaged",
+      "status" -> "Inactive"
+    )).get
+
+    status(makeKeyInactiveResult) should be(SEE_OTHER) // on success it redirects to the "edit key" page
+
+    // check the key doesn't exist on Kong anymore
+    Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
+
   }
 }
 

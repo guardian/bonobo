@@ -38,7 +38,7 @@ trait BonoboKeysTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
     try super.afterAll()
     finally {
       println(s"Deleting keys table $keysTableName")
-      //dynamoClient.deleteTable(keysTableName)
+      dynamoClient.deleteTable(keysTableName)
     }
   }
 }
