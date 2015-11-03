@@ -15,7 +15,7 @@ trait DynamoDbLocalServerFixture extends BeforeAndAfterAll { self: Suite =>
   private var dynamoServer: Process = _
 
   override def beforeAll(): Unit = {
-    dynamoServer = "java -Djava.library.path=dynamodb-local/DynamoDBLocal_lib -jar dynamodb-local/DynamoDBLocal.jar -inMemory".run()
+    dynamoServer = "java -Djava.library.path=dynamodb-local/DynamoDBLocal_lib -jar dynamodb-local/DynamoDBLocal.jar -inMemory -port 8500".run()
     super.beforeAll()
   }
 
