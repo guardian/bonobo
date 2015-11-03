@@ -2,6 +2,10 @@
 
 Key management for Kong
 
+## Prerequisites for development
+
+Bonobo needs an instance of Kong to connect to, so you will need Kong and Cassandra running somewhere. We recommend running them in Docker containers. See the "To run the integration tests" section below for instructions on setting this up.
+
 ## To run locally
 
 Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster.
