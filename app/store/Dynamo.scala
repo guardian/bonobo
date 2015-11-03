@@ -26,7 +26,7 @@ trait DB {
 
   def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo]
 
-  def getKeyWithId(id: String): Option[KongKey]
+  def getKeyWithUserId(bonoboId: String): Option[KongKey]
 
   def getKeyWithValue(key: String): Option[KongKey]
 
@@ -137,15 +137,15 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  def getKeyWithId(id: String): Option[KongKey] = {
+  def getKeyWithUserId(bonoboId: String): Option[KongKey] = {
     val keyQuery = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("bonoboId = :i")
-      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+      .withValueMap(new ValueMap().withString(":i", bonoboId).withString(":h", "hashkey"))
       .withMaxResultSize(1)
       .withScanIndexForward(false)
     val resultKey = KongTable.query(keyQuery).asScala.toList.map(fromKongItem).headOption
-    Logger.info(s"DynamoDB: Key with id $id is $resultKey")
+    Logger.info(s"DynamoDB: Key for user with id $bonoboId is $resultKey")
     resultKey
   }
 
@@ -161,13 +161,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     resultKey
   }
 
-  def getKeysWithUserId(id: String): List[KongKey] = {
+  def getKeysWithUserId(bonoboId: String): List[KongKey] = {
     val keyQuery = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("bonoboId = :i")
-      .withValueMap(new ValueMap().withString(":i", id).withString(":h", "hashkey"))
+      .withValueMap(new ValueMap().withString(":i", bonoboId).withString(":h", "hashkey"))
     val resultKeys = KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
-    Logger.info(s"DynamoDB: User with id $id has ${resultKeys.length} key(s).")
+    Logger.info(s"DynamoDB: User with id $bonoboId has ${resultKeys.length} key(s).")
     resultKeys
   }
 
@@ -181,7 +181,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   private def getKeysForUsers(users: List[BonoboUser]): List[KongKey] = {
     users.flatMap {
-      user => getKeyWithId(user.bonoboId)
+      user => getKeyWithUserId(user.bonoboId)
     }
   }
 

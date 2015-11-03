@@ -40,7 +40,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
         ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime(), "rangekey"), BonoboUser("id", "name", "email", "product name", "product url", "company name", Some("company url")))), false)
       }
 
-      def getKeyWithId(id: String): Option[KongKey] = ???
+      def getKeyWithUserId(id: String): Option[KongKey] = ???
 
       def getKeyWithValue(key: String): Option[KongKey] = ???
 
