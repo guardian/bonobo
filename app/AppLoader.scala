@@ -1,5 +1,5 @@
 import play.api.{ Logger, Application, ApplicationLoader }
-import  components.AppComponents
+import components.AppComponents
 
 import play.api.ApplicationLoader.Context
 
