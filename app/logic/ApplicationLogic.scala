@@ -52,7 +52,9 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       }
     }
 
-    if (dynamo.getUserWithEmail(form.email).isDefined)
+    val user = dynamo.getUserWithEmail(form.email)
+    Logger.info(s"ApplicationLogic: Check if user with email ${form.email} already exists: ${user.isDefined}")
+    if (user.isDefined)
       Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
     else checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
   }

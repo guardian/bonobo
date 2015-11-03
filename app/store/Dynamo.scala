@@ -98,9 +98,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withKeyConditionExpression("id = :i")
       .withValueMap(new ValueMap().withString(":i", id))
       .withMaxResultSize(1)
-    val resultUser = BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
-    Logger.info(s"DynamoDB: User with id $id is $resultUser")
-    resultUser
+    BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
   }
 
   def getUserWithEmail(email: String): Option[BonoboUser] = {
@@ -108,9 +106,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withFilterExpression("email = :e")
       .withValueMap(new ValueMap().withString(":e", email))
       .withMaxResultSize(1)
-    val result = BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem).headOption
-    Logger.info(s"DynamoDB: Check if user with email $email already exists: ${result.isDefined}")
-    result
+    BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem).headOption
   }
 
   def saveKey(kongKey: KongKey): Unit = {
@@ -156,9 +152,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withFilterExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
     val result = KongTable.query(query)
-    val resultKey = result.asScala.toList.map(fromKongItem).headOption
-    Logger.info(s"DynamoDB: Key with the value ${keyValue} is ${resultKey}")
-    resultKey
+    result.asScala.toList.map(fromKongItem).headOption
   }
 
   def getKeysWithUserId(bonoboId: String): List[KongKey] = {
@@ -166,9 +160,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withKeyConditionExpression("hashkey = :h")
       .withFilterExpression("bonoboId = :i")
       .withValueMap(new ValueMap().withString(":i", bonoboId).withString(":h", "hashkey"))
-    val resultKeys = KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
-    Logger.info(s"DynamoDB: User with id $bonoboId has ${resultKeys.length} key(s).")
-    resultKeys
+    KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
   }
 
   def getNumberOfKeys: Long = KongTable.describe().getItemCount
