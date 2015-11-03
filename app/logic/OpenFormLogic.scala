@@ -4,6 +4,7 @@ import controllers.Forms.{ OpenCreateKeyFormData, CreateKeyFormData, CreateUserF
 import kong.Kong
 import kong.Kong.{ ConflictFailure, Happy }
 import models._
+import play.api.Logger
 import store.DB
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,6 +22,7 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
    */
   def createUser(form: OpenCreateKeyFormData): Future[String] = {
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: OpenCreateKeyFormData): Unit = {
+      Logger.info(s"OpenFormLogic: Creating user with name ${form.name}")
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
 
@@ -28,7 +30,9 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
       dynamo.saveKey(newKongKey)
     }
 
-    if (dynamo.getUserWithEmail(form.email).isDefined)
+    val user = dynamo.getUserWithEmail(form.email)
+    Logger.info(s"OpenFormLogic: Check if user with email ${form.email} already exists: ${user.isDefined}")
+    if (user.isDefined)
       Future.failed(ConflictFailure("Email already taken. You cannot have more than one key associated with an email."))
     else {
       kong.createConsumerAndKey(Developer, Developer.rateLimit, key = None) map {
