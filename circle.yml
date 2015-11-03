@@ -9,10 +9,10 @@ dependencies:
     - wget -q https://dl.bintray.com/sbt/debian/sbt-0.13.9.deb
     - sudo dpkg -i sbt-0.13.9.deb
   cache_directories:
-    - "~/.sbt" 
+    - "~/.sbt"
   override:
     - sbt update
 
 test:
   override:
-    - sbt it:test
+    - sbt test it:test
