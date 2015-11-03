@@ -10,7 +10,7 @@ import scala.util.Random
 
 trait DynamoDbClientFixture extends BeforeAndAfterAll { self: Suite =>
 
-  val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withEndpoint("http://localhost:8000")
+  val dynamoClient: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withEndpoint("http://localhost:8500")
 
   def randomTableName(prefix: String): String = s"$prefix-${Random.alphanumeric.take(10).mkString}"
 
