@@ -69,15 +69,21 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def editUserPage(id: String) = maybeAuth { implicit request =>
-    val consumer = dynamo.getUserWithId(id)
-    val userKeys = dynamo.getAllKeysWithId(id)
-    val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
-
-    Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
+    dynamo.getUserWithId(id) match {
+      case Some(consumer) => {
+        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
+        val userKeys = dynamo.getKeysWithUserId(id)
+        Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
+      }
+      case None => {
+        val userKeys = dynamo.getKeysWithUserId(id)
+        BadRequest(views.html.editUser(id, editUserForm, request.user.firstName, userKeys, editUserPageTitle, error = Some("Something bad happened while getting the user from the database.")))
+      }
+    }
   }
 
   def editUser(id: String) = maybeAuth { implicit request =>
-    val userKeys = dynamo.getAllKeysWithId(id)
+    val userKeys = dynamo.getKeysWithUserId(id)
 
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
       BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
@@ -115,7 +121,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
   }
 
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
-    dynamo.retrieveKey(keyValue) match {
+    dynamo.getKeyWithValue(keyValue) match {
       case Some(value) => {
         val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.requestsPerDay,
           value.requestsPerMinute, value.tier, defaultRequests = false, value.status))
@@ -127,7 +133,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def editKey(keyValue: String) = maybeAuth.async { implicit request =>
     def retrievingKeyFromDynamo(f: KongKey => Future[Result]): Future[Result] = {
-      val oldKey = dynamo.retrieveKey(keyValue)
+      val oldKey = dynamo.getKeyWithValue(keyValue)
       oldKey match {
         case Some(key) => f(key)
         case None => Future.successful(NotFound)

@@ -22,13 +22,13 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
   def createUser(form: OpenCreateKeyFormData): Future[String] = {
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: OpenCreateKeyFormData): Unit = {
       val newBonoboUser = BonoboUser(consumer.id, formData)
-      dynamo.saveBonoboUser(newBonoboUser)
+      dynamo.saveUser(newBonoboUser)
 
       val newKongKey = KongKey(consumer.id, consumer, Developer.rateLimit, Developer)
-      dynamo.saveKongKey(newKongKey)
+      dynamo.saveKey(newKongKey)
     }
 
-    if (dynamo.getKeyForEmail(form.email).isDefined)
+    if (dynamo.getUserWithEmail(form.email).isDefined)
       Future.failed(ConflictFailure("Email already taken. You cannot have more than one key associated with an email."))
     else {
       kong.createConsumerAndKey(Developer, Developer.rateLimit, key = None) map {

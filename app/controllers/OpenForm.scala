@@ -38,7 +38,11 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
   }
 
   def showKey(consumerId: String) = Action {
-    Ok(views.html.openShowKey(dynamo.getKeyForUser(consumerId)))
+    dynamo.getKeyWithId(consumerId) match {
+      case Some(key) => Ok(views.html.openShowKey(key.key))
+      case None => BadRequest(views.html.openShowKey(key = "", error = Some("Something bad happened when trying to get the key from the database.")))
+    }
+
   }
 }
 

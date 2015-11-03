@@ -84,12 +84,12 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       response =>
         response.status match {
           case 201 => response.json.validate[KongCreateConsumerResponse] match {
-            case JsSuccess(json, _) => Future.successful(json)
-            case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
+            case JsSuccess(json, _) => success(s"Kong: The consumer has been successfully created with the id ${json.id}", json)
+            case JsError(consumerError) => genericFail(consumerError.toString())
           }
-          case 409 => Future.failed(ConflictFailure(s"Consumer with username $username already exists"))
+          case 409 => conflictFail(s"Kong: Consumer with username $username already exists")
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when attempting to create a new consumer")
+            genericFail(s"Kong responded with status $other - ${response.body} when attempting to create a new consumer")
         }
     }
   }
@@ -102,10 +102,10 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       "config.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
       response =>
         response.status match {
-          case 201 => Future.successful(())
-          case 409 => Future.failed(ConflictFailure(response.body))
+          case 201 => success(s"Kong: The rate limits for consumer with id $consumerId have been set successfully", ())
+          case 409 => conflictFail(response.body)
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when trying to set the rate limit for consumer $consumerId")
+            genericFail(s"Kong responded with status $other - ${response.body} when trying to set the rate limit for consumer $consumerId")
         }
     }
   }
@@ -116,10 +116,10 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       "key" -> Seq(key))).flatMap {
       response =>
         response.status match {
-          case 201 => Future.successful(key)
-          case 409 => Future.failed(ConflictFailure("Key already taken - use a different value as a key"))
+          case 201 => success(s"Kong: Success when creating the new key $key", key)
+          case 409 => conflictFail(s"Key $key already taken - try using a different value")
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when trying to create a key for consumer $consumerId")
+            genericFail(s"Kong responded with status $other - ${response.body} when trying to create a key for consumer $consumerId")
         }
     }
   }
@@ -130,26 +130,26 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       .withQueryString("name" -> RateLimitingPluginName).get().flatMap {
         response =>
           (response.json \\ "id").headOption match {
-            case Some(JsString(id)) => Future.successful(id)
-            case _ => Future.failed(GenericFailure(s"failed to parse json: the response was ${response.json}"))
+            case Some(JsString(id)) => success(s"Kong: the id of the $RateLimitingPluginName plugin has been found successfully", id)
+            case _ => genericFail(s"Kong: Failed to parse json when getting the $RateLimitingPluginName plugin. Response: ${response.json}")
           }
       }
   }
 
-  def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type] = {
-    getPluginId(id) flatMap {
+  def updateConsumer(consumerId: String, newRateLimit: RateLimits): Future[Happy.type] = {
+    getPluginId(consumerId) flatMap {
       pluginId =>
         ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
-          "consumer_id" -> Seq(id),
+          "consumer_id" -> Seq(consumerId),
           "name" -> Seq(RateLimitingPluginName),
           "config.minute" -> Seq(newRateLimit.requestsPerMinute.toString),
           "config.day" -> Seq(newRateLimit.requestsPerDay.toString))).flatMap {
           response =>
             response.status match {
-              case 200 => Future.successful(Happy)
-              case 409 => Future.failed(ConflictFailure(response.body))
+              case 200 => success(s"Kong: The rate limits for the consumer with id $consumerId have been updated successfully", Happy)
+              case 409 => conflictFail(s"Kong: Conflict failure when trying to set rate limits for user with id $consumerId. Response: ${response.json}")
               case other =>
-                fail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for consumer $id")
+                genericFail(s"Kong responded with status $other - ${response.body} when trying to update the rate limit for consumer $consumerId")
             }
         }
     }
@@ -162,10 +162,10 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     )).flatMap {
       response =>
         response.status match {
-          case 200 => Future.successful(Happy)
-          case 409 => Future.failed(ConflictFailure(response.body))
+          case 200 => success(s"Kong: The username for the consumer with id $consumerId has been updated successfully", Happy)
+          case 409 => conflictFail(s"Kong: Conflict failure when trying to update the username for user with id $consumerId. Response: ${response.json}")
           case other =>
-            fail(s"Kong responded with status $other - ${response.body} when trying to update the username for consumer $consumerId")
+            genericFail(s"Kong responded with status $other - ${response.body} when trying to update the username for consumer $consumerId")
         }
     }
   }
@@ -174,9 +174,9 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").get().flatMap {
       response =>
         response.json.validate[KongListConsumerKeysResponse] match {
-          case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => Future.successful(head.id)
-          case JsSuccess(KongListConsumerKeysResponse(Nil), _) => Future.failed(GenericFailure("No keys found"))
-          case JsError(consumerError) => Future.failed(GenericFailure(consumerError.toString()))
+          case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => success(s"Kong: The key id for consumer with id $consumerId has been found successfully", head.id) //Future.successful(head.id)
+          case JsSuccess(KongListConsumerKeysResponse(Nil), _) => genericFail(s"Kong: No key was found for consumer with id $consumerId")
+          case JsError(consumerError) => genericFail(s"Kong: Failed to parse json when getting the key for consumer with id $consumerId. Response: ${consumerError.toString()}")
         }
     }
   }
@@ -187,16 +187,26 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName/$keyId").delete().flatMap {
           response =>
             response.status match {
-              case 204 => Future.successful(Happy)
+              case 204 => success(s"Kong: The key with id $keyId has been deleted successfully", Happy)
               case other =>
-                fail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for consumer $consumerId")
+                genericFail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for consumer $consumerId")
             }
         }
     }
   }
 
-  private def fail[A](errorMsg: String): Future[A] = {
+  private def genericFail[A](errorMsg: String): Future[A] = {
     Logger.warn(errorMsg)
     Future.failed[A](GenericFailure(errorMsg))
+  }
+
+  private def conflictFail[A](errorMsg: String): Future[A] = {
+    Logger.warn(errorMsg)
+    Future.failed[A](ConflictFailure(errorMsg))
+  }
+
+  private def success[A](successMsg: String, returnValue: A): Future[A] = {
+    Logger.info(successMsg)
+    Future.successful(returnValue)
   }
 }
