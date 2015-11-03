@@ -1,0 +1,12 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - "~/.ivy2"
+    - "~/.sbt" 
+
+test:
+  override:
+    - sbt it:test
