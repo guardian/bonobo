@@ -2,7 +2,7 @@ package integration.fixtures
 
 import org.scalatest.{ BeforeAndAfterAll, Suite }
 import scala.annotation.tailrec
-import scala.util.Random
+import scala.util.{Try, Random}
 import sys.process._
 
 trait KongFixture extends BeforeAndAfterAll { this: Suite =>
@@ -77,17 +77,33 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   override def afterAll(): Unit = {
     try super.afterAll()
     finally {
-      "docker kill kong".!!
-      println("Killed Kong container")
+      Try {
+        "docker kill kong".!!
+        println("Killed Kong container")
+      } recover {
+        case e => println(s"Failed to kill Kong container. Exception: $e}")
+      }
 
-      "docker kill cassandra".!!
-      println("Killed Cassandra container")
+      Try {
+        "docker kill cassandra".!!
+        println("Killed Cassandra container")
+      } recover {
+        case e => println(s"Failed to kill Cassandra container. Exception: $e}")
+      }
 
-      "docker rm kong".!!
-      println("Removed Kong container")
+      Try {
+        "docker rm kong".!!
+        println("Removed Kong container")
+      } recover {
+        case e => println(s"Failed to remove Kong container. Exception: $e}")
+      }
 
-      "docker rm cassandra".!!
-      println("Removed Cassandra container")
+      Try {
+        "docker rm cassandra".!!
+        println("Removed Cassandra container")
+      } recover {
+        case e => println(s"Failed to remove Cassandra container. Exception: $e}")
+      }
     }
   }
 
