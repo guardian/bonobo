@@ -15,7 +15,7 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
   import OpenForm._
   import Forms.OpenCreateKeyFormData
 
-  private val openLogic = new OpenFormLogic(dynamo, kong)
+  private val logic = new OpenFormLogic(dynamo, kong)
 
   def createKeyPage = Action { implicit request =>
     Ok(views.html.openCreateKey(createKeyForm))
@@ -27,7 +27,7 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
     }
 
     def handleValidForm(formData: OpenCreateKeyFormData): Future[Result] = {
-      openLogic.createUser(formData) map { consumerKey =>
+      logic.createUser(formData) map { consumerKey =>
         Redirect(routes.OpenForm.showKey(consumerKey))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.openCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))

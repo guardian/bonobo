@@ -18,7 +18,7 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
    * The key will be randomly generated, the tier is Developer
    * and the default rate limits are being used.
    *
-   * @return a Future of the newly created Kong consumer's ID
+   * @return a Future of the newly created Kong consumer's key
    */
 
   def createUser(form: OpenCreateKeyFormData): Future[String] = {
