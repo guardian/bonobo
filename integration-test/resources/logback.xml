@@ -1,0 +1,17 @@
+<configuration>
+
+    <logger name="application" level="DEBUG" />
+    <logger name="play" level="INFO" />
+    <logger name="com.amazonaws" level="error" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date [%thread] %-5level %logger{20} - %msg%n%xException{30}</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="console"/>
+    </root>
+
+</configuration>

@@ -73,7 +73,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val dynamoKongKey = dynamo.retrieveKey("123124-13434-32323-3439")
+    val dynamoKongKey = dynamo.getKeyWithValue("123124-13434-32323-3439")
     val consumerId = dynamoKongKey.value.kongId
 
     // check the consumerId in dynamo matches the one on Kong
@@ -87,7 +87,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamoKongKey.value.bonoboId shouldBe dynamoKongKey.value.kongId
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.retrieveUser(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
   behavior of "creating a new user without specifying a custom key"
@@ -105,7 +105,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val dynamoBonoboUser = dynamo.retrieveUserByEmail("fsdlfkjsd@email.com")
+    val dynamoBonoboUser = dynamo.getUserWithEmail("fsdlfkjsd@email.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
 
     // check the consumerId in dynamo matches the one on Kong
@@ -113,11 +113,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
-    val dynamoKongKey = dynamo.retrieveKey(keyValue)
+    val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.retrieveUser(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
   behavior of "adding a second key to an existing user"
@@ -137,7 +137,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val bonoboId = dynamo.retrieveKey("the-dark-knight").value.bonoboId
+    val bonoboId = dynamo.getKeyWithValue("the-dark-knight").value.bonoboId
 
     val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -146,8 +146,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val firstKongId = dynamo.retrieveKey("the-dark-knight").value.kongId
-    val secondKongId = dynamo.retrieveKey("the-dark-day").value.kongId
+    val firstKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongId
+    val secondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongId
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(secondKongId), atMost = 10.seconds) shouldBe true
@@ -156,7 +156,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     bonoboId should not be secondKongId
 
     // the bonoboId for the new key should be same as the bonoboId for the first one
-    bonoboId shouldBe dynamo.retrieveKey("the-dark-day").value.bonoboId
+    bonoboId shouldBe dynamo.getKeyWithValue("the-dark-day").value.bonoboId
   }
 
   behavior of "making a key inactive"
@@ -176,7 +176,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val consumerId = dynamo.retrieveKey("testing-inactive").value.kongId
+    val consumerId = dynamo.getKeyWithValue("testing-inactive").value.kongId
 
     // check the key exists on Kong
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
@@ -195,7 +195,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
 
     // check the key is marked as inactive on Bonobo-Keys
-    dynamo.retrieveKey("testing-inactive").value.status shouldBe "Inactive"
+    dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
 
     // trying to create a new key with the same value as an inactive key should fail
     val failUser = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
@@ -212,7 +212,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check we return a conflict error, and that the key table is still inactive
     status(failUser) shouldBe 409
-    dynamo.retrieveKey("testing-inactive").value.status shouldBe "Inactive"
+    dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
   }
 
   behavior of "updating the rate limits for a key"
@@ -242,9 +242,9 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(update) shouldBe 303
 
-    dynamo.retrieveKey("testing-update-rate-limits").value.requestsPerDay shouldBe 444
+    dynamo.getKeyWithValue("testing-update-rate-limits").value.requestsPerDay shouldBe 444
 
-    val consumerId = dynamo.retrieveKey("testing-update-rate-limits").value.kongId
+    val consumerId = dynamo.getKeyWithValue("testing-update-rate-limits").value.kongId
     Await.result(checkRateLimitsMatch(consumerId, 44, 444), atMost = 10.seconds) shouldBe true
   }
 
@@ -279,7 +279,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check we return a conflict error, and not user is added on Bonobo-Keys
     status(req2) shouldBe 409
-    dynamo.retrieveUserByEmail("user-2@email.com") should not be defined
+    dynamo.getUserWithEmail("user-2@email.com") should not be defined
   }
 }
 

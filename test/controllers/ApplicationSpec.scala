@@ -22,25 +22,31 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
 
-      def search(query: String, limit: Port): List[BonoboInfo] = ???
-      def saveBonoboUser(bonoboUser: BonoboUser): Unit = ???
-      def saveKongKey(kongKey: KongKey): Unit = ???
-      def getNumberOfKeys: Long = 1
-      def updateKongKey(kongKey: KongKey): Unit = ???
-      def deleteKongKey(createdAt: String): Unit = ???
-      def retrieveKey(id: String): Option[KongKey] = ???
+      def search(query: String, limit: Int = 20): List[BonoboInfo] = ???
+
+      def saveUser(bonoboKey: BonoboUser): Unit = ???
+
+      def updateUser(bonoboUser: BonoboUser): Unit = ???
+
+      def getUserWithId(id: String): Option[BonoboUser] = ???
+
+      def getUserWithEmail(email: String): Option[BonoboUser] = ???
+
+      def saveKey(kongKey: KongKey): Unit = ???
+
+      def updateKey(kongKey: KongKey): Unit = ???
 
       def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo] = {
         ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.withName("Developer").get, "Active", new DateTime(), "rangekey"), BonoboUser("id", "name", "email", "product name", "product url", "company name", Some("company url")))), false)
       }
 
-      def retrieveUser(userId: String): Option[BonoboUser] = ???
-      def retrieveUserByEmail(email: String): Option[BonoboUser] = ???
-      def updateBonoboUser(bonoboUser: BonoboUser): Unit = ???
-      def getAllKeysWithId(id: String): List[KongKey] = ???
-      def getUserWithId(id: String): BonoboUser = ???
-      def getKeyForUser(userId: String): String = ???
-      def getKeyForEmail(email: String): Option[BonoboUser] = ???
+      def getKeyWithUserId(id: String): Option[KongKey] = ???
+
+      def getKeyWithValue(key: String): Option[KongKey] = ???
+
+      def getKeysWithUserId(id: String): List[KongKey] = ???
+
+      def getNumberOfKeys: Long = 1
     }
     val application = new Application(dynamo, mockKong, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())

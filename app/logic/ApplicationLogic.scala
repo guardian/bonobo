@@ -5,6 +5,7 @@ import kong.Kong
 import kong.Kong.{ ConflictFailure, Happy }
 import models._
 import store.DB
+import play.api.Logger
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -33,9 +34,10 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    * @return a Future of the newly created Kong consumer's ID
    */
   def createUser(form: CreateUserFormData): Future[String] = {
+    Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
       val newBonoboUser = BonoboUser(consumer.id, formData)
-      dynamo.saveBonoboUser(newBonoboUser)
+      dynamo.saveUser(newBonoboUser)
 
       // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same
       saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier)
@@ -50,20 +52,27 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       }
     }
 
-    if (dynamo.getKeyForEmail(form.email).isDefined)
+    val user = dynamo.getUserWithEmail(form.email)
+    Logger.info(s"ApplicationLogic: Check if user with email ${form.email} already exists: ${user.isDefined}")
+    if (user.isDefined)
       Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
     else checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
   }
 
   def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
+    Logger.info(s"ApplicationLogic: Updating user with id ${userId}")
     def updateUserOnDB = {
       val updatedUser = BonoboUser(userId, form)
-      Right(dynamo.updateBonoboUser(updatedUser))
+      Right(dynamo.updateUser(updatedUser))
     }
-
-    if (dynamo.getUserWithId(userId).email != form.email && dynamo.getKeyForEmail(form.email).isDefined)
-      Left(s"A user with the email ${form.email} already exists.")
-    else updateUserOnDB
+    dynamo.getUserWithId(userId) match {
+      case Some(user) => {
+        if (user.email != form.email && dynamo.getUserWithEmail(form.email).isDefined)
+          Left(s"A user with the email ${form.email} already exists.")
+        else updateUserOnDB
+      }
+      case None => Left(s"Something bad happened when trying to get the user from the database.")
+    }
   }
 
   /**
@@ -71,13 +80,13 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    * The key will be randomly generated if no custom key is specified.
    */
   def createKey(userId: String, form: CreateKeyFormData): Future[Unit] = {
+    Logger.info(s"ApplicationLogic: Creating key for user with id ${userId}")
     def createConsumerAndKey: Future[Unit] = {
       val rateLimits: RateLimits = form.tier.rateLimit
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer => saveKeyOnDB(userId, consumer, rateLimits, form.tier)
       }
     }
-
     checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
   }
 
@@ -87,38 +96,39 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    *  - activating/deactivating the key (i.e. creating/deleting the key in Kong)
    *  - updating properties of the key (e.g. the tier, rate limits) in Dynamo.
    */
-  def updateKey(oldKey: KongKey, newFormData: EditKeyFormData): Future[Unit] = {
+  def updateKey(oldKey: KongKey, form: EditKeyFormData): Future[Unit] = {
+    Logger.info(s"ApplicationLogic: Updating key with id ${oldKey.kongId}")
     val bonoboId = oldKey.bonoboId
     val kongId = oldKey.kongId
 
-    def updateKongKeyOnDB(newFormData: EditKeyFormData): Unit = {
+    def updateKongKeyOnDB(form: EditKeyFormData): Unit = {
       val updatedKey = {
-        if (newFormData.defaultRequests) {
-          val defaultRateLimits = newFormData.tier.rateLimit
-          KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
-        } else KongKey(bonoboId, kongId, newFormData, oldKey.createdAt, RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay), oldKey.rangeKey)
+        if (form.defaultRequests) {
+          val defaultRateLimits = form.tier.rateLimit
+          KongKey(bonoboId, kongId, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongId, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
       }
-      dynamo.updateKongKey(updatedKey)
+      dynamo.updateKey(updatedKey)
     }
 
     def updateUsernameIfNecessary(): Future[Happy.type] = {
-      if (oldKey.tier != newFormData.tier) {
-        kong.updateConsumerUsername(kongId, newFormData.tier)
+      if (oldKey.tier != form.tier) {
+        kong.updateConsumerUsername(kongId, form.tier)
       } else {
         Future.successful(Happy)
       }
     }
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != newFormData.requestsPerDay || oldKey.requestsPerMinute != newFormData.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(newFormData.requestsPerMinute, newFormData.requestsPerDay))
+      if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
+        kong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
       } else {
         Future.successful(Happy)
       }
     }
 
     def deactivateKeyIfNecessary(): Future[Happy.type] = {
-      if (oldKey.status == KongKey.Active && newFormData.status == KongKey.Inactive) {
+      if (oldKey.status == KongKey.Active && form.status == KongKey.Inactive) {
         kong.deleteKey(kongId)
       } else {
         Future.successful(Happy)
@@ -126,7 +136,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     }
 
     def activateKeyIfNecessary(): Future[String] = {
-      if (oldKey.status == KongKey.Inactive && newFormData.status == KongKey.Active) {
+      if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
         kong.createKey(kongId, Some(oldKey.key))
       } else {
         Future.successful(oldKey.key)
@@ -139,13 +149,13 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       _ <- deactivateKeyIfNecessary()
       _ <- activateKeyIfNecessary()
     } yield {
-      updateKongKeyOnDB(newFormData)
+      updateKongKeyOnDB(form)
     }
   }
 
   private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: => Future[A]): Future[A] = key match {
     case Some(value) =>
-      if (dynamo.retrieveKey(value).isDefined)
+      if (dynamo.getKeyWithValue(value).isDefined)
         Future.failed(ConflictFailure("Key already taken."))
       else f
     case None => f
@@ -153,6 +163,6 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
   private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): Unit = {
     val newKongKey = KongKey(userId, consumer, rateLimits, tier)
-    dynamo.saveKongKey(newKongKey)
+    dynamo.saveKey(newKongKey)
   }
 }
