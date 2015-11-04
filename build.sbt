@@ -1,6 +1,6 @@
-name := """bonobo"""
-
+name := "bonobo"
 version := "1.0-SNAPSHOT"
+scalaVersion := "2.11.7"
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, RiffRaffArtifact, UniversalPlugin)
@@ -8,8 +8,15 @@ lazy val root = (project in file("."))
   .settings(Defaults.itSettings: _*)
 
 riffRaffPackageType := (packageZipTarball in Universal).value
-
-scalaVersion := "2.11.6"
+riffRaffBuildIdentifier := sys.env.getOrElse("CIRCLE_BUILD_NUM", "DEV")
+riffRaffUploadArtifactBucket := Some("riffraff-artifact")
+riffRaffUploadManifestBucket := Some("riffraff-builds")
+riffRaffManifestProjectName := {
+  if (sys.env.contains("CIRCLECI"))
+    "Content Platforms::bonobo::circleci"
+  else
+    "Content Platforms::bonobo"
+}
 
 libraryDependencies ++= Seq(
   ws,
@@ -23,8 +30,6 @@ libraryDependencies ++= Seq(
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
-// Play provides two styles of routers, one expects its actions to be injected, the
-// other, legacy style, accesses its actions statically.
 routesGenerator := InjectedRoutesGenerator
 
 scalariformSettings
