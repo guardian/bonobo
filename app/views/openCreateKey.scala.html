@@ -11,7 +11,7 @@
             @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
             @b3.text(keyForm("companyName"), '_label -> "Company Name *")
             @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
-            @b3.checkbox(keyForm("acceptTerms"), '_text -> "I accept the Guardian Open Platform terms and conditions")
+            @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
             @b3.submit('class -> "btn btn-primary btn-block") { Register }
         }
         </div>
