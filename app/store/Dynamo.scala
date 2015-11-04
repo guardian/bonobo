@@ -26,8 +26,6 @@ trait DB {
 
   def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo]
 
-  def getKeyWithUserId(bonoboId: String): Option[KongKey]
-
   def getKeyWithValue(key: String): Option[KongKey]
 
   def getKeysWithUserId(id: String): List[KongKey]
@@ -133,18 +131,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  def getKeyWithUserId(bonoboId: String): Option[KongKey] = {
-    val keyQuery = new QuerySpec()
-      .withKeyConditionExpression("hashkey = :h")
-      .withFilterExpression("bonoboId = :i")
-      .withValueMap(new ValueMap().withString(":i", bonoboId).withString(":h", "hashkey"))
-      .withMaxResultSize(1)
-      .withScanIndexForward(false)
-    val resultKey = KongTable.query(keyQuery).asScala.toList.map(fromKongItem).headOption
-    Logger.info(s"DynamoDB: Key for user with id $bonoboId is $resultKey")
-    resultKey
-  }
-
   def getKeyWithValue(keyValue: String): Option[KongKey] = {
     val query = new QuerySpec()
       .withConsistentRead(true)
@@ -173,7 +159,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   private def getKeysForUsers(users: List[BonoboUser]): List[KongKey] = {
     users.flatMap {
-      user => getKeyWithUserId(user.bonoboId)
+      user => getKeysWithUserId(user.bonoboId)
     }
   }
 
