@@ -1,6 +1,6 @@
-@(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, firstName: String, pageTitle: String, query: Option[String] = None, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 
-@main("Keys", firstName, pageTitle, success, error){
+@main("Keys", firstName, pageTitle, query = query, success, error){
     <div class="row">
         <p class="col-md-12">Total number of keys: <strong>@totalKeys</strong></p>
     </div>
@@ -13,6 +13,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Company</th>
+                        <th>Product</th>
                         <th>Tier</th>
                         <th>Status</th>
                         <th>Created At</th>
@@ -26,6 +27,7 @@
                         <td>@key.bonoboUser.name</td>
                         <td>@key.bonoboUser.email</td>
                         <td>@key.bonoboUser.companyName</td>
+                        <td>@key.bonoboUser.productName</td>
                         <td>@key.kongKey.tier.friendlyName</td>
                         <td>@key.kongKey.status</td>
                         <td>@key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")</td>
