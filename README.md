@@ -1,5 +1,7 @@
 # bonobo
 
+[![Circle CI](https://circleci.com/gh/guardian/bonobo/tree/master.svg?style=svg)](https://circleci.com/gh/guardian/bonobo/tree/master)
+
 Key management for Kong
 
 ## Prerequisites for development
