@@ -15,4 +15,4 @@ dependencies:
 
 test:
   override:
-    - sbt test it:test
+    - sbt test it:test riffRaffUpload

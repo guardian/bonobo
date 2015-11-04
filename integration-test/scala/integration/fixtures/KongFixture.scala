@@ -20,7 +20,6 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     }
   }
   val kongUrl = s"http://$containersHost:8001"
-  println(s"Kong URL = $kongUrl")
   val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
 
   @tailrec
@@ -36,7 +35,6 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   @tailrec
   private def waitForCassandraToStart(): Unit = {
-    println("Connecting to Cassandra. Exit code: " + s"nc -z $containersHost 9042".!)
     s"nc -z $containersHost 9042".! match {
       case 0 => ()
       case _ =>
