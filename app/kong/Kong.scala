@@ -130,7 +130,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       .withQueryString("name" -> RateLimitingPluginName).get().flatMap {
         response =>
           (response.json \\ "id").headOption match {
-            case Some(JsString(id)) => success(s"Kong: the id of the $RateLimitingPluginName plugin has been found successfully", id)
+            case Some(JsString(id)) => success(s"Kong: the id of the $RateLimitingPluginName plugin has been found successfully: $id", id)
             case _ => genericFail(s"Kong: Failed to parse json when getting the $RateLimitingPluginName plugin. Response: ${response.json}")
           }
       }
@@ -174,7 +174,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").get().flatMap {
       response =>
         response.json.validate[KongListConsumerKeysResponse] match {
-          case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => success(s"Kong: The key id for consumer with id $consumerId has been found successfully", head.id) //Future.successful(head.id)
+          case JsSuccess(KongListConsumerKeysResponse(head :: tail), _) => success(s"Kong: The key id for consumer with id $consumerId has been found successfully", head.id)
           case JsSuccess(KongListConsumerKeysResponse(Nil), _) => genericFail(s"Kong: No key was found for consumer with id $consumerId")
           case JsError(consumerError) => genericFail(s"Kong: Failed to parse json when getting the key for consumer with id $consumerId. Response: ${consumerError.toString()}")
         }
