@@ -27,8 +27,8 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
     }
 
     def handleValidForm(formData: OpenCreateKeyFormData): Future[Result] = {
-      logic.createUser(formData) map { consumerId =>
-        Redirect(routes.OpenForm.showKey(consumerId))
+      logic.createUser(formData) map { consumerKey =>
+        Redirect(routes.OpenForm.showKey(consumerKey))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.openCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
         case GenericFailure(errorMessage) => InternalServerError(views.html.openCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
@@ -37,12 +37,8 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def showKey(consumerId: String) = Action {
-    dynamo.getKeyWithUserId(consumerId) match {
-      case Some(key) => Ok(views.html.openShowKey(key.key))
-      case None => BadRequest(views.html.openShowKey(key = "", error = Some("Something bad happened when trying to get the key from the database.")))
-    }
-
+  def showKey(consumerKey: String) = Action {
+    Ok(views.html.openShowKey(consumerKey))
   }
 }
 
