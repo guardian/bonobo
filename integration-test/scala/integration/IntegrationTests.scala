@@ -281,5 +281,36 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(req2) shouldBe 409
     dynamo.getUserWithEmail("user-2@email.com") should not be defined
   }
+
+  /* Tests for the open registration form */
+  behavior of "creating a new user using the open registration form"
+
+  it should "add a Bonobo user and key to Dynamo" in {
+    val result = route(FakeRequest(POST, "/create").withFormUrlEncodedBody(
+      "name" -> "Joe Bloggs",
+      "email" -> "test@openform.com",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
+      "acceptTerms" -> "true"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the show key page
+
+    val dynamoBonoboUser = dynamo.getUserWithEmail("test@openform.com")
+    val consumerId = dynamoBonoboUser.value.bonoboId
+
+    // check the consumerId in dynamo matches the one on Kong
+    Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+
+    // check Kong's key value matches Bonobo-Keys.keyValue
+    val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    keyValue shouldBe dynamoKongKey.value.key
+
+    // check Bonobo-Users.id matches Bonobo-Keys.kongId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+  }
 }
 
