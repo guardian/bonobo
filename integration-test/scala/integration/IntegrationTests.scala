@@ -101,7 +101,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productName" -> "http://blabla",
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
-      "key" -> "23492342-2342342")).get
+      "key" -> "")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -277,12 +277,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "key" -> "testing-duplicate-keys"
     )).get
 
-    // check we return a conflict error, and not user is added on Bonobo-Keys
+    // check we return a conflict error, and no user is added on Bonobo-Keys
     status(req2) shouldBe 409
     dynamo.getUserWithEmail("user-2@email.com") should not be defined
   }
 
-  /* Tests for the open registration form */
   behavior of "creating a new user using the open registration form"
 
   it should "add a Bonobo user and key to Dynamo" in {
