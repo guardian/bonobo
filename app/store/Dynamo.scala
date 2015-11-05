@@ -41,7 +41,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def search(query: String, limit: Int = 20): List[BonoboInfo] = {
     val keysScan = new ScanSpec()
-      .withFilterExpression("#1 = :s")
+      .withFilterExpression("contains (#1, :s)")
       .withNameMap(new NameMap()
         .`with`("#1", "keyValue")
       )
@@ -53,7 +53,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     Logger.info(s"DynamoDB: Searching '${query}' found ${resultForKeysSearch.length} matching key(s)")
 
     val userScan = new ScanSpec()
-      .withFilterExpression("#1 = :s OR #2 = :s OR #3 = :s OR #4 = :s")
+      .withFilterExpression("contains (#1, :s) OR contains (#2, :s) OR contains (#3, :s) OR contains (#4, :s)")
       .withNameMap(new NameMap()
         .`with`("#1", "email")
         .`with`("#2", "name")
@@ -67,7 +67,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val resultForUsersSearch = matchKeysWithUsers(keysForUsersSearch, users)
     Logger.info(s"DynamoDB: Searching '${query}' found ${resultForUsersSearch.length} matching user(s)")
 
-    resultForKeysSearch ++ resultForUsersSearch
+    (resultForKeysSearch ++ resultForUsersSearch).distinct.sortBy(_.kongKey.createdAt.getMillis).reverse
   }
 
   def saveUser(bonoboUser: BonoboUser): Unit = {
