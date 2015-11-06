@@ -3,14 +3,20 @@
 
 @mainOpenForm("Create a key", success, error) {
     <div class="row">
-        <div class="col-md-6 col-md-offset-3 column">
+        <div class="col-md-8 col-md-offset-2 column">
         @b3.form(routes.OpenForm.createKey()) {
-            @b3.text(keyForm("name"), '_label -> "Name *")
-            @b3.email(keyForm("email"), '_label -> "Email address *")
-            @b3.text(keyForm("productName"), '_label -> "Product Name *")
-            @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
-            @b3.text(keyForm("companyName"), '_label -> "Company Name *")
-            @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+            <div class="row">
+                <div class="col-md-6">
+                    @b3.text(keyForm("name"), '_label -> "Name *")
+                    @b3.text(keyForm("productName"), '_label -> "Product Name *")
+                    @b3.text(keyForm("companyName"), '_label -> "Company Name *")
+                </div>
+                <div class="col-md-6">
+                    @b3.email(keyForm("email"), '_label -> "Email address *")
+                    @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
+                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+                </div>
+            </div>
             @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
             @b3.submit('class -> "btn btn-primary btn-block") { Register }
         }
