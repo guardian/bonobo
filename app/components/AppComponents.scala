@@ -78,5 +78,5 @@ class AppComponents(context: Context)
     with DynamoComponentImpl
     with KongComponentImpl
     with ControllersComponent {
-  val enableAuth = true
+  def enableAuth = true
 }
