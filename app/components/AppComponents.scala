@@ -3,9 +3,8 @@ package components
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import controllers.OpenForm
+import controllers.{ CommercialForm, OpenForm, Application, Auth }
 import com.gu.googleauth.GoogleAuthConfig
-import controllers.{ Application, Auth }
 import kong.{ Kong, KongClient }
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
@@ -67,8 +66,9 @@ trait ControllersComponent { self: BuiltInComponents with NingWSComponents with 
   def authController = new Auth(googleAuthConfig, wsApi)
 
   val openFormController = new OpenForm(dynamo, kong, messagesApi)
+  val commercialFormController = new CommercialForm(dynamo, kong, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
-  val router: Router = new Routes(httpErrorHandler, appController, openFormController, authController, assets)
+  val router: Router = new Routes(httpErrorHandler, appController, openFormController, commercialFormController, authController, assets)
 }
 
 class AppComponents(context: Context)
