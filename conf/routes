@@ -17,11 +17,17 @@ POST        /user/create               controllers.Application.createUser
 GET         /user/:id/edit             controllers.Application.editUserPage(id: String)
 POST        /user/:id/edit             controllers.Application.editUser(id: String)
 
+GET         /healthcheck               controllers.Application.healthcheck
+
+#Developers open registration form
 GET         /create                    controllers.OpenForm.createKeyPage
 POST        /create                    controllers.OpenForm.createKey
 GET         /show                      controllers.OpenForm.showKey(key: String)
 
-GET         /healthcheck               controllers.Application.healthcheck
+#Commercial request key form
+GET         /request                   controllers.CommercialForm.requestKeyPage
+POST        /request                   controllers.CommercialForm.requestKey
+GET         /message                   controllers.CommercialForm.requestMessage
 
 #Google Auth
 GET         /login                     controllers.Auth.login

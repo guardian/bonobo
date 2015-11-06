@@ -23,7 +23,7 @@ class OpenForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Con
 
   def createKey = Action.async { implicit request =>
     def handleInvalidForm(form: Form[OpenCreateKeyFormData]): Future[Result] = {
-      Future.successful(Ok(views.html.openCreateKey(form, error = Some("Please correct the highlighted fields."))))
+      Future.successful(BadRequest(views.html.openCreateKey(form, error = Some("Please correct the highlighted fields."))))
     }
 
     def handleValidForm(formData: OpenCreateKeyFormData): Future[Result] = {
