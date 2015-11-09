@@ -3,22 +3,34 @@
 
 @mainOpenForm("Request a key", success, error) {
     <div class="row">
-        <div class="col-md-6 col-md-offset-3 column">
+        <div class="col-md-8 col-md-offset-2 column">
         @b3.form(routes.CommercialForm.requestKey()) {
-            @b3.text(keyForm("name"), '_label -> "Name *")
-            @b3.email(keyForm("email"), '_label -> "Email address *")
-            @b3.text(keyForm("productName"), '_label -> "Product Name *")
-            @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
-            @b3.text(keyForm("companyName"), '_label -> "Company Name *")
-            @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+            <div class="row">
+                <div class="col-md-6">
+                    @b3.text(keyForm("name"), '_label -> "Name *")
+                    @b3.text(keyForm("productName"), '_label -> "Product Name *")
+                    @b3.text(keyForm("companyName"), '_label -> "Company Name *")
+                </div>
+                <div class="col-md-6">
+                    @b3.email(keyForm("email"), '_label -> "Email address *")
+                    @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
+                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+                </div>
+            </div>
             @b3.free(){
                 <p>To help us understand your requirements, it would be great if you could provide us with:</p>
             }
-            @b3.text(keyForm("businessArea"), '_label -> "Business Area")
-            @b3.number(keyForm("monthlyUsers"), '_label -> "Currently monthly users", 'min -> "0" )
-            @b3.text(keyForm("commercialModel"), '_label -> "What is your commercial model?")
-            @b3.text(keyForm("content"), '_label -> "What content do you intend to display?")
-            @b3.number(keyForm("articlesPerDay"), '_label -> "How many articles will you display per day on avarage?", 'min -> "0" )
+            <div class="row">
+                <div class="col-md-6">
+                    @b3.text(keyForm("businessArea"), '_label -> "Business Area")
+                    @b3.text(keyForm("commercialModel"), '_label -> "What is your commercial model?")
+                    @b3.number(keyForm("articlesPerDay"), '_label -> "How many articles will you display per day on avarage?", 'min -> "0" )
+                </div>
+                <div class="col-md-6">
+                    @b3.number(keyForm("monthlyUsers"), '_label -> "Currently monthly users", 'min -> "0" )
+                    @b3.text(keyForm("content"), '_label -> "What content do you intend to display?")
+                </div>
+            </div>
             @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
             @b3.submit('class -> "btn btn-primary btn-block") { Submit Request }
         }
