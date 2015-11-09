@@ -1,6 +1,6 @@
 @(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, firstName: String, pageTitle: String, query: Option[String] = None, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 
-@main("Keys", firstName, pageTitle, query = query, success, error){
+@main("Keys", firstName, pageTitle, success, error, query){
     <div class="row">
         <p class="col-md-12">Total number of keys: <strong>@totalKeys</strong></p>
     </div>
