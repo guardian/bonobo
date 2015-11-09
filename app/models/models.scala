@@ -29,7 +29,7 @@ object BonoboUser {
     new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
   }
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, formData.businessArea, Some(formData.monthlyUsers.toString), formData.commercialModel, formData.content, Some(formData.articlesPerDay.toString))
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, formData.businessArea, formData.monthlyUsers.map(_.toString()), formData.commercialModel, formData.content, formData.articlesPerDay.map(_.toString()))
     new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
   }
 }
