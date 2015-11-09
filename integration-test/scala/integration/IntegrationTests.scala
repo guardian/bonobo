@@ -330,7 +330,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         monthlyUsers = Some("100"),
         commercialModel = Some("Model"),
         content = Some("News"),
-        articlesPerDay = Some("20"), 
+        articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration))
     val result = route(FakeRequest(POST, "/request").withFormUrlEncodedBody(
