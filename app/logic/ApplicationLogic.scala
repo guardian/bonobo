@@ -61,15 +61,15 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
   def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
     Logger.info(s"ApplicationLogic: Updating user with id ${userId}")
-    def updateUserOnDB = {
-      val updatedUser = BonoboUser(userId, form)
+    def updateUserOnDB(oldUser: BonoboUser) = {
+      val updatedUser = BonoboUser(userId, form, oldUser.additionalInfo.createdAt, oldUser.additionalInfo.registrationType)
       Right(dynamo.updateUser(updatedUser))
     }
     dynamo.getUserWithId(userId) match {
-      case Some(user) => {
-        if (user.email != form.email && dynamo.getUserWithEmail(form.email).isDefined)
+      case Some(oldUser) => {
+        if (oldUser.email != form.email && dynamo.getUserWithEmail(form.email).isDefined)
           Left(s"A user with the email ${form.email} already exists.")
-        else updateUserOnDB
+        else updateUserOnDB(oldUser)
       }
       case None => Left(s"Something bad happened when trying to get the user from the database.")
     }
