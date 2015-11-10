@@ -44,6 +44,11 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       s"http://localhost:9000/user/${user.bonoboId}/edit"
     sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message)
   }
+
+  def sendEmailNewKey(toEmail: String, key: String): Unit = {
+    val message = s"A new key has been created for you: $key"
+    sendEmail(toEmail, "New Key Created", message)
+  }
 }
 
 object AwsMailClient {

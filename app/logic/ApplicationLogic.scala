@@ -79,12 +79,16 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    * Creates a new key for the given user.
    * The key will be randomly generated if no custom key is specified.
    */
-  def createKey(userId: String, form: CreateKeyFormData): Future[Unit] = {
+  def createKey(userId: String, form: CreateKeyFormData): Future[String] = {
     Logger.info(s"ApplicationLogic: Creating key for user with id ${userId}")
-    def createConsumerAndKey: Future[Unit] = {
+    def createConsumerAndKey: Future[String] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
-        consumer => saveKeyOnDB(userId, consumer, rateLimits, form.tier)
+      kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
+        consumer =>
+          {
+            saveKeyOnDB(userId, consumer, rateLimits, form.tier)
+            Future.successful(consumer.key)
+          }
       }
     }
     checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)

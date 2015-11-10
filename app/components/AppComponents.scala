@@ -78,7 +78,7 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
 trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent =>
   def enableAuth: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  def appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, enableAuth)
+  def appController = new Application(dynamo, kong, awsEmail, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
 
   val developerFormController = new DeveloperForm(dynamo, kong, messagesApi)

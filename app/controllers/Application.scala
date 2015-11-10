@@ -1,5 +1,6 @@
 package controllers
 
+import email.AwsEmailClient
 import logic.ApplicationLogic
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
@@ -15,7 +16,7 @@ import kong.Kong._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+class Application(dynamo: DB, kong: Kong, awsEmail: AwsEmailClient, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
@@ -111,8 +112,15 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-      logic.createKey(userId, form) map { _ =>
-        Redirect(routes.Application.editUserPage(userId))
+      logic.createKey(userId, form) map { key =>
+        val user = dynamo.getUserWithId(userId)
+        user match {
+          case Some(u) => {
+            awsEmail.sendEmailNewKey(u.email, key)
+            Redirect(routes.Application.editUserPage(userId))
+          }
+          case None => NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found")))
+        }
       } recover {
         case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
         case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
