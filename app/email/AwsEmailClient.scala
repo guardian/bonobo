@@ -29,7 +29,20 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
   }
 
   def sendEmailCommercialRequest(user: BonoboUser): Unit = {
-    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", s"http://localhost:9000/user/${user.bonoboId}/edit")
+    val message = s"Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}\n" +
+      s"Name: ${user.name}\n" +
+      s"Email: ${user.email}\n" +
+      s"Product name: ${user.productName}\n" +
+      s"Product URL: ${user.productUrl}\n" +
+      s"Company name: ${user.companyName}\n" +
+      s"Company URL: ${user.companyUrl.getOrElse('-')}\n" +
+      s"Business area: ${user.additionalInfo.businessArea.getOrElse('-')}\n" +
+      s"Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}\n" +
+      s"Content type: ${user.additionalInfo.content.getOrElse('-')}\n" +
+      s"Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}\n" +
+      s"Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}\n" +
+      s"http://localhost:9000/user/${user.bonoboId}/edit"
+    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message)
   }
 }
 
