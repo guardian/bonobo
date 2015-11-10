@@ -76,7 +76,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
         Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
       }
       case None => {
-        BadRequest(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("Something bad happened while getting the user from the database.")))
+        NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
       }
     }
   }
