@@ -1,7 +1,7 @@
 package util
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
-import com.amazonaws.auth.{ AWSCredentialsProviderChain, EnvironmentVariableCredentialsProvider, InstanceProfileCredentialsProvider, SystemPropertiesCredentialsProvider }
+import com.amazonaws.auth._
 
 object AWSConstants {
 
@@ -12,5 +12,4 @@ object AWSConstants {
     new ProfileCredentialsProvider(),
     new InstanceProfileCredentialsProvider()
   )
-
 }

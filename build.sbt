@@ -21,6 +21,7 @@ riffRaffManifestProjectName := {
 libraryDependencies ++= Seq(
   ws,
   "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20",
+  "com.amazonaws" % "aws-java-sdk-ses" % "1.10.20",
   "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
   "com.gu" %% "play-googleauth" % "0.3.1",
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "it,test",

@@ -1,10 +1,13 @@
 package components
 
+import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import controllers.{ CommercialForm, DeveloperForm, Application, Auth }
 import com.gu.googleauth.GoogleAuthConfig
+import email.AwsEmailClient
 import kong.{ Kong, KongClient }
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
@@ -59,14 +62,27 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
   }
 }
 
-trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent =>
+trait AwsEmailComponent {
+  def awsEmail: AwsEmailClient
+}
+
+trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents =>
+  val awsEmail = {
+    val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
+    val amazonSesClient: AmazonSimpleEmailServiceAsyncClient = new AmazonSimpleEmailServiceAsyncClient(CredentialsProvider.getCredentials).withRegion(awsRegion)
+    val fromAddress = "test@open-platform.theguardian.com"
+    new AwsEmailClient(amazonSesClient, fromAddress)
+  }
+}
+
+trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent =>
   def enableAuth: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   def appController = new Application(dynamo, kong, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
 
   val developerFormController = new DeveloperForm(dynamo, kong, messagesApi)
-  val commercialFormController = new CommercialForm(dynamo, kong, messagesApi)
+  val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
 }
@@ -77,6 +93,7 @@ class AppComponents(context: Context)
     with GoogleAuthComponent
     with DynamoComponentImpl
     with KongComponentImpl
+    with AwsEmailComponentImpl
     with ControllersComponent {
   def enableAuth = true
 }
