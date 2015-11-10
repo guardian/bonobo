@@ -1,17 +1,15 @@
 package controllers
 
+import email.AwsEmailClient
 import kong.Kong
-import kong.Kong.{ GenericFailure, ConflictFailure }
-import logic.{ CommercialFormLogic, DeveloperFormLogic }
+import logic.CommercialFormLogic
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.mvc._
 import store.DB
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-class CommercialForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class CommercialForm(dynamo: DB, kong: Kong, awsEmail: AwsEmailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import CommercialForm._
   import Forms.CommercialRequestKeyFormData
 
@@ -29,7 +27,10 @@ class CommercialForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) exten
     def handleValidForm(formData: CommercialRequestKeyFormData): Result = {
       logic.sendRequest(formData) match {
         case Left(error) => BadRequest(views.html.commercialRequestKey(requestKeyForm.fill(formData), error = Some(error)))
-        case Right(_) => Redirect(routes.CommercialForm.requestMessage())
+        case Right(user) => {
+          awsEmail.sendEmailCommercialRequest(user)
+          Redirect(routes.CommercialForm.requestMessage())
+        }
       }
     }
     requestKeyForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
