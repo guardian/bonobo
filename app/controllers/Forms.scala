@@ -16,7 +16,7 @@ object Forms {
 
   case class SearchFormData(query: String)
 
-  case class OpenCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String], acceptTerms: Boolean)
+  case class DeveloperCreateKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String], acceptTerms: Boolean)
 
   case class CommercialRequestKeyFormData(name: String, email: String, productName: String, productUrl: String, companyName: String, companyUrl: Option[String],
     businessArea: Option[String], monthlyUsers: Option[Int], commercialModel: Option[String], content: Option[String], articlesPerDay: Option[Int], acceptTerms: Boolean)

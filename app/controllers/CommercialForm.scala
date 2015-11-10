@@ -2,7 +2,7 @@ package controllers
 
 import kong.Kong
 import kong.Kong.{ GenericFailure, ConflictFailure }
-import logic.{ CommercialFormLogic, OpenFormLogic }
+import logic.{ CommercialFormLogic, DeveloperFormLogic }
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ I18nSupport, MessagesApi }
