@@ -287,7 +287,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "creating a new user using the open registration form"
 
   it should "add a Bonobo user and key to Dynamo" in {
-    val result = route(FakeRequest(POST, "/create").withFormUrlEncodedBody(
+    val result = route(FakeRequest(POST, "/formDeveloper").withFormUrlEncodedBody(
       "name" -> "Joe Bloggs",
       "email" -> "test@openform.com",
       "companyName" -> "The Test Company",
@@ -333,7 +333,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration))
-    val result = route(FakeRequest(POST, "/request").withFormUrlEncodedBody(
+    val result = route(FakeRequest(POST, "/formCommercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName,
