@@ -73,25 +73,28 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     dynamo.getUserWithId(id) match {
       case Some(consumer) => {
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
-        Ok(views.html.editUser(id, filledForm, request.user.firstName, userKeys, editUserPageTitle))
+        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
       }
       case None => {
-        BadRequest(views.html.editUser(id, editUserForm, request.user.firstName, userKeys, editUserPageTitle, error = Some("Something bad happened while getting the user from the database.")))
+        NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
       }
     }
   }
 
   def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
-
+    val additionalInfo = dynamo.getUserWithId(id) match {
+      case Some(user) => Some(user.additionalInfo)
+      case None => None
+    }
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
-      BadRequest(views.html.editUser(id, form, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
+      BadRequest(views.html.editUser(id, form, additionalInfo, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
 
     def handleValidForm(form: EditUserFormData): Result = {
       logic.updateUser(id, form) match {
-        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
-        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
+        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), additionalInfo, request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
       }
     }
 

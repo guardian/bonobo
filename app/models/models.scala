@@ -1,7 +1,7 @@
 package models
 
 import java.util.UUID
-import controllers.Forms.{ OpenCreateKeyFormData, EditKeyFormData, CreateUserFormData, EditUserFormData }
+import controllers.Forms._
 import org.joda.time.DateTime
 
 /* model used for saving the users on Bonobo */
@@ -12,19 +12,40 @@ case class BonoboUser(
   productName: String,
   productUrl: String,
   companyName: String,
-  companyUrl: Option[String])
+  companyUrl: Option[String],
+  additionalInfo: AdditionalUserInfo)
 
 object BonoboUser {
+  /* Method used when manually creating a new user */
   def apply(id: String, formData: CreateUserFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration, None, None, None, None, None)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
   }
-  def apply(id: String, formData: EditUserFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
+  /* Method used when editing a new user */
+  def apply(id: String, formData: EditUserFormData, createdAt: DateTime, registrationType: RegistrationType): BonoboUser = {
+    val additionalInfo = AdditionalUserInfo(createdAt, registrationType, None, None, None, None, None)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
   }
-  def apply(id: String, formData: OpenCreateKeyFormData): BonoboUser = {
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl)
+  /* Method used when using the developer form for creating a new user */
+  def apply(id: String, formData: DeveloperCreateKeyFormData): BonoboUser = {
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), DeveloperRegistration, None, None, None, None, None)
+    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
+  }
+  /* Method used when using the commercial form for creating a new user */
+  def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, formData.businessArea, formData.monthlyUsers.map(_.toString), formData.commercialModel, formData.content, formData.articlesPerDay.map(_.toString))
+    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
   }
 }
+
+case class AdditionalUserInfo(
+  createdAt: DateTime,
+  registrationType: RegistrationType,
+  businessArea: Option[String],
+  monthlyUsers: Option[String],
+  commercialModel: Option[String],
+  content: Option[String],
+  articlesPerDay: Option[String])
 
 /* model used for saving the keys on Kong */
 case class KongKey(
@@ -94,5 +115,28 @@ case object Internal extends Tier {
   def rateLimit: RateLimits = RateLimits(720, 10000)
   def friendlyName: String = "Internal"
   def conciergeName: String = "internal"
+}
+
+sealed trait RegistrationType {
+  def friendlyName: String
+}
+
+object RegistrationType {
+  def withName(registrationType: String): Option[RegistrationType] = registrationType match {
+    case "Developer" => Some(DeveloperRegistration)
+    case "Commercial" => Some(CommercialRegistration)
+    case "Manual" => Some(ManualRegistration)
+    case _ => None
+  }
+}
+
+case object DeveloperRegistration extends RegistrationType {
+  def friendlyName: String = "Developer"
+}
+case object CommercialRegistration extends RegistrationType {
+  def friendlyName: String = "Commercial"
+}
+case object ManualRegistration extends RegistrationType {
+  def friendlyName: String = "Manual"
 }
 

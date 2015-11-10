@@ -236,14 +236,24 @@ object Dynamo {
       .withString("productName", bonoboKey.productName)
       .withString("productUrl", bonoboKey.productUrl)
       .withString("companyName", bonoboKey.companyName)
+      .withLong("createdAt", bonoboKey.additionalInfo.createdAt.getMillis)
+      .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
 
-    bonoboKey.companyUrl match {
-      case Some(url) => item.withString("companyUrl", url)
-      case None => item
-    }
+    bonoboKey.companyUrl.fold(item) { url => item.withString("companyUrl", url) }
+    bonoboKey.additionalInfo.businessArea.fold(item) { businessArea => item.withString("businessArea", businessArea) }
+    bonoboKey.additionalInfo.monthlyUsers.fold(item) { monthlyUsers => item.withString("monthlyUsers", monthlyUsers) }
+    bonoboKey.additionalInfo.commercialModel.fold(item) { commercialModel => item.withString("commercialModel", commercialModel) }
+    bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
+    bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
+    def toRegistrationType(registrationType: String): RegistrationType = {
+      RegistrationType.withName(registrationType).getOrElse {
+        Logger.warn(s"Invalid registration type in DynamoDB: $registrationType")
+        ManualRegistration
+      }
+    }
     BonoboUser(
       bonoboId = item.getString("id"),
       name = item.getString("name"),
@@ -251,7 +261,14 @@ object Dynamo {
       productName = item.getString("productName"),
       productUrl = item.getString("productUrl"),
       companyName = item.getString("companyName"),
-      companyUrl = Option(item.getString("companyUrl"))
+      companyUrl = Option(item.getString("companyUrl")),
+      additionalInfo = AdditionalUserInfo(createdAt = new DateTime(item.getString("createdAt").toLong),
+        registrationType = toRegistrationType(item.getString("registrationType")),
+        businessArea = Option(item.getString("businessArea")),
+        monthlyUsers = Option(item.getString("monthlyUsers")),
+        commercialModel = Option(item.getString("commercialModel")),
+        content = Option(item.getString("content")),
+        articlesPerDay = Option(item.getString("articlesPerDay")))
     )
   }
 

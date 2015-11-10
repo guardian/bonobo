@@ -1,4 +1,4 @@
-@(id: String, form: Form[controllers.Forms.EditUserFormData], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit user", firstName, pageTitle, success, error) {
@@ -11,41 +11,76 @@
       @b3.text( form("productUrl"), '_label -> "Product URL *", 'placeholder -> "Product URL" )
       @b3.text( form("companyName"), '_label -> "Company name *", 'placeholder -> "Company name" )
       @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
-      @b3.submit('class -> "btn btn-primary"){ Save }
+      @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
     }
     </div>
   </div>
 
   <div class="row">
-    <h4 class="text-primary">Keys for the current user</h4>
-    <table class="table table-responsive table-striped">
-      <thead>
-        <tr>
-          <th>Key</th>
-          <th>Tier</th>
-          <th>Requests per minute</th>
-          <th>Requests per day</th>
-          <th>Created At</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-      @for(key <- keys) {
-        <tr>
-          <td>@key.key</td>
-          <td>@key.tier.friendlyName</td>
-          <td>@key.requestsPerMinute</td>
-          <td>@key.requestsPerDay</td>
-          <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
-          <td>@key.status</td>
-          <td><a href="@routes.Application.editKeyPage(key.key)" class="text-info">Edit key</a></td>
-        </tr>
+    <h4 class="text-primary">Additional information</h4>
+    <div class="col-md-12 column form-horizontal">
+      <div>
+        <label class="control-label col-md-4">Created at:</label>
+        <p class="form-control-static col-sm-8">@additionalInfo.get.createdAt.toString("dd-MM-yyyy hh:mma")</p>
+      </div>
+      <div>
+        <label class="control-label col-md-4">Registration type:</label>
+        <p class="form-control-static col-sm-8">@additionalInfo.get.registrationType.friendlyName</p>
+      </div>
+      @if(additionalInfo.get.registrationType == CommercialRegistration){
+          <div>
+            <label class="control-label col-md-4">Business area:</label>
+            <p class="form-control-static col-sm-7">@additionalInfo.get.businessArea.getOrElse("-")</p>
+          </div>
+          <div>
+            <label class="control-label col-md-4">Commercial model:</label>
+            <p class="form-control-static col-sm-7">@additionalInfo.get.commercialModel.getOrElse("-")</p>
+          </div>
+          <div>
+            <label class="control-label col-md-4">Content type:</label>
+            <p class="form-control-static col-sm-7">@additionalInfo.get.content.getOrElse("-")</p>
+          </div>
+          <div>
+            <label class="control-label col-md-4">Monthly users:</label>
+            <p class="form-control-static col-sm-7">@additionalInfo.get.monthlyUsers.getOrElse("-")</p>
+          </div>
+          <div>
+            <label class="control-label col-md-4">Articles per day:</label>
+            <p class="form-control-static col-sm-7">@additionalInfo.get.articlesPerDay.getOrElse("-")</p>
+          </div>
       }
-      </tbody>
-    </table>
+    </div>
   </div>
 
-  <div class="row" style="padding-bottom: 20px">
-    <a href="@routes.Application.createKeyPage(id)" class="btn btn-success">Create a new key for this user</a>
+  <div class="row">
+    <h4 class="text-primary">Keys for the current user</h4>
+    @if(keys.length > 0){
+      <table class="table table-responsive table-striped">
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Tier</th>
+            <th>Requests per minute</th>
+            <th>Requests per day</th>
+            <th>Created At</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        @for(key <- keys) {
+          <tr>
+            <td>@key.key</td>
+            <td>@key.tier.friendlyName</td>
+            <td>@key.requestsPerMinute</td>
+            <td>@key.requestsPerDay</td>
+            <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
+            <td>@key.status</td>
+            <td><a href="@routes.Application.editKeyPage(key.key)" class="text-info">Edit key</a></td>
+          </tr>
+        }
+        </tbody>
+      </table>
+    }
+    <a href="@routes.Application.createKeyPage(id)" class="btn btn-success" style="margin-bottom: 20px;"><span class="glyphicon glyphicon-plus"></span> Add new key</a>
   </div>
 }
