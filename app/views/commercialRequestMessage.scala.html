@@ -1,0 +1,12 @@
+@(success: Option[String] = None, error: Option[String] = None)
+
+@mainOpenForm("Request sent", success, error) {
+    <div>
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3 column">
+                <p>Thank you and welcome to the open platform!</p>
+                <p>You have successfully sent a request for an API key. We will be in touch with you shortly.</p>
+            </div>
+        </div>
+    </div>
+}

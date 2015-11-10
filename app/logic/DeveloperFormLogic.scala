@@ -1,6 +1,6 @@
 package logic
 
-import controllers.Forms.OpenCreateKeyFormData
+import controllers.Forms.DeveloperCreateKeyFormData
 import kong.Kong
 import kong.Kong.ConflictFailure
 import models._
@@ -10,7 +10,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class OpenFormLogic(dynamo: DB, kong: Kong) {
+class DeveloperFormLogic(dynamo: DB, kong: Kong) {
 
   /**
    * Creates a consumer and key on Kong and a Bonobo user,
@@ -21,8 +21,8 @@ class OpenFormLogic(dynamo: DB, kong: Kong) {
    * @return a Future of the newly created Kong consumer's key
    */
 
-  def createUser(form: OpenCreateKeyFormData): Future[String] = {
-    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: OpenCreateKeyFormData): Unit = {
+  def createUser(form: DeveloperCreateKeyFormData): Future[String] = {
+    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: DeveloperCreateKeyFormData): Unit = {
       Logger.info(s"OpenFormLogic: Creating user with name ${form.name}")
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
