@@ -1,6 +1,6 @@
 package controllers
 
-import email.AwsEmailClient
+import email.MailClient
 import kong.Kong
 import logic.CommercialFormLogic
 import play.api.data.Form
@@ -9,7 +9,7 @@ import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.mvc._
 import store.DB
 
-class CommercialForm(dynamo: DB, kong: Kong, awsEmail: AwsEmailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import CommercialForm._
   import Forms.CommercialRequestKeyFormData
 

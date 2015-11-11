@@ -1,13 +1,12 @@
 package components
 
-import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import controllers.{ CommercialForm, DeveloperForm, Application, Auth }
 import com.gu.googleauth.GoogleAuthConfig
-import email.AwsEmailClient
+import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
@@ -63,7 +62,7 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
 }
 
 trait AwsEmailComponent {
-  def awsEmail: AwsEmailClient
+  def awsEmail: MailClient
 }
 
 trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents =>
