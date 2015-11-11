@@ -3,6 +3,8 @@ package integration
 import java.io.File
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
+import email.{MailClient, AwsEmailClient}
+import models.BonoboUser
 import store.Dynamo
 import kong.KongClient
 import components._
@@ -20,6 +22,12 @@ import play.api._
  * The Dynamo tables and Kong instance are created (i.e. empty) before the first test in the file,
  * and destroyed after the last test in the file has run.
  */
+class FakeEmailClient extends MailClient {
+  def sendEmailCommercialRequest(user: BonoboUser): Unit = println("Not sending emails for commercial request")
+
+  def sendEmailNewKey(toEmail: String, key: String): Unit = println("Not sending emails for new key added")
+}
+
 trait IntegrationSpecBase
     extends BonoboKeysTableFixture
     with BonoboUserTableFixture
@@ -36,12 +44,16 @@ trait IntegrationSpecBase
   trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
     val kong = new KongClient(wsClient, kongUrl, kongApiName)
   }
+  trait FakeAwsEmailComponent extends AwsEmailComponent {
+    val awsEmail = new FakeEmailClient()
+  }
   class TestComponents(context: Context)
       extends BuiltInComponentsFromContext(context)
       with NingWSComponents
       with GoogleAuthComponent
       with FakeDynamoComponent
       with FakeKongComponent
+      with FakeAwsEmailComponent
       with ControllersComponent {
     def enableAuth = false
   }

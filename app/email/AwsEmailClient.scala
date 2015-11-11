@@ -7,12 +7,13 @@ import models.BonoboUser
 import play.api.Logger
 
 trait MailClient {
-  def sendEmail(address: String, subject: String, message: String): Unit
+  def sendEmailCommercialRequest(user: BonoboUser): Unit
+  def sendEmailNewKey(toEmail: String, key: String): Unit
 }
 
 class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String, responseHandler: AsyncHandler[SendEmailRequest, SendEmailResult] = AwsMailClient.asyncHandler) extends MailClient {
 
-  override def sendEmail(address: String, subject: String, message: String): Unit = {
+  private def sendEmail(address: String, subject: String, message: String): Unit = {
     Logger.debug(s"Sending $subject to $address")
 
     val destination = new Destination().withToAddresses(address)
