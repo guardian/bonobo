@@ -261,6 +261,58 @@
           ]
         }
       }
+    },
+    "UsersTable": {
+      "Type":"AWS::DynamoDB::Table",
+      "Properties":{
+        "TableName": { "Fn::Join": [ "-", [ "bonobo", { "Ref": "Stage" }, "users" ] ] },
+        "AttributeDefinitions":[
+          {
+            "AttributeName":"id",
+            "AttributeType":"S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName":"id",
+            "KeyType": "HASH"
+          }
+        ],
+        "ProvisionedThroughput":{
+          "ReadCapacityUnits": 20,
+          "WriteCapacityUnits": 10
+        }
+      }
+    },
+    "KeysTable": {
+      "Type":"AWS::DynamoDB::Table",
+      "Properties":{
+        "TableName": { "Fn::Join": [ "-", [ "bonobo", { "Ref": "Stage" }, "keys" ] ] },
+        "AttributeDefinitions":[
+          {
+            "AttributeName":"hashkey",
+            "AttributeType":"S"
+          },
+          {
+            "AttributeName":"rangekey",
+            "AttributeType":"S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName":"hashkey",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName":"rangekey",
+            "KeyType": "RANGE"
+          }
+        ],
+        "ProvisionedThroughput":{
+          "ReadCapacityUnits": 20,
+          "WriteCapacityUnits": 10
+        }
+      }
     }
   }
 }
