@@ -24,13 +24,13 @@ trait DB {
 
   def updateKey(kongKey: KongKey): Unit
 
-  def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo]
+  def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo]
 
   def getKeyWithValue(key: String): Option[KongKey]
 
   def getKeysWithUserId(id: String): List[KongKey]
 
-  def getNumberOfKeys: Long
+  def getNumberOfKeys(): Long
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
@@ -123,10 +123,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     Logger.info(s"DynamoDB: Key ${kongKey.key} has been updated")
   }
 
-  def getKeys(direction: String, range: Option[String]): ResultsPage[BonoboInfo] = {
+  def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo] = {
     direction match {
-      case "previous" => getKeysBefore(range)
-      case "next" => getKeysAfter(range)
+      case "previous" => getKeysBefore(range, limit)
+      case "next" => getKeysAfter(range, limit)
       case _ => ResultsPage(List.empty, hasNext = false)
     }
   }
@@ -149,7 +149,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     KongTable.query(keyQuery).asScala.toList.map(fromKongItem)
   }
 
-  def getNumberOfKeys: Long = KongTable.describe().getItemCount
+  def getNumberOfKeys(): Long = KongTable.describe().getItemCount
 
   private def getUsersForKeys(keys: List[KongKey]): List[BonoboUser] = {
     keys.flatMap {
@@ -174,7 +174,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  private def getKeysAfter(afterRange: Option[String]): ResultsPage[BonoboInfo] = {
+  private def getKeysAfter(afterRange: Option[String], limit: Int): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
         .withKeyConditionExpression("hashkey = :h")
@@ -201,7 +201,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     }
   }
 
-  private def getKeysBefore(beforeRange: Option[String]): ResultsPage[BonoboInfo] = {
+  private def getKeysBefore(beforeRange: Option[String], limit: Int): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
         .withKeyConditionExpression("hashkey = :h")
@@ -225,8 +225,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 }
 
 object Dynamo {
-
-  val limit = 4 // items per page to be displayed
 
   def toBonoboItem(bonoboKey: BonoboUser): Item = {
     val item = new Item()

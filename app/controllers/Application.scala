@@ -30,7 +30,7 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
 
   def showKeys(direction: String, range: Option[String]) = maybeAuth { implicit request =>
     val resultsPage = dynamo.getKeys(direction, range)
-    val totalKeys = dynamo.getNumberOfKeys
+    val totalKeys = dynamo.getNumberOfKeys()
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.showKeys(resultsPage.items, givenDirection, resultsPage.hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
   }
