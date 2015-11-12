@@ -34,7 +34,7 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     dynamo.getUserWithEmail(form.email) match {
       case Some(a) => Future.failed(ConflictFailure("Email already taken."))
       case None => {
-        kong.createConsumerAndKey(Developer, Developer.rateLimit, key = None) map {
+        kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
           consumer =>
             saveUserAndKeyOnDB(consumer, form)
             consumer.key

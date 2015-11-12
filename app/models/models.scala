@@ -2,6 +2,7 @@ package models
 
 import java.util.UUID
 import controllers.Forms._
+import enumeratum.{ PlayJsonEnum, Enum, EnumEntry }
 import org.joda.time.DateTime
 
 /* model used for saving the users on Bonobo */
@@ -91,37 +92,33 @@ case class ConsumerCreationResult(id: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 
-sealed trait Tier {
+sealed trait Tier extends EnumEntry {
   def rateLimit: RateLimits
   def friendlyName: String
   def conciergeName: String
 }
 
-object Tier {
-  def withName(tier: String): Option[Tier] = tier match {
-    case "Developer" => Some(Developer)
-    case "RightsManaged" => Some(RightsManaged)
-    case "Internal" => Some(Internal)
-    case _ => None
+object Tier extends Enum[Tier] with PlayJsonEnum[Tier] {
+
+  val values = findValues
+
+  case object Developer extends Tier {
+    def rateLimit: RateLimits = RateLimits(720, 5000)
+    def friendlyName: String = "Developer"
+    def conciergeName: String = "developer"
+  }
+  case object RightsManaged extends Tier {
+    def rateLimit: RateLimits = RateLimits(720, 10000)
+    def friendlyName: String = "Rights managed"
+    def conciergeName: String = "rights-managed"
+  }
+  case object Internal extends Tier {
+    def rateLimit: RateLimits = RateLimits(720, 10000)
+    def friendlyName: String = "Internal"
+    def conciergeName: String = "internal"
   }
 
-  def isValid(tier: String): Boolean = withName(tier).isDefined
-}
-
-case object Developer extends Tier {
-  def rateLimit: RateLimits = RateLimits(720, 5000)
-  def friendlyName: String = "Developer"
-  def conciergeName: String = "developer"
-}
-case object RightsManaged extends Tier {
-  def rateLimit: RateLimits = RateLimits(720, 10000)
-  def friendlyName: String = "Rights managed"
-  def conciergeName: String = "rights-managed"
-}
-case object Internal extends Tier {
-  def rateLimit: RateLimits = RateLimits(720, 10000)
-  def friendlyName: String = "Internal"
-  def conciergeName: String = "internal"
+  def isValid(tier: String): Boolean = withNameOption(tier).isDefined
 }
 
 sealed trait RegistrationType {
@@ -133,6 +130,7 @@ object RegistrationType {
     case "Developer" => Some(DeveloperRegistration)
     case "Commercial" => Some(CommercialRegistration)
     case "Manual" => Some(ManualRegistration)
+    case "Mashery" => Some(MasheryRegistration)
     case _ => None
   }
 }
@@ -145,5 +143,8 @@ case object CommercialRegistration extends RegistrationType {
 }
 case object ManualRegistration extends RegistrationType {
   def friendlyName: String = "Manual"
+}
+case object MasheryRegistration extends RegistrationType {
+  def friendlyName: String = "Imported from Mashery"
 }
 

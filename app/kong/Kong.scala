@@ -39,7 +39,6 @@ object Kong {
 
   object KongListConsumerKeysResponse {
     implicit val keyRead = Json.reads[KongListConsumerKeysResponse]
-
   }
 
   case class KongPluginConfig(id: String)
