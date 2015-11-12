@@ -26,7 +26,9 @@ libraryDependencies ++= Seq(
   "com.gu" %% "play-googleauth" % "0.3.1",
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "it,test",
   "org.scalatestplus" % "play_2.11" % "1.4.0-M4" % "it,test",
-  "org.mockito" % "mockito-all" % "1.10.19" % "test"
+  "org.mockito" % "mockito-all" % "1.10.19" % "test",
+  "com.beachape" %% "enumeratum" % "1.3.2",
+  "com.beachape" %% "enumeratum-play-json" % "1.3.2"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"

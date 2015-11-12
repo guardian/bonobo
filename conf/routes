@@ -33,5 +33,8 @@ GET         /register/message          controllers.CommercialForm.requestMessage
 GET         /login                     controllers.Auth.login
 GET         /oauth2callback            controllers.Auth.oauth2Callback
 
+#Migrate data from Mashery
+POST        /migrate                   controllers.Migration.migrate
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file              controllers.Assets.versioned(path="/public", file: Asset)

@@ -82,8 +82,10 @@ trait ControllersComponent { self: BuiltInComponents with NingWSComponents with 
 
   val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
   val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
+  val migrationController = new Migration(dynamo, kong)
+
   val assets = new controllers.Assets(httpErrorHandler)
-  val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
+  val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, migrationController, assets)
 }
 
 class AppComponents(context: Context)
