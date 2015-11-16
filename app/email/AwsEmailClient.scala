@@ -5,9 +5,10 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import com.amazonaws.services.simpleemail.model._
 import models.BonoboUser
 import play.api.Logger
+import play.api.mvc.RequestHeader
 
 trait MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser): Unit
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit
   def sendEmailNewKey(toEmail: String, key: String): Unit
 }
 
@@ -29,7 +30,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     amazonMailClient.sendEmailAsync(request, responseHandler)
   }
 
-  def sendEmailCommercialRequest(user: BonoboUser): Unit = {
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit = {
     val message = s"Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}\n" +
       s"Name: ${user.name}\n" +
       s"Email: ${user.email}\n" +
@@ -42,8 +43,8 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       s"Content type: ${user.additionalInfo.content.getOrElse('-')}\n" +
       s"Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}\n" +
       s"Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}\n" +
-      s"http://localhost:9000/user/${user.bonoboId}/edit"
-    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message)
+      s"${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}"
+    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message) //this should be eventually sent to content.delivery@guardian.co.uk instead
   }
 
   def sendEmailNewKey(toEmail: String, key: String): Unit = {
