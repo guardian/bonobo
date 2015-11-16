@@ -4,6 +4,7 @@ import java.util.UUID
 import controllers.Forms._
 import enumeratum.{ PlayJsonEnum, Enum, EnumEntry }
 import org.joda.time.DateTime
+import play.api.libs.json.{ Reads, Json }
 
 /* model used for saving the users on Bonobo */
 case class BonoboUser(
@@ -130,7 +131,7 @@ object RegistrationType {
     case "Developer" => Some(DeveloperRegistration)
     case "Commercial" => Some(CommercialRegistration)
     case "Manual" => Some(ManualRegistration)
-    case "Mashery" => Some(MasheryRegistration)
+    case "Imported from Mashery" => Some(MasheryRegistration)
     case _ => None
   }
 }
@@ -148,3 +149,30 @@ case object MasheryRegistration extends RegistrationType {
   def friendlyName: String = "Imported from Mashery"
 }
 
+case class MasheryUser(
+  name: String,
+  email: String,
+  productName: String,
+  productUrl: String,
+  companyName: String,
+  companyUrl: Option[String],
+  createdAt: DateTime,
+  keys: List[MasheryKey])
+
+object MasheryKey {
+  implicit val dateReads = Reads.jodaDateReads("MMM dd yyyy HH:mm:ss")
+  implicit val keyRead = Json.reads[MasheryKey]
+}
+
+object MasheryUser {
+  implicit val dateReads = Reads.jodaDateReads("MMM dd yyyy HH:mm:ss")
+  implicit val userRead = Json.reads[MasheryUser]
+}
+
+case class MasheryKey(
+  key: String,
+  requestsPerDay: Int,
+  requestsPerMinute: Int,
+  tier: Tier,
+  status: String,
+  createdAt: DateTime)

@@ -1,55 +1,55 @@
 [
   {
-    "name": "Joe Bloggs",
+    "name": "First Migration",
     "email": "test@migratemashery.com",
-    "companyName": "Company name",
-    "companyUrl": "http://company.com",
     "productName": "Product name",
     "productUrl": "http://product.com",
-    "createdAt": "Thu Nov 12 2015 14:29:48 GMT+0000 (GMT)",
+    "companyName": "Company name",
+    "companyUrl": "http://company.com",
+    "createdAt": "Nov 12 2015 14:29:48",
     "keys": [
       {
-        "key": "some-key",
-        "createdAt": "Thu Nov 12 2015 14:29:48 GMT+0000 (GMT)",
+        "key": "first-key-1",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 100,
+        "tier": "Developer",
         "status": "active",
-        "tier": "developer",
-        "requestsPerDay": "1000",
-        "requestsPerMinute": "100"
+        "createdAt": "Nov 12 2015 14:29:48"
       },
       {
-        "key": "some-other-key",
-        "createdAt": "Thu Nov 11 2015 14:29:48 GMT+0000 (GMT)",
+        "key": "first-key-2",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 100,
+        "tier": "Developer",
         "status": "active",
-        "tier": "developer",
-        "requestsPerDay": "1000",
-        "requestsPerMinute": "100"
+        "createdAt": "Nov 11 2015 14:29:48"
       }
     ]
   },
   {
-    "name": "Joe Blogg",
+    "name": "Second Migration",
     "email": "test2@migratemashery.com",
-    "companyName": "Company name",
-    "companyUrl": "",
     "productName": "Product name",
     "productUrl": "http://product.com",
-    "createdAt": "Thu Nov 10 2015 17:29:48 GMT+0000 (GMT)",
+    "companyName": "Company name",
+    "companyUrl": "",
+    "createdAt": "Nov 10 2015 17:29:48",
     "keys": [
       {
-        "key": "some-key-2",
-        "createdAt": "Thu Nov 11 2015 14:30:48 GMT+0000 (GMT)",
+        "key": "second-key-1",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 100,
+        "tier": "Internal",
         "status": "active",
-        "tier": "internal",
-        "requestsPerDay": "1000",
-        "requestsPerMinute": "100"
+        "createdAt": "Nov 11 2015 14:30:48"
       },
       {
-        "key": "some-other-key-2",
-        "createdAt": "Thu Nov 11 2015 14:29:48 GMT+0000 (GMT)",
+        "key": "second-key-2",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 100,
+        "tier": "Developer",
         "status": "active",
-        "tier": "developer",
-        "requestsPerDay": "1000",
-        "requestsPerMinute": "100"
+        "createdAt": "Nov 11 2015 14:29:48"
       }
     ]
   }
