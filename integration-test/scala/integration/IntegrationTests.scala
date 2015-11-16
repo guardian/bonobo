@@ -1,6 +1,6 @@
 package integration
 
-import models.{AdditionalUserInfo, BonoboUser, CommercialRegistration}
+import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.{ Eventually, ScalaFutures }
 import org.scalatest.{ Matchers, OptionValues, FlatSpec }
@@ -11,6 +11,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
+
 
 class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
 
@@ -419,5 +420,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "take a list of users from Mashery and save them in Kong and Dynamo" in {
     //TODO: write tests
   }
+
 }
 
