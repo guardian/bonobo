@@ -5,6 +5,7 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import email.{MailClient, AwsEmailClient}
 import models.BonoboUser
+import play.api.mvc.RequestHeader
 import store.Dynamo
 import kong.KongClient
 import components._
@@ -23,7 +24,7 @@ import play.api._
  * and destroyed after the last test in the file has run.
  */
 class FakeEmailClient extends MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser): Unit = println("Not sending emails for commercial request")
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit = println("Not sending emails for commercial request")
 
   def sendEmailNewKey(toEmail: String, key: String): Unit = println("Not sending emails for new key added")
 }
