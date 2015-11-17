@@ -7,8 +7,6 @@
     @b3.form(routes.Application.editUser(id)) {
       @b3.text( form("name"), '_label -> "Name *", 'placeholder -> "Name")
       @b3.text( form("email"), '_label -> "Email *", 'placeholder -> "Email")
-      @b3.text( form("productName"), '_label -> "Product name *", 'placeholder -> "Product name" )
-      @b3.text( form("productUrl"), '_label -> "Product URL *", 'placeholder -> "Product URL" )
       @b3.text( form("companyName"), '_label -> "Company name *", 'placeholder -> "Company name" )
       @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
       @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
@@ -59,6 +57,8 @@
         <thead>
           <tr>
             <th>Key</th>
+            <th>Product Name</th>
+            <th>Product Url</th>
             <th>Tier</th>
             <th>Requests per minute</th>
             <th>Requests per day</th>
@@ -70,6 +70,8 @@
         @for(key <- keys) {
           <tr>
             <td>@key.key</td>
+            <td>@key.productName</td>
+            <td>@key.productUrl</td>
             <td>@key.tier.friendlyName</td>
             <td>@key.requestsPerMinute</td>
             <td>@key.requestsPerDay</td>

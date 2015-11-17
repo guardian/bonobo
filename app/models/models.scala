@@ -9,8 +9,6 @@ case class BonoboUser(
   bonoboId: String,
   email: String,
   name: String,
-  productName: String,
-  productUrl: String,
   companyName: String,
   companyUrl: Option[String],
   additionalInfo: AdditionalUserInfo)
@@ -19,22 +17,22 @@ object BonoboUser {
   /* Method used when manually creating a new user */
   def apply(id: String, formData: CreateUserFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration, None, None, None, None, None)
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
+    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when editing a new user */
   def apply(id: String, formData: EditUserFormData, createdAt: DateTime, registrationType: RegistrationType): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(createdAt, registrationType, None, None, None, None, None)
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
+    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when using the developer form for creating a new user */
   def apply(id: String, formData: DeveloperCreateKeyFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), DeveloperRegistration, None, None, None, None, None)
-    new BonoboUser(id, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
+    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when using the commercial form for creating a new user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, formData.businessArea, formData.monthlyUsers.map(_.toString), formData.commercialModel, formData.content, formData.articlesPerDay.map(_.toString))
-    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.productName, formData.productUrl, formData.companyName, formData.companyUrl, additionalInfo)
+    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
 }
 
@@ -57,6 +55,8 @@ case class KongKey(
   tier: Tier,
   status: String,
   createdAt: DateTime,
+  productName: String,
+  productUrl: String,
   rangeKey: String)
 
 object KongKey {
@@ -66,11 +66,11 @@ object KongKey {
   private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
 
   def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
-    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, rangeKey)
+    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
-  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, uniqueRangeKey(consumer.createdAt))
+  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String): KongKey = {
+    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
 }
