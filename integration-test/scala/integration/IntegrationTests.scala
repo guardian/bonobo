@@ -160,6 +160,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
+      "productName" -> "Another Product",
+      "productUrl" -> "http://anotherproduct.co.uk",
       "key" -> "the-dark-day"
     )).get
 
@@ -202,6 +204,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
+      "productName" -> "Another product",
+      "productUrl" -> "http://anotherproduct.co.uk",
       "requestsPerDay" -> "10000",
       "requestsPerMinute" -> "720",
       "tier" -> "RightsManaged",
@@ -253,6 +257,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val update = route(FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
       "key" -> "some-key",
+      "productName" -> "Another product",
+      "productUrl" -> "http://anotherproduct.co.uk",
       "requestsPerDay" -> "444",
       "requestsPerMinute" -> "44",
       "tier" -> "Internal",
@@ -340,8 +346,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       email = "test@commercialform.com",
       companyName = "The Test Company",
       companyUrl = Some("http://thetestcompany.co.uk"),
-      productName = "http://blabla",
-      productUrl = "http://blabla",
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
@@ -355,8 +359,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName,
       "companyUrl" -> userToSave.companyUrl.value,
-      "productName" -> userToSave.productName,
-      "productUrl" -> userToSave.productUrl,
+      "productName" -> "Product",
+      "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,
       "monthlyUsers" -> userToSave.additionalInfo.monthlyUsers.value,
       "commercialModel" -> userToSave.additionalInfo.commercialModel.value,
@@ -379,8 +383,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       email = "test-email@commercialform.com",
       companyName = "The Test Company",
       companyUrl = Some("http://thetestcompany.co.uk"),
-      productName = "http://blabla",
-      productUrl = "http://blabla",
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
@@ -394,8 +396,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName,
       "companyUrl" -> userToSave.companyUrl.value,
-      "productName" -> userToSave.productName,
-      "productUrl" -> userToSave.productUrl,
+      "productName" -> "Product",
+      "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,
       "monthlyUsers" -> userToSave.additionalInfo.monthlyUsers.value,
       "commercialModel" -> userToSave.additionalInfo.commercialModel.value,

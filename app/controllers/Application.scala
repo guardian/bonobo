@@ -78,7 +78,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) => {
-        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
+        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl))
         Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
       }
       case None => {
@@ -141,7 +141,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
   def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
     dynamo.getKeyWithValue(keyValue) match {
       case Some(value) => {
-        val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.requestsPerDay,
+        val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.productName, value.productUrl, value.requestsPerDay,
           value.requestsPerMinute, value.tier, defaultRequests = false, value.status))
         Ok(views.html.editKey(value.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
       }
@@ -198,10 +198,10 @@ object Application {
     mapping(
       "name" -> nonEmptyText,
       "email" -> email,
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
       "companyName" -> nonEmptyText,
       "companyUrl" -> optional(text),
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
@@ -211,8 +211,6 @@ object Application {
     mapping(
       "name" -> nonEmptyText,
       "email" -> email,
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
       "companyName" -> nonEmptyText,
       "companyUrl" -> optional(text)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
@@ -221,13 +219,17 @@ object Application {
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString)
+      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
       "key" -> nonEmptyText,
+      "productName" -> nonEmptyText,
+      "productUrl" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),

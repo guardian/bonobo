@@ -7,8 +7,6 @@
             @b3.form(routes.Application.createUser) {
                 @b3.text( form("name"), '_label -> "Name *", 'placeholder -> "Name" )
                 @b3.email( form("email"), '_label -> "Email *", 'placeholder -> "example@mail.com" )
-                @b3.text( form("productName"), '_label -> "Product name *", 'placeholder -> "Product name" )
-                @b3.text( form("productUrl"), '_label -> "Product URL *", 'placeholder -> "Product URL" )
                 @b3.text( form("companyName"), '_label -> "Company name *", 'placeholder -> "Company name" )
                 @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
                 @b3.select( form("tier"), options = Seq(Developer.toString -> Developer.friendlyName, RightsManaged.toString -> RightsManaged.friendlyName, Internal.toString -> Internal.friendlyName), '_label -> "Tier *" )
