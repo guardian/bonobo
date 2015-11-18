@@ -3,7 +3,8 @@ package integration
 import java.io.File
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import email.{MailClient, AwsEmailClient}
+import com.amazonaws.services.simpleemail.model.SendEmailResult
+import email.MailClient
 import models.BonoboUser
 import play.api.mvc.RequestHeader
 import store.Dynamo
@@ -16,6 +17,8 @@ import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ning.NingWSComponents
 import play.api._
 
+import scala.concurrent.Future
+
 /**
  * Base trait for integration tests.
  * Builds a Play app that integrates with real DynamoDB tables and a real Kong instance (running in Docker).
@@ -24,9 +27,9 @@ import play.api._
  * and destroyed after the last test in the file has run.
  */
 class FakeEmailClient extends MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit = println("Not sending emails for commercial request")
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult] = Future.successful(new SendEmailResult())
 
-  def sendEmailNewKey(toEmail: String, key: String): Unit = println("Not sending emails for new key added")
+  def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = Future.successful(new SendEmailResult())
 }
 
 trait IntegrationSpecBase

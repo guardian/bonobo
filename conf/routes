@@ -14,7 +14,7 @@ POST        /key/:id/edit              controllers.Application.editKey(id: Strin
 
 GET         /user/create               controllers.Application.createUserPage
 POST        /user/create               controllers.Application.createUser
-GET         /user/:id/edit             controllers.Application.editUserPage(id: String)
+GET         /user/:id/edit             controllers.Application.editUserPage(id: String, error: Option[String] ?= None)
 POST        /user/:id/edit             controllers.Application.editUser(id: String)
 
 GET         /healthcheck               controllers.Application.healthcheck
@@ -27,7 +27,7 @@ GET         /register/key              controllers.DeveloperForm.showKey(key: St
 #Commercial request key form
 GET         /register/commercial       controllers.CommercialForm.requestKeyPage
 POST        /register/commercial       controllers.CommercialForm.requestKey
-GET         /register/message          controllers.CommercialForm.requestMessage
+GET         /register/message          controllers.CommercialForm.requestMessage(error: Option[String] ?= None)
 
 #Google Auth
 GET         /login                     controllers.Auth.login
