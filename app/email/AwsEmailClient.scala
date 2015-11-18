@@ -7,14 +7,17 @@ import models.BonoboUser
 import play.api.Logger
 import play.api.mvc.RequestHeader
 
+import scala.concurrent.{ Future, Promise }
+
 trait MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit
-  def sendEmailNewKey(toEmail: String, key: String): Unit
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult]
+
+  def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
 
 class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String, responseHandler: AsyncHandler[SendEmailRequest, SendEmailResult] = AwsMailClient.asyncHandler) extends MailClient {
 
-  private def sendEmail(address: String, subject: String, message: String): Unit = {
+  private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     Logger.debug(s"Sending $subject to $address")
 
     val destination = new Destination().withToAddresses(address)
@@ -27,27 +30,40 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
 
     val request = new SendEmailRequest().withSource(fromAddress).withDestination(destination).withMessage(emailMessage)
 
+    val promise = Promise[SendEmailResult]()
+    val responseHandler = new AsyncHandler[SendEmailRequest, SendEmailResult] {
+      override def onError(e: Exception) = {
+        Logger.warn(s"Could not send mail: ${e.getMessage}")
+        promise.failure(e)
+      }
+
+      override def onSuccess(request: SendEmailRequest, result: SendEmailResult) = {
+        Logger.info("The email has been successfully sent")
+        promise.success(result)
+      }
+    }
     amazonMailClient.sendEmailAsync(request, responseHandler)
+    promise.future
   }
 
-  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Unit = {
+  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult] = {
     val message = s"Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}\n" +
-      s"Name: ${user.name}\n" +
-      s"Email: ${user.email}\n" +
-      s"Product name: ${user.productName}\n" +
-      s"Product URL: ${user.productUrl}\n" +
-      s"Company name: ${user.companyName}\n" +
-      s"Company URL: ${user.companyUrl.getOrElse('-')}\n" +
-      s"Business area: ${user.additionalInfo.businessArea.getOrElse('-')}\n" +
-      s"Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}\n" +
-      s"Content type: ${user.additionalInfo.content.getOrElse('-')}\n" +
-      s"Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}\n" +
-      s"Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}\n" +
-      s"${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}"
+      s"""Name: ${user.name}
+      Email: ${user.email}
+      Product name: ${user.productName}
+      Product URL: ${user.productUrl}
+      Company name: ${user.companyName}
+      Company URL: ${user.companyUrl.getOrElse('-')}
+      Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
+      Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}
+      Content type: ${user.additionalInfo.content.getOrElse('-')}
+      Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
+      Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
+      ${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}"""
     sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message) //this should be eventually sent to content.delivery@guardian.co.uk instead
   }
 
-  def sendEmailNewKey(toEmail: String, key: String): Unit = {
+  def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = {
     val message = s"A new key has been created for you: $key"
     sendEmail(toEmail, "New Key Created", message)
   }

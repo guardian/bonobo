@@ -1,5 +1,6 @@
 package controllers
 
+import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
 import logic.ApplicationLogic
 import models._
@@ -69,12 +70,12 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editUserPage(id: String) = maybeAuth { implicit request =>
+  def editUserPage(id: String, error: Option[String]) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) => {
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
-        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
+        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle, error = error))
       }
       case None => {
         NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
@@ -112,14 +113,16 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-      logic.createKey(userId, form) map { key =>
+      logic.createKey(userId, form) flatMap { key =>
         val user = dynamo.getUserWithId(userId)
         user match {
           case Some(u) => {
-            awsEmail.sendEmailNewKey(u.email, key)
-            Redirect(routes.Application.editUserPage(userId))
+            awsEmail.sendEmailNewKey(u.email, key) map {
+              case result: SendEmailResult => Redirect(routes.Application.editUserPage(userId))
+              case _ => Redirect(routes.Application.editUserPage(userId, Some(s"We were unable to send the email with the new key. Please contact ${u.email}.")))
+            }
           }
-          case None => NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found")))
+          case None => Future.successful(NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
         }
       } recover {
         case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
