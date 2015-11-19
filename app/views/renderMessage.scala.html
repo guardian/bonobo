@@ -7,9 +7,7 @@
     @for(e <- error) {
         <p class="alert alert-danger">@e</p>
     }
-    @flash.map { e =>
-        @if(e.get("error").isDefined){
-            <p class="alert alert-danger">@e.get("error")</p>
-        }
+    @for(f <- flash; e <- f.get("error")){
+        <p class="alert alert-danger">@e</p>
     }
 </div>
