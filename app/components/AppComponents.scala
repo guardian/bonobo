@@ -80,7 +80,7 @@ trait ControllersComponent { self: BuiltInComponents with NingWSComponents with 
   def appController = new Application(dynamo, kong, awsEmail, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
 
-  val developerFormController = new DeveloperForm(dynamo, kong, messagesApi)
+  val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
   val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)

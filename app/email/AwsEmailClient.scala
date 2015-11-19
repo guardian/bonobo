@@ -15,7 +15,7 @@ trait MailClient {
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
 
-class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String, responseHandler: AsyncHandler[SendEmailRequest, SendEmailResult] = AwsMailClient.asyncHandler) extends MailClient {
+class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String) extends MailClient {
 
   private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     Logger.debug(s"Sending $subject to $address")
@@ -42,7 +42,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
         promise.success(result)
       }
     }
-    amazonMailClient.sendEmailAsync(request, responseHandler)
+    amazonMailClient.sendEmailAsync(request)
     promise.future
   }
 
@@ -60,22 +60,11 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       |Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
       |Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
       |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}""".stripMargin
-    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message) //this should be eventually sent to content.delivery@guardian.co.uk instead
+    sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message) //TODO: this should be eventually sent to content.delivery@guardian.co.uk instead
   }
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = {
     val message = s"A new key has been created for you: $key"
     sendEmail(toEmail, "New Key Created", message)
-  }
-}
-
-object AwsMailClient {
-  val asyncHandler = new AsyncHandler[SendEmailRequest, SendEmailResult] {
-    override def onError(e: Exception) = {
-      Logger.warn(s"Could not send mail: ${e.getMessage}")
-    }
-
-    override def onSuccess(request: SendEmailRequest, result: SendEmailResult) =
-      Logger.info("The email has been successfully sent")
   }
 }
