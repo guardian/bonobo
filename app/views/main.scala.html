@@ -1,4 +1,4 @@
-@(title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, query: Option[String] = None)(content: Html)
+@(title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None, query: Option[String] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -37,7 +37,7 @@
         </nav>
         <div class="container" role="main" style="margin-top: 35px;">
             @renderTitle(pageTitle)
-            @renderMessage(success, error)
+            @renderMessage(success, error, flash)
             @content
         </div>
     </body>

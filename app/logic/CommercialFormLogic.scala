@@ -18,11 +18,12 @@ class CommercialFormLogic(dynamo: DB, kong: Kong) {
    * @return Unit in case of success or a message in case of error.
    */
 
-  def sendRequest(form: CommercialRequestKeyFormData): Either[String, Unit] = {
-    def saveUserOnDB(formData: CommercialRequestKeyFormData): Unit = {
+  def sendRequest(form: CommercialRequestKeyFormData): Either[String, BonoboUser] = {
+    def saveUserOnDB(formData: CommercialRequestKeyFormData): BonoboUser = {
       Logger.info(s"CommercialFormLogic: User with email ${form.email} has sent a new request.")
       val newBonoboUser = BonoboUser(formData)
       dynamo.saveUser(newBonoboUser)
+      newBonoboUser
     }
 
     dynamo.getUserWithEmail(form.email) match {

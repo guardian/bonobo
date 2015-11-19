@@ -1,5 +1,6 @@
 package controllers
 
+import email.MailClient
 import kong.Kong
 import kong.Kong.{ GenericFailure, ConflictFailure }
 import logic.DeveloperFormLogic
@@ -11,7 +12,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
 
@@ -27,8 +28,12 @@ class DeveloperForm(dynamo: DB, kong: Kong, val messagesApi: MessagesApi) extend
     }
 
     def handleValidForm(formData: DeveloperCreateKeyFormData): Future[Result] = {
-      logic.createUser(formData) map { consumerKey =>
-        Redirect(routes.DeveloperForm.showKey(consumerKey))
+      logic.createUser(formData) flatMap { consumerKey =>
+        awsEmail.sendEmailNewKey(formData.email, consumerKey) map {
+          result => Redirect(routes.DeveloperForm.showKey(consumerKey))
+        } recover {
+          case _ => Redirect(routes.DeveloperForm.showKey(consumerKey)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+        }
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
         case GenericFailure(errorMessage) => InternalServerError(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
