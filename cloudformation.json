@@ -65,7 +65,7 @@
     "EmailPolicy": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
-        "PolicyName": "dynamodb-policy",
+        "PolicyName": "email-policy",
         "PolicyDocument": {
           "Statement": [{
             "Effect": "Allow",
