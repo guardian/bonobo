@@ -62,6 +62,20 @@
         "Roles": [{"Ref": "RootRole" }]
       }
     },
+    "EmailPolicy": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyName": "dynamodb-policy",
+        "PolicyDocument": {
+          "Statement": [{
+            "Effect": "Allow",
+            "Action": [ "ses:SendEmail", "ses:SendRawEmail" ],
+            "Resource": "*"
+          }]
+        },
+        "Roles": [{"Ref": "RootRole" }]
+      }
+    },
     "InstanceProfile": {
       "Type": "AWS::IAM::InstanceProfile",
       "Properties": {
