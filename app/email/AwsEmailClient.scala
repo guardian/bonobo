@@ -42,7 +42,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
         promise.success(result)
       }
     }
-    amazonMailClient.sendEmailAsync(request)
+    amazonMailClient.sendEmailAsync(request, responseHandler)
     promise.future
   }
 
