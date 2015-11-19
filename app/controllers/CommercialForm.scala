@@ -33,8 +33,9 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
         case Left(error) => Future.successful(BadRequest(views.html.commercialRequestKey(requestKeyForm.fill(formData), error = Some(error))))
         case Right(user) => {
           awsEmail.sendEmailCommercialRequest(user) map {
-            case result: SendEmailResult => Redirect(routes.CommercialForm.requestMessage())
-            case _ => Redirect(routes.CommercialForm.requestMessage(Some("We were unable to send the email. Please contact [email] for further instructions")))
+            result => Redirect(routes.CommercialForm.requestMessage())
+          } recover {
+            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact [email] for further instructions")
           }
         }
       }
@@ -42,8 +43,8 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
     requestKeyForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  def requestMessage(error: Option[String]) = Action {
-    Ok(views.html.commercialRequestMessage(error = error))
+  def requestMessage = Action {
+    Ok(views.html.commercialRequestMessage())
   }
 }
 

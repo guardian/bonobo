@@ -59,23 +59,27 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
       Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
-    def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
-      logic.createUser(createUserFormData) map { consumerId =>
-        Redirect(routes.Application.editUserPage(consumerId))
+    def handleValidForm(formData: CreateUserFormData): Future[Result] = {
+      logic.createUser(formData) flatMap { consumer =>
+        awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
+          result => Redirect(routes.Application.editUserPage(consumer.id))
+        } recover {
+          case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+        }
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editUserPage(id: String, error: Option[String]) = maybeAuth { implicit request =>
+  def editUserPage(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) => {
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.productName, consumer.productUrl, consumer.companyName, consumer.companyUrl))
-        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle, error = error))
+        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
       }
       case None => {
         NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
@@ -118,8 +122,9 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
         user match {
           case Some(u) => {
             awsEmail.sendEmailNewKey(u.email, key) map {
-              case result: SendEmailResult => Redirect(routes.Application.editUserPage(userId))
-              case _ => Redirect(routes.Application.editUserPage(userId, Some(s"We were unable to send the email with the new key. Please contact ${u.email}.")))
+              result => Redirect(routes.Application.editUserPage(userId))
+            } recover {
+              case _ => Redirect(routes.Application.editUserPage(userId)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${u.email}.")
             }
           }
           case None => Future.successful(NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
