@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.{ Future, Promise }
 
 trait MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult]
+  def sendEmailCommercialRequest(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult]
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
@@ -33,7 +33,8 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     val promise = Promise[SendEmailResult]()
     val responseHandler = new AsyncHandler[SendEmailRequest, SendEmailResult] {
       override def onError(e: Exception) = {
-        Logger.warn(s"Could not send mail: ${e.getMessage}")
+        Logger.warn(s"Could not send mail: ${e.getMessage}\n" +
+          s"The failing request was $request")
         promise.failure(e)
       }
 
@@ -46,12 +47,14 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     promise.future
   }
 
-  def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult] = {
+  def sendEmailCommercialRequest(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult] = {
     val message = s"""Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}
       |Name: ${user.name}
       |Email: ${user.email}
       |Company name: ${user.companyName}
       |Company URL: ${user.companyUrl.getOrElse('-')}
+      |Product name: $productName
+      |Product URL: $productUrl
       |Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
       |Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}
       |Content type: ${user.additionalInfo.content.getOrElse('-')}
