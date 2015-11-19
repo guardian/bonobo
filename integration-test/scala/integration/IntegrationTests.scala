@@ -92,6 +92,23 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
+  it should "show error message when the email hasn't been sent" in {
+    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "testing-email@wayneenterprises.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "http://wayneenterprises.com.co.uk",
+      "tier" -> "RightsManaged",
+      "key" -> "the-dark"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
+    flash(result).get("error") shouldBe defined
+  }
+
   behavior of "creating a new user without specifying a custom key"
 
   it should "add a Bonobo user and a randomly generated key" in {
@@ -353,6 +370,42 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val dynamoBonoboUser = dynamo.getUserWithEmail("test@commercialform.com")
 
     dynamoBonoboUser.value shouldBe userToSave.copy(bonoboId = dynamoBonoboUser.value.bonoboId, additionalInfo = userToSave.additionalInfo.copy(createdAt = dynamoBonoboUser.value.additionalInfo.createdAt))
+  }
+
+  it should "show error message when the email hasn't been sent" in {
+    val userToSave = new BonoboUser(
+      bonoboId = "id",
+      name = "Joe Bloggs",
+      email = "test-email@commercialform.com",
+      companyName = "The Test Company",
+      companyUrl = Some("http://thetestcompany.co.uk"),
+      productName = "http://blabla",
+      productUrl = "http://blabla",
+      additionalInfo = AdditionalUserInfo(
+        businessArea = Some("News"),
+        monthlyUsers = Some("100"),
+        commercialModel = Some("Model"),
+        content = Some("News"),
+        articlesPerDay = Some("20"),
+        createdAt = DateTime.now(),
+        registrationType = CommercialRegistration))
+    val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
+      "name" -> userToSave.name,
+      "email" -> userToSave.email,
+      "companyName" -> userToSave.companyName,
+      "companyUrl" -> userToSave.companyUrl.value,
+      "productName" -> userToSave.productName,
+      "productUrl" -> userToSave.productUrl,
+      "businessArea" -> userToSave.additionalInfo.businessArea.value,
+      "monthlyUsers" -> userToSave.additionalInfo.monthlyUsers.value,
+      "commercialModel" -> userToSave.additionalInfo.commercialModel.value,
+      "content" -> userToSave.additionalInfo.content.value,
+      "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
+      "acceptTerms" -> "true"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the message page
+    flash(result).get("error") shouldBe defined
   }
 }
 

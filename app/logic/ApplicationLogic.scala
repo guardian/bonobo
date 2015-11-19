@@ -33,7 +33,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    *
    * @return a Future of the newly created Kong consumer's ID
    */
-  def createUser(form: CreateUserFormData): Future[String] = {
+  def createUser(form: CreateUserFormData): Future[ConsumerCreationResult] = {
     Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
       val newBonoboUser = BonoboUser(consumer.id, formData)
@@ -43,12 +43,12 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier)
     }
 
-    def createConsumerAndKey: Future[String] = {
+    def createConsumerAndKey: Future[ConsumerCreationResult] = {
       val rateLimits: RateLimits = form.tier.rateLimit
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form, rateLimits)
-          consumer.id
+          consumer
       }
     }
 

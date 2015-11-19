@@ -47,19 +47,19 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
   }
 
   def sendEmailCommercialRequest(user: BonoboUser)(implicit request: RequestHeader): Future[SendEmailResult] = {
-    val message = s"Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}\n" +
-      s"""Name: ${user.name}
-      Email: ${user.email}
-      Product name: ${user.productName}
-      Product URL: ${user.productUrl}
-      Company name: ${user.companyName}
-      Company URL: ${user.companyUrl.getOrElse('-')}
-      Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
-      Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}
-      Content type: ${user.additionalInfo.content.getOrElse('-')}
-      Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
-      Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
-      ${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}"""
+    val message = s"""Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}
+      |Name: ${user.name}
+      |Email: ${user.email}
+      |Product name: ${user.productName}
+      |Product URL: ${user.productUrl}
+      |Company name: ${user.companyName}
+      |Company URL: ${user.companyUrl.getOrElse('-')}
+      |Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
+      |Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}
+      |Content type: ${user.additionalInfo.content.getOrElse('-')}
+      |Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
+      |Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
+      |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}""".stripMargin
     sendEmail("maria-livia.chiorean@guardian.co.uk", "Commercial Key Request", message) //this should be eventually sent to content.delivery@guardian.co.uk instead
   }
 
