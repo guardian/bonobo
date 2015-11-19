@@ -80,8 +80,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     BonoboTable.updateItem(new PrimaryKey("id", bonoboUser.bonoboId),
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
-      new AttributeUpdate("productName").put(bonoboUser.productName),
-      new AttributeUpdate("productUrl").put(bonoboUser.productUrl),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
       bonoboUser.companyUrl match {
         case Some(url) => new AttributeUpdate("companyUrl").put(url)
@@ -115,6 +113,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def updateKey(kongKey: KongKey): Unit = {
     KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
+      new AttributeUpdate("productName").put(kongKey.productName),
+      new AttributeUpdate("productUrl").put(kongKey.productUrl),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
@@ -231,8 +231,6 @@ object Dynamo {
       .withPrimaryKey("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
       .withString("email", bonoboKey.email)
-      .withString("productName", bonoboKey.productName)
-      .withString("productUrl", bonoboKey.productUrl)
       .withString("companyName", bonoboKey.companyName)
       .withLong("createdAt", bonoboKey.additionalInfo.createdAt.getMillis)
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
@@ -256,8 +254,6 @@ object Dynamo {
       bonoboId = item.getString("id"),
       name = item.getString("name"),
       email = item.getString("email"),
-      productName = item.getString("productName"),
-      productUrl = item.getString("productUrl"),
       companyName = item.getString("companyName"),
       companyUrl = Option(item.getString("companyUrl")),
       additionalInfo = AdditionalUserInfo(createdAt = new DateTime(item.getString("createdAt").toLong),
@@ -281,6 +277,8 @@ object Dynamo {
       .withString("status", kongKey.status)
       .withString("tier", kongKey.tier.toString)
       .withLong("createdAt", kongKey.createdAt.getMillis)
+      .withString("productName", kongKey.productName)
+      .withString("productUrl", kongKey.productUrl)
   }
 
   def fromKongItem(item: Item): KongKey = {
@@ -299,6 +297,8 @@ object Dynamo {
       status = item.getString("status"),
       tier = toTier(item.getString("tier")),
       createdAt = new DateTime(item.getString("createdAt").toLong),
+      productName = item.getString("productName"),
+      productUrl = item.getString("productUrl"),
       rangeKey = item.getString("rangekey")
     )
   }

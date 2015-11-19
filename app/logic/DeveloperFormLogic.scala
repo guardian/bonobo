@@ -27,7 +27,7 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer.id, consumer, Developer.rateLimit, Developer)
+      val newKongKey = KongKey(consumer.id, consumer, Developer.rateLimit, Developer, formData.productName, formData.productUrl)
       dynamo.saveKey(newKongKey)
     }
 
