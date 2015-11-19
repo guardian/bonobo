@@ -1,5 +1,7 @@
 package controllers
 
+import com.amazonaws.services.simpleemail.model.SendEmailResult
+import email.MailClient
 import logic.ApplicationLogic
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
@@ -15,7 +17,7 @@ import kong.Kong._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
@@ -57,12 +59,16 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
       Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
-    def handleValidForm(createUserFormData: CreateUserFormData): Future[Result] = {
-      logic.createUser(createUserFormData) map { consumerId =>
-        Redirect(routes.Application.editUserPage(consumerId))
+    def handleValidForm(formData: CreateUserFormData): Future[Result] = {
+      logic.createUser(formData) flatMap { consumer =>
+        awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
+          result => Redirect(routes.Application.editUserPage(consumer.id))
+        } recover {
+          case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+        }
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(createUserFormData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
@@ -111,8 +117,18 @@ class Application(dynamo: DB, kong: Kong, val messagesApi: MessagesApi, val auth
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
-      logic.createKey(userId, form) map { _ =>
-        Redirect(routes.Application.editUserPage(userId))
+      logic.createKey(userId, form) flatMap { key =>
+        val user = dynamo.getUserWithId(userId)
+        user match {
+          case Some(u) => {
+            awsEmail.sendEmailNewKey(u.email, key) map {
+              result => Redirect(routes.Application.editUserPage(userId))
+            } recover {
+              case _ => Redirect(routes.Application.editUserPage(userId)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${u.email}.")
+            }
+          }
+          case None => Future.successful(NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
+        }
       } recover {
         case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
         case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
