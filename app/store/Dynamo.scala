@@ -81,10 +81,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      bonoboUser.companyUrl match {
-        case Some(url) => new AttributeUpdate("companyUrl").put(url)
-        case None => new AttributeUpdate("companyUrl").delete()
-      }
+      new AttributeUpdate("companyName").put(bonoboUser.companyUrl)
     )
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
   }
@@ -232,14 +229,15 @@ object Dynamo {
       .withString("name", bonoboKey.name)
       .withString("email", bonoboKey.email)
       .withString("companyName", bonoboKey.companyName)
+      .withString("companyUrl", bonoboKey.companyUrl)
       .withLong("createdAt", bonoboKey.additionalInfo.createdAt.getMillis)
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
 
-    bonoboKey.companyUrl.fold(item) { url => item.withString("companyUrl", url) }
     bonoboKey.additionalInfo.businessArea.fold(item) { businessArea => item.withString("businessArea", businessArea) }
     bonoboKey.additionalInfo.monthlyUsers.fold(item) { monthlyUsers => item.withString("monthlyUsers", monthlyUsers) }
     bonoboKey.additionalInfo.commercialModel.fold(item) { commercialModel => item.withString("commercialModel", commercialModel) }
     bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
+    bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
     bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
   }
 
@@ -255,13 +253,14 @@ object Dynamo {
       name = item.getString("name"),
       email = item.getString("email"),
       companyName = item.getString("companyName"),
-      companyUrl = Option(item.getString("companyUrl")),
+      companyUrl = item.getString("companyUrl"),
       additionalInfo = AdditionalUserInfo(createdAt = new DateTime(item.getString("createdAt").toLong),
         registrationType = toRegistrationType(item.getString("registrationType")),
         businessArea = Option(item.getString("businessArea")),
         monthlyUsers = Option(item.getString("monthlyUsers")),
         commercialModel = Option(item.getString("commercialModel")),
         content = Option(item.getString("content")),
+        contentFormat = Option(item.getString("contentFormat")),
         articlesPerDay = Option(item.getString("articlesPerDay")))
     )
   }

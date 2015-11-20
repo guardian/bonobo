@@ -199,7 +199,7 @@ object Application {
       "name" -> nonEmptyText,
       "email" -> email,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> optional(text),
+      "companyUrl" -> nonEmptyText,
       "productName" -> nonEmptyText,
       "productUrl" -> nonEmptyText,
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
@@ -212,7 +212,7 @@ object Application {
       "name" -> nonEmptyText,
       "email" -> email,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> optional(text)
+      "companyUrl" -> nonEmptyText
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
