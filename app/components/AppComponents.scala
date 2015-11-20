@@ -4,7 +4,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
-import controllers.{ CommercialForm, DeveloperForm, Application, Auth }
+import controllers._
 import com.gu.googleauth.GoogleAuthConfig
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }

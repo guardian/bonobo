@@ -4,6 +4,7 @@ import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.{ Eventually, ScalaFutures }
 import org.scalatest.{ Matchers, OptionValues, FlatSpec }
+import play.api.Logger
 import play.api.test.Helpers._
 import play.api.test.FakeRequest
 
@@ -11,6 +12,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
+
+import scala.io.Source
+import scala.util.{Failure, Success}
 
 
 class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
@@ -413,12 +417,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(result) shouldBe 303 // on success it redirects to the message page
     flash(result).get("error") shouldBe defined
-  }
-
-  behavior of "migrate users from Mashery"
-
-  it should "take a list of users from Mashery and save them in Kong and Dynamo" in {
-    //TODO: write tests
   }
 
 }

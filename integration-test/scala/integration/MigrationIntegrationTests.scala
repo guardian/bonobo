@@ -7,6 +7,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await}
@@ -34,18 +35,16 @@ class MigrationIntegrationTests extends FlatSpec with Matchers with OptionValues
     val result = route(FakeRequest(POST, "/migrate").withJsonBody(masheryJson)).get
     status(result) shouldBe 200
 
-    result.onComplete{
-      case Success(_) => {
-        masheryJson.validate[List[MasheryUser]] match {
-          case JsSuccess(j, _) => j.foreach(checkSave)
-          case JsError(errorMessage) => Logger.warn(s"Integration Tests: Error parsing json $errorMessage")
-        }
+
+    whenReady(result){ r =>
+      masheryJson.validate[List[MasheryUser]] match {
+        case JsSuccess(j, _) => j.foreach(checkIfSaved)
+        case JsError(errorMessage) => fail(s"Integration Tests: Error parsing json $errorMessage")
       }
-      case Failure(_) => Logger.warn(s"Integration Tests: Error completing request")
     }
   }
 
-  private def checkSave(user: MasheryUser): Unit = {
+  private def checkIfSaved(user: MasheryUser): Unit = {
     val bonoboUser = dynamo.getUserWithEmail(user.email)
     Logger.info(s"Integration Tests: bonoboUser = $bonoboUser")
 
@@ -59,7 +58,7 @@ class MigrationIntegrationTests extends FlatSpec with Matchers with OptionValues
     bonoboId shouldBe defined
 
     val additionalInfo = AdditionalUserInfo(user.createdAt, MasheryRegistration)
-    val expectedUser = Option(BonoboUser("random_id", user.email, user.name, user.productName, user.productUrl, user.companyName, user.companyUrl, additionalInfo).copy(bonoboId = bonoboId.value))
+    val expectedUser = Option(BonoboUser("random_id", user.email, user.name, user.companyName, user.companyUrl, additionalInfo).copy(bonoboId = bonoboId.value))
     bonoboUser shouldBe expectedUser
 
     val kongKeys = dynamo.getKeysWithUserId(bonoboUser.value.bonoboId)
