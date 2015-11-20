@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
 import models.BonoboUser
+import play.api.libs.json.{JsNumber, JsString}
 import play.api.mvc.RequestHeader
 import store.Dynamo
 import kong.KongClient
@@ -16,7 +17,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ning.NingWSComponents
 import play.api._
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
@@ -70,4 +71,44 @@ trait IntegrationSpecBase
 
   override implicit lazy val app = components.application
 
+  def checkConsumerExistsOnKong(consumerId: String): Future[Boolean] = {
+    wsClient.url(s"$kongUrl/consumers/$consumerId").get().map {
+      response =>
+        (response.json \\ "id").headOption match {
+          case Some(JsString(id)) if id == consumerId => true
+          case _ => false
+        }
+    }
+  }
+
+  def checkKeyExistsOnKong(consumerId: String): Future[Boolean] = {
+    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
+      response =>
+        (response.json \\ "key").headOption match {
+          case Some(JsString(key)) => true
+          case _ => false
+        }
+    }
+  }
+
+  def getKeyForConsumerId(consumerId: String): Future[String] = {
+    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
+      response =>
+        (response.json \\ "key").headOption match {
+          case Some(JsString(key)) => key
+          case _ => fail()
+        }
+    }
+  }
+
+  def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
+    wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
+      .withQueryString("consumer_id" -> consumerId).get().map {
+      response =>
+        (response.json \\ "day").headOption match {
+          case Some(JsNumber(config)) if config.toInt == day => true
+          case _ => false
+        }
+    }
+  }
 }

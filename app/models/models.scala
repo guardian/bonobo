@@ -82,6 +82,10 @@ object KongKey {
     new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
+  /* model used in the migration endpoint */
+  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String, status: String, date: DateTime): KongKey = {
+    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, status, date, productName, productUrl, uniqueRangeKey(consumer.createdAt))
+  }
 }
 
 /* model used for show all keys table */

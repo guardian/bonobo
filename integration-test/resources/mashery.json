@@ -3,7 +3,7 @@
     "name": "First User",
     "email": "test@migratemashery.com",
     "companyName": "Company name",
-    "companyUrl": "http://company.com",
+    "companyUrl": "",
     "createdAt": "Nov 12 2015 14:29:48",
     "keys": [
       {
@@ -13,7 +13,7 @@
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
-        "status": "active",
+        "status": "Active",
         "createdAt": "Nov 12 2015 14:29:48"
       },
       {
@@ -23,7 +23,7 @@
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
-        "status": "active",
+        "status": "Active",
         "createdAt": "Nov 11 2015 14:29:48"
       }
     ]
@@ -42,7 +42,7 @@
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Internal",
-        "status": "active",
+        "status": "Active",
         "createdAt": "Nov 11 2015 14:30:48"
       },
       {
@@ -52,7 +52,17 @@
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
-        "status": "active",
+        "status": "Active",
+        "createdAt": "Nov 11 2015 14:29:48"
+      },
+      {
+        "key": "second-key-3",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 20,
+        "tier": "Developer",
+        "status": "Inactive",
         "createdAt": "Nov 11 2015 14:29:48"
       }
     ]
