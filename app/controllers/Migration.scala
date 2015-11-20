@@ -52,12 +52,13 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
       Future.failed(ConflictFailure("Key already taken."))
     } else {
       val rateLimits: RateLimits = RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay)
-      kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) map {
+      kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) flatMap {
         consumer =>
           {
             val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, masheryKey.productName, masheryKey.productUrl, masheryKey.status, masheryKey.createdAt)
             dynamo.saveKey(kongKey)
-            if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id)
+            if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id).map(_ => ())
+            else Future.successful(())
           }
       }
     }
