@@ -39,4 +39,6 @@ scalariformSettings
 
 testOptions in Test += Tests.Argument("-oF")
 
+parallelExecution in IntegrationTest := false
+
 sourceDirectory in IntegrationTest <<= baseDirectory { base => base / "integration-test" }

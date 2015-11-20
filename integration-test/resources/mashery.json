@@ -1,15 +1,15 @@
 [
   {
-    "name": "First Migration",
+    "name": "First User",
     "email": "test@migratemashery.com",
-    "productName": "Product name",
-    "productUrl": "http://product.com",
     "companyName": "Company name",
     "companyUrl": "http://company.com",
     "createdAt": "Nov 12 2015 14:29:48",
     "keys": [
       {
         "key": "first-key-1",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
@@ -18,6 +18,8 @@
       },
       {
         "key": "first-key-2",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
@@ -27,16 +29,16 @@
     ]
   },
   {
-    "name": "Second Migration",
+    "name": "Second User",
     "email": "test2@migratemashery.com",
-    "productName": "Product name",
-    "productUrl": "http://product.com",
     "companyName": "Company name",
-    "companyUrl": "",
+    "companyUrl": "http://company.com",
     "createdAt": "Nov 10 2015 17:29:48",
     "keys": [
       {
         "key": "second-key-1",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Internal",
@@ -45,6 +47,8 @@
       },
       {
         "key": "second-key-2",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",

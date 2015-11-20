@@ -4,7 +4,7 @@ import java.util.UUID
 import controllers.Forms._
 import enumeratum.{ PlayJsonEnum, Enum, EnumEntry }
 import org.joda.time.DateTime
-import play.api.libs.json.{ Reads, Json }
+import play.api.libs.json.{ Writes, Reads, Json }
 
 /* model used for saving the users on Bonobo */
 case class BonoboUser(
@@ -152,10 +152,8 @@ case object MasheryRegistration extends RegistrationType {
 case class MasheryUser(
   name: String,
   email: String,
-  productName: String,
-  productUrl: String,
   companyName: String,
-  companyUrl: Option[String],
+  companyUrl: String,
   createdAt: DateTime,
   keys: List[MasheryKey])
 
@@ -171,6 +169,8 @@ object MasheryUser {
 
 case class MasheryKey(
   key: String,
+  productName: String,
+  productUrl: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,
   tier: Tier,
