@@ -60,10 +60,10 @@ object CommercialForm {
       "companyName" -> nonEmptyText,
       "companyUrl" -> nonEmptyText,
       "businessArea" -> nonEmptyText,
-      "monthlyUsers" -> number.verifying(_ > 0),
+      "monthlyUsers" -> number,
       "commercialModel" -> nonEmptyText,
       "content" -> nonEmptyText,
-      "articlesPerDay" -> number.verifying(_ > 0),
+      "articlesPerDay" -> number,
       "contentFormat" -> nonEmptyText,
       "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(CommercialRequestKeyFormData.apply)(CommercialRequestKeyFormData.unapply)
