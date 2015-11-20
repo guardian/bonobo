@@ -1,6 +1,5 @@
 package controllers
 
-import controllers.Forms.CreateKeyFormData
 import kong.Kong
 import kong.Kong.ConflictFailure
 import models._
@@ -13,60 +12,58 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class Migration(dynamo: DB, kong: Kong) extends Controller {
-  def migrate = Action(parse.json) { implicit request =>
+  def migrate = Action.async(parse.json) { implicit request =>
     request.body.validate[List[MasheryUser]] match {
-      case JsSuccess(j, _) => {
-        j.foreach(handleMasheryUser)
+      case JsSuccess(masheryUsers, _) => {
+        Future.traverse(masheryUsers)(masheryUser => handleMasheryUser(masheryUser)) map (_ => Ok("OK"))
       }
-      case JsError(errorMessage) => Logger.warn(s"Migration: Error when parsing json: $errorMessage")
+      case JsError(errorMessage) => {
+        Logger.warn(s"Migration: Error when parsing json: $errorMessage")
+        Future.successful(BadRequest(s"Invalid Json: $errorMessage"))
+      }
     }
-    Ok("OK")
   }
 
-  private def handleMasheryUser(user: MasheryUser): Future[Unit] = {
+  import Migration._
+
+  private def handleMasheryUser(user: MasheryUser): Future[List[Unit]] = {
     val bonoboId = java.util.UUID.randomUUID().toString
     val additionalInfo = AdditionalUserInfo(user.createdAt, MasheryRegistration)
-    val bonoboUser = BonoboUser(bonoboId, user.email, user.name, user.companyName, user.companyUrl, additionalInfo)
-    //TODO: Check for empty fields
-
-    createUserAndKeys(bonoboUser, user.keys)
+    val bonoboUser = BonoboUser(bonoboId, user.email, user.name, unspecifiedIfEmpty(user.companyName), unspecifiedIfEmpty(user.companyUrl), additionalInfo)
+    handleUserAndKeys(bonoboUser, user.keys)
   }
 
-  private def createUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[Unit] = {
-    Logger.info(s"Migration: Creating user $bonoboUser with keys $masheryKeys")
-
+  private def handleUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[List[Unit]] = {
     dynamo.getUserWithEmail(bonoboUser.email) match {
       case Some(user) => {
-        Logger.warn(s"Migration: Email already taken when creating user with name ${bonoboUser.name} and key with value ${masheryKeys.head.key}")
+        Logger.warn(s"Migration: Email already taken when creating user with name ${bonoboUser.name} and keys with value ${masheryKeys.head.key}")
         Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
       }
       case None => {
         dynamo.saveUser(bonoboUser)
-        masheryKeys.map(key => createKey(bonoboUser, key))
-        Future.successful(())
+        Future.traverse(masheryKeys)(key => createKey(bonoboUser, key))
       }
     }
   }
 
-  private def createKey(bonoboUser: BonoboUser, key: MasheryKey): Future[Unit] = {
-    Logger.info(s"Migration: Creating key for user $bonoboUser")
-    def createConsumerAndKey: Future[Unit] = {
-      val rateLimits: RateLimits = key.tier.rateLimit
-      kong.createConsumerAndKey(key.tier, rateLimits, Some(key.key)) map {
-        consumer => saveKeyOnDB(bonoboUser.bonoboId, consumer, rateLimits, key.tier, key.productName, key.productUrl)
-      }
-    }
-    checkingIfKeyAlreadyTaken(key.key)(createConsumerAndKey)
-  }
-
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String): Unit = {
-    val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
-    dynamo.saveKey(newKongKey)
-  }
-
-  private def checkingIfKeyAlreadyTaken[A](key: String)(f: => Future[A]): Future[A] =
-    if (dynamo.getKeyWithValue(key).isDefined) {
-      Logger.warn(s"Migration: Key $key already taken")
+  private def createKey(bonoboUser: BonoboUser, masheryKey: MasheryKey): Future[Unit] = {
+    if (dynamo.getKeyWithValue(masheryKey.key).isDefined) {
+      Logger.warn(s"Migration: Key $masheryKey already taken")
       Future.failed(ConflictFailure("Key already taken."))
-    } else f
+    } else {
+      val rateLimits: RateLimits = RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay)
+      kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) map {
+        consumer =>
+          {
+            val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, masheryKey.productName, masheryKey.productUrl, masheryKey.status, masheryKey.createdAt)
+            dynamo.saveKey(kongKey)
+            if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id)
+          }
+      }
+    }
+  }
+}
+
+object Migration {
+  def unspecifiedIfEmpty(s: String) = if (s.isEmpty) "Unspecified" else s
 }
