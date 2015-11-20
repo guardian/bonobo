@@ -13,7 +13,7 @@
         "requestsPerDay": 1000,
         "requestsPerMinute": 100,
         "tier": "Developer",
-        "status": "Active",
+        "status": "Inactive",
         "createdAt": "Nov 12 2015 14:29:48"
       },
       {
