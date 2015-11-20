@@ -10,28 +10,28 @@ case class BonoboUser(
   email: String,
   name: String,
   companyName: String,
-  companyUrl: Option[String],
+  companyUrl: String,
   additionalInfo: AdditionalUserInfo)
 
 object BonoboUser {
   /* Method used when manually creating a new user */
   def apply(id: String, formData: CreateUserFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration, None, None, None, None, None)
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration)
     new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when editing a new user */
   def apply(id: String, formData: EditUserFormData, createdAt: DateTime, registrationType: RegistrationType): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(createdAt, registrationType, None, None, None, None, None)
+    val additionalInfo = AdditionalUserInfo(createdAt, registrationType)
     new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when using the developer form for creating a new user */
   def apply(id: String, formData: DeveloperCreateKeyFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), DeveloperRegistration, None, None, None, None, None)
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), DeveloperRegistration)
     new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
   /* Method used when using the commercial form for creating a new user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, formData.businessArea, formData.monthlyUsers.map(_.toString), formData.commercialModel, formData.content, formData.articlesPerDay.map(_.toString))
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
     new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo)
   }
 }
@@ -43,7 +43,14 @@ case class AdditionalUserInfo(
   monthlyUsers: Option[String],
   commercialModel: Option[String],
   content: Option[String],
+  contentFormat: Option[String],
   articlesPerDay: Option[String])
+
+object AdditionalUserInfo {
+  def apply(date: DateTime, registrationType: RegistrationType): AdditionalUserInfo = {
+    new AdditionalUserInfo(date, registrationType, None, None, None, None, None, None)
+  }
+}
 
 /* model used for saving the keys on Kong */
 case class KongKey(

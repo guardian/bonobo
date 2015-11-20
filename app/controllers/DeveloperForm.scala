@@ -57,7 +57,7 @@ object DeveloperForm {
       "productName" -> nonEmptyText,
       "productUrl" -> nonEmptyText,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> optional(text),
+      "companyUrl" -> nonEmptyText,
       "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(DeveloperCreateKeyFormData.apply)(DeveloperCreateKeyFormData.unapply)
   )
