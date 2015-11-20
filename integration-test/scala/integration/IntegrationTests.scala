@@ -345,12 +345,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       name = "Joe Bloggs",
       email = "test@commercialform.com",
       companyName = "The Test Company",
-      companyUrl = Some("http://thetestcompany.co.uk"),
+      companyUrl = "http://thetestcompany.co.uk",
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
         commercialModel = Some("Model"),
         content = Some("News"),
+        contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration))
@@ -358,13 +359,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName,
-      "companyUrl" -> userToSave.companyUrl.value,
+      "companyUrl" -> userToSave.companyUrl,
       "productName" -> "Product",
       "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,
       "monthlyUsers" -> userToSave.additionalInfo.monthlyUsers.value,
       "commercialModel" -> userToSave.additionalInfo.commercialModel.value,
       "content" -> userToSave.additionalInfo.content.value,
+      "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
       "acceptTerms" -> "true"
     )).get
@@ -382,12 +384,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       name = "Joe Bloggs",
       email = "test-email@commercialform.com",
       companyName = "The Test Company",
-      companyUrl = Some("http://thetestcompany.co.uk"),
+      companyUrl = "http://thetestcompany.co.uk",
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
         commercialModel = Some("Model"),
         content = Some("News"),
+        contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration))
@@ -395,13 +398,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName,
-      "companyUrl" -> userToSave.companyUrl.value,
+      "companyUrl" -> userToSave.companyUrl,
       "productName" -> "Product",
       "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,
       "monthlyUsers" -> userToSave.additionalInfo.monthlyUsers.value,
       "commercialModel" -> userToSave.additionalInfo.commercialModel.value,
       "content" -> userToSave.additionalInfo.content.value,
+      "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
       "acceptTerms" -> "true"
     )).get

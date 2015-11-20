@@ -52,7 +52,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       |Name: ${user.name}
       |Email: ${user.email}
       |Company name: ${user.companyName}
-      |Company URL: ${user.companyUrl.getOrElse('-')}
+      |Company URL: ${user.companyUrl}
       |Product name: $productName
       |Product URL: $productUrl
       |Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
