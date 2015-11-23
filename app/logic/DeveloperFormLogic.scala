@@ -27,14 +27,14 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer.id, consumer, Developer.rateLimit, Developer, formData.productName, formData.productUrl)
+      val newKongKey = KongKey(consumer.id, consumer, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
       dynamo.saveKey(newKongKey)
     }
 
     dynamo.getUserWithEmail(form.email) match {
       case Some(a) => Future.failed(ConflictFailure("Email already taken."))
       case None => {
-        kong.createConsumerAndKey(Developer, Developer.rateLimit, key = None) map {
+        kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
           consumer =>
             saveUserAndKeyOnDB(consumer, form)
             consumer.key

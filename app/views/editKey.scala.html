@@ -10,7 +10,7 @@
             @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
             @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
-            @b3.select( form("tier"), options = Seq(Developer.toString -> Developer.friendlyName, RightsManaged.toString -> RightsManaged.friendlyName, Internal.toString -> Internal.friendlyName), '_label -> "Tier" )
+            @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
             @b3.checkbox( form("defaultRequests"), '_label -> "Use default rate limits" )
             @b3.select( form("status"), options = Seq(KongKey.Active -> "Active", KongKey.Inactive -> "Inactive"), '_label -> "Status" )
             @b3.free('_id -> "idFormGroup") {

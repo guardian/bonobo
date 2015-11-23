@@ -4,7 +4,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
-import controllers.{ CommercialForm, DeveloperForm, Application, Auth }
+import controllers._
 import com.gu.googleauth.GoogleAuthConfig
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
@@ -82,8 +82,10 @@ trait ControllersComponent { self: BuiltInComponents with NingWSComponents with 
 
   val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
   val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
+  val migrationController = new Migration(dynamo, kong)
+
   val assets = new controllers.Assets(httpErrorHandler)
-  val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
+  val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, migrationController, assets)
 }
 
 class AppComponents(context: Context)

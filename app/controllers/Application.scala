@@ -202,7 +202,7 @@ object Application {
       "companyUrl" -> nonEmptyText,
       "productName" -> nonEmptyText,
       "productUrl" -> nonEmptyText,
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
+      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches()))
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
@@ -219,7 +219,7 @@ object Application {
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
+      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "productName" -> nonEmptyText,
       "productUrl" -> nonEmptyText
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
@@ -232,7 +232,7 @@ object Application {
       "productUrl" -> nonEmptyText,
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withName(tier).get, (tier: Tier) => tier.toString),
+      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "defaultRequests" -> boolean,
       "status" -> nonEmptyText
     )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
