@@ -116,7 +116,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
       response =>
         response.status match {
           case 201 => success(s"Kong: Success when creating the new key $key", key)
-          case 409 => conflictFail(s"Key $key already taken - try using a different value")
+          case 409 => conflictFail(s"Kong: Key $key already taken - try using a different value")
           case other =>
             genericFail(s"Kong responded with status $other - ${response.body} when trying to create a key for consumer $consumerId")
         }

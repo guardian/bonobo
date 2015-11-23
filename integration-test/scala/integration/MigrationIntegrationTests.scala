@@ -17,18 +17,37 @@ class MigrationIntegrationTests extends FlatSpec with Matchers with OptionValues
   behavior of "migrate users from Mashery"
 
   it should "take a list of users from Mashery and save them in Kong and Dynamo" in {
+    val initialResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "test@thetestcompany.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "http://blabla",
+      "productUrl" -> "http://blabla",
+      "tier" -> "RightsManaged",
+      "key" -> "second-key-2"
+    )).get
+
+    status(initialResult) shouldBe 303 // on success it redirects to the "edit user" page
+
     val masheryJson = Json.parse(Source.fromFile("integration-test/resources/mashery.json").mkString)
     masheryJson should not be JsNull
 
     val result = route(FakeRequest(POST, "/migrate").withJsonBody(masheryJson)).get
     status(result) shouldBe 200
 
-    whenReady(result){ r =>
-      masheryJson.validate[List[MasheryUser]] match {
-        case JsSuccess(masheryUsers, _) => masheryUsers.foreach(checkIfSaved)
-        case JsError(errorMessage) => fail(s"Integration Tests: Error parsing json $errorMessage")
+    contentAsJson(result).validate[MigrationResult] match {
+      case JsSuccess(count, _) => {
+        whenReady(result){ r =>
+          masheryJson.validate[List[MasheryUser]] match {
+            case JsSuccess(masheryUsers, _) => masheryUsers.foreach(user => if(!count.userConflicts.contains(EmailConflict(user.email))) checkIfSaved(user))
+            case JsError(errorMessage) => fail(s"Integration Tests: Error parsing json $errorMessage")
+          }
+        }
       }
+      case JsError(errorMessage) => fail(s"Integration Tests: Error parsing json $errorMessage")
     }
+
   }
 
   private def checkIfSaved(masheryUser: MasheryUser): Unit = {
