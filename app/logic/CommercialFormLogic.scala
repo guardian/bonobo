@@ -2,12 +2,9 @@ package logic
 
 import controllers.Forms.CommercialRequestKeyFormData
 import kong.Kong
-import kong.Kong.ConflictFailure
-import models.{ Developer, KongKey, BonoboUser, ConsumerCreationResult }
+import models.BonoboUser
 import play.api.Logger
 import store.DB
-
-import scala.concurrent.Future
 
 class CommercialFormLogic(dynamo: DB, kong: Kong) {
 

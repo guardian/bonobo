@@ -3,6 +3,7 @@ package store
 import com.amazonaws.services.dynamodbv2.document.spec.{ QuerySpec, ScanSpec }
 import com.amazonaws.services.dynamodbv2.document.utils.{ NameMap, ValueMap }
 import com.amazonaws.services.dynamodbv2.document._
+import models.Tier.Developer
 import models._
 import org.joda.time.DateTime
 import play.api.Logger
@@ -282,7 +283,7 @@ object Dynamo {
 
   def fromKongItem(item: Item): KongKey = {
     def toTier(tier: String): Tier = {
-      Tier.withName(tier).getOrElse {
+      Tier.withNameOption(tier).getOrElse {
         Logger.warn(s"Invalid tier in DynamoDB: $tier")
         Developer
       }

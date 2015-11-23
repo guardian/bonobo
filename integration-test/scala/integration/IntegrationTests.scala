@@ -1,6 +1,6 @@
 package integration
 
-import models.{AdditionalUserInfo, BonoboUser, CommercialRegistration}
+import models._
 import org.joda.time.DateTime
 import org.scalatest.concurrent.{ Eventually, ScalaFutures }
 import org.scalatest.{ Matchers, OptionValues, FlatSpec }
@@ -13,51 +13,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json._
 
 class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
-
-  /* HELPER FUNCTIONS */
-
-  def checkConsumerExistsOnKong(consumerId: String): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/consumers/$consumerId").get().map {
-      response =>
-        (response.json \\ "id").headOption match {
-          case Some(JsString(id)) if id == consumerId => true
-          case _ => false
-        }
-    }
-  }
-
-  def checkKeyExistsOnKong(consumerId: String): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
-      response =>
-        (response.json \\ "key").headOption match {
-          case Some(JsString(key)) => true
-          case _ => false
-        }
-    }
-  }
-
-  def getKeyForConsumerId(consumerId: String): Future[String] = {
-    wsClient.url(s"$kongUrl/consumers/$consumerId/key-auth").get().map {
-      response =>
-        (response.json \\ "key").headOption match {
-          case Some(JsString(key)) => key
-          case _ => fail()
-        }
-    }
-  }
-
-  def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
-      .withQueryString("consumer_id" -> consumerId).get().map {
-      response =>
-        (response.json \\ "day").headOption match {
-          case Some(JsNumber(config)) if config.toInt == day => true
-          case _ => false
-        }
-    }
-  }
-
-  /* ACTUAL TESTS */
 
   behavior of "creating a new user with a custom key"
 
