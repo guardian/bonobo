@@ -36,7 +36,7 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
   private def handleUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[List[Unit]] = {
     dynamo.getUserWithEmail(bonoboUser.email) match {
       case Some(user) => {
-        Logger.warn(s"Migration: Email already taken when creating user with name ${bonoboUser.name} and keys with value ${masheryKeys.head.key}")
+        Logger.warn(s"Migration: Email already taken when creating user with name ${bonoboUser.name} and keys ${masheryKeys.map(_.key)}")
         Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
       }
       case None => {
