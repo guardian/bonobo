@@ -162,12 +162,12 @@ case class MasheryUser(
   keys: List[MasheryKey])
 
 object MasheryKey {
-  implicit val dateReads = Reads.jodaDateReads("MMM dd yyyy HH:mm:ss")
+  implicit val dateReads = Reads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss'Z'")
   implicit val keyRead = Json.reads[MasheryKey]
 }
 
 object MasheryUser {
-  implicit val dateReads = Reads.jodaDateReads("MMM dd yyyy HH:mm:ss")
+  implicit val dateReads = Reads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss'Z'")
   implicit val userRead = Json.reads[MasheryUser]
 }
 

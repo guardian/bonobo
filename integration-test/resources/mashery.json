@@ -4,7 +4,7 @@
     "email": "test@migratemashery.com",
     "companyName": "Company name",
     "companyUrl": "",
-    "createdAt": "Nov 12 2015 14:29:48",
+    "createdAt": "2015-11-09T14:29:48Z",
     "keys": [
       {
         "key": "first-key-1",
@@ -14,7 +14,7 @@
         "requestsPerMinute": 100,
         "tier": "Developer",
         "status": "Inactive",
-        "createdAt": "Nov 12 2015 14:29:48"
+        "createdAt": "2015-11-09T14:29:48Z"
       },
       {
         "key": "first-key-2",
@@ -24,7 +24,7 @@
         "requestsPerMinute": 100,
         "tier": "Developer",
         "status": "Active",
-        "createdAt": "Nov 11 2015 14:29:48"
+        "createdAt": "2015-11-12T14:29:48Z"
       }
     ]
   },
@@ -33,7 +33,7 @@
     "email": "test2@migratemashery.com",
     "companyName": "Company name",
     "companyUrl": "http://company.com",
-    "createdAt": "Nov 10 2015 17:29:48",
+    "createdAt": "2015-11-10T17:29:48Z",
     "keys": [
       {
         "key": "second-key-1",
@@ -43,7 +43,7 @@
         "requestsPerMinute": 100,
         "tier": "Internal",
         "status": "Active",
-        "createdAt": "Nov 11 2015 14:30:48"
+        "createdAt": "2015-11-12T14:30:48Z"
       },
       {
         "key": "second-key-2",
@@ -53,7 +53,7 @@
         "requestsPerMinute": 100,
         "tier": "Developer",
         "status": "Active",
-        "createdAt": "Nov 11 2015 14:29:48"
+        "createdAt": "2015-11-12T14:29:48Z"
       },
       {
         "key": "second-key-3",
@@ -63,8 +63,16 @@
         "requestsPerMinute": 20,
         "tier": "Developer",
         "status": "Inactive",
-        "createdAt": "Nov 11 2015 14:29:48"
+        "createdAt": "2015-11-12T14:29:48Z"
       }
     ]
+  },
+  {
+    "name": "Third User",
+    "email": "test3@migratemashery.com",
+    "companyName": "Company name",
+    "companyUrl": "",
+    "createdAt": "2015-11-09T14:29:48Z",
+    "keys": []
   }
 ]
