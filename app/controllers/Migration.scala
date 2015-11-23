@@ -1,10 +1,9 @@
 package controllers
 
 import kong.Kong
-import kong.Kong.ConflictFailure
 import models._
 import play.api.Logger
-import play.api.libs.json.{ JsError, JsSuccess }
+import play.api.libs.json.{ Json, JsError, JsSuccess }
 import play.api.mvc._
 import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +14,11 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
   def migrate = Action.async(parse.json) { implicit request =>
     request.body.validate[List[MasheryUser]] match {
       case JsSuccess(masheryUsers, _) => {
-        Future.traverse(masheryUsers)(masheryUser => handleMasheryUser(masheryUser)) map (_ => Ok("OK"))
+        Future.traverse(masheryUsers)(masheryUser => handleMasheryUser(masheryUser)) map { userResults =>
+          val count = handleUserResult(userResults)
+          Logger.info(s"Number of successful users: $count")
+          Ok(Json.toJson(count))
+        }
       }
       case JsError(errorMessage) => {
         Logger.warn(s"Migration: Error when parsing json: $errorMessage")
@@ -26,40 +29,53 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
 
   import Migration._
 
-  private def handleMasheryUser(user: MasheryUser): Future[List[Unit]] = {
+  private def handleMasheryUser(user: MasheryUser): Future[MigrateUserResult] = {
     val bonoboId = java.util.UUID.randomUUID().toString
     val additionalInfo = AdditionalUserInfo(user.createdAt, MasheryRegistration)
     val bonoboUser = BonoboUser(bonoboId, user.email, user.name, unspecifiedIfEmpty(user.companyName), unspecifiedIfEmpty(user.companyUrl), additionalInfo)
     handleUserAndKeys(bonoboUser, user.keys)
   }
 
-  private def handleUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[List[Unit]] = {
+  private def handleUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[MigrateUserResult] = {
     dynamo.getUserWithEmail(bonoboUser.email) match {
-      case Some(user) => {
-        Logger.warn(s"Migration: Email already taken when creating user with name ${bonoboUser.name} and keys ${masheryKeys.map(_.key)}")
-        Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
-      }
+      case Some(user) => Future.successful(EmailConflict(user.email))
       case None => {
         dynamo.saveUser(bonoboUser)
-        Future.traverse(masheryKeys)(key => createKey(bonoboUser, key))
+        Future.traverse(masheryKeys)(key => createKeyForUser(bonoboUser, key)).map { keyResult => MigratedUser(keyResult) }
       }
     }
   }
 
-  private def createKey(bonoboUser: BonoboUser, masheryKey: MasheryKey): Future[Unit] = {
+  private def createKeyForUser(bonoboUser: BonoboUser, masheryKey: MasheryKey): Future[MigrateKeyResult] = {
     if (dynamo.getKeyWithValue(masheryKey.key).isDefined) {
-      Logger.warn(s"Migration: Key $masheryKey already taken")
-      Future.failed(ConflictFailure("Key already taken."))
+      Logger.info(s"Key ${masheryKey.key} already taken")
+      Future.successful(KeyConflict(masheryKey.key))
     } else {
       val rateLimits: RateLimits = RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay)
-      kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) flatMap {
+      kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) map {
         consumer =>
           {
             val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, masheryKey.productName, masheryKey.productUrl, masheryKey.status, masheryKey.createdAt)
             dynamo.saveKey(kongKey)
-            if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id).map(_ => ())
-            else Future.successful(())
+            if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id)
           }
+      }
+      Future.successful(MigratedKey)
+    }
+  }
+
+  private def handleUserResult(userResults: List[MigrateUserResult]): MigrationResult = {
+    userResults.foldLeft(MigrationResult(0, 0, List.empty, List.empty)) { (counter, result) =>
+      result match {
+        case MigratedUser(keys) => {
+          keys.foldLeft(counter.copy(successfullyManagedUsers = counter.successfullyManagedUsers + 1)) { (keysCounter, keysResult) =>
+            keysResult match {
+              case MigratedKey => keysCounter.copy(successfullyManagedKeys = keysCounter.successfullyManagedKeys + 1)
+              case KeyConflict(key) => keysCounter.copy(keyConflicts = keysCounter.keyConflicts :+ KeyConflict(key))
+            }
+          }
+        }
+        case EmailConflict(email) => counter.copy(userConflicts = counter.userConflicts :+ EmailConflict(email))
       }
     }
   }
@@ -68,3 +84,4 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
 object Migration {
   def unspecifiedIfEmpty(s: String) = if (s.isEmpty) "Unspecified" else s
 }
+

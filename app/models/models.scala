@@ -180,3 +180,28 @@ case class MasheryKey(
   tier: Tier,
   status: String,
   createdAt: DateTime)
+
+case class MigrationResult(successfullyManagedUsers: Int, successfullyManagedKeys: Int, userConflicts: List[EmailConflict], keyConflicts: List[KeyConflict])
+
+sealed trait MigrateUserResult
+case class MigratedUser(keyResults: List[MigrateKeyResult]) extends MigrateUserResult
+case class EmailConflict(email: String) extends MigrateUserResult
+
+sealed trait MigrateKeyResult
+case object MigratedKey extends MigrateKeyResult
+case class KeyConflict(key: String) extends MigrateKeyResult
+
+case object EmailConflict {
+  implicit val emailConflictWrites = Json.writes[EmailConflict]
+  implicit val emailConflictReads = Json.reads[EmailConflict]
+}
+
+case object KeyConflict {
+  implicit val keyConflictWrites = Json.writes[KeyConflict]
+  implicit val keyConflictReads = Json.reads[KeyConflict]
+}
+
+case object MigrationResult {
+  implicit val migrationResultWrites = Json.writes[MigrationResult]
+  implicit val migrationResultReads = Json.reads[MigrationResult]
+}

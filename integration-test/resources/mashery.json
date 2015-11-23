@@ -74,5 +74,24 @@
     "companyUrl": "",
     "createdAt": "2015-11-09T14:29:48Z",
     "keys": []
+  },
+  {
+    "name": "Forth User",
+    "email": "test@migratemashery.com",
+    "companyName": "Company name",
+    "companyUrl": "",
+    "createdAt": "2015-11-09T14:29:48Z",
+    "keys": [
+      {
+        "key": "forth-key-1",
+        "productName": "Product name",
+        "productUrl": "http://product.com",
+        "requestsPerDay": 1000,
+        "requestsPerMinute": 100,
+        "tier": "Developer",
+        "status": "Inactive",
+        "createdAt": "2015-11-09T14:29:48Z"
+      }
+    ]
   }
 ]
