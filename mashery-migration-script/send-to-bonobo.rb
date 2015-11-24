@@ -68,6 +68,14 @@ def tier(key)
   end
 end
 
+def status(key)
+  if key['status'] == 'active'
+    'Active'
+  else
+    'Inactive'
+  end
+end
+
 def convert_key(key)
   {
     :key => key['apikey'],
@@ -76,7 +84,7 @@ def convert_key(key)
     :requestsPerDay => limit(key, 'day'),
     :requestsPerMinute => limit(key, 'second') * 60,
     :tier => tier(key),
-    :status => key['status'].capitalize,
+    :status => status(key),
     :createdAt => key['created']
   }
 end
@@ -114,7 +122,7 @@ def post_batch(bonobo_host, json_payload)
   response = Net::HTTP.new(uri.hostname, uri.port).start do |http|
     http.request(req)
   end
-  puts "Response from Bonobo was #{response.code} #{response.message}:
+  puts "#{Time.now} - Response from Bonobo was #{response.code} #{response.message}:
   #{response.body}"
 end
 
