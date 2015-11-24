@@ -259,7 +259,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check we return a conflict error, and no user is added on Bonobo-Keys
     status(req2) shouldBe 409
-    dynamo.getUserWithEmail("user-2@email.com") should not be defined
+    dynamo.isEmailInUse("user-2@email.com") should be (false)
   }
 
   behavior of "creating a new user using the open registration form"
