@@ -12,12 +12,13 @@ import scala.concurrent.Future
 
 class Migration(dynamo: DB, kong: Kong) extends Controller {
   def migrate = Action.async(parse.json) { implicit request =>
+    Logger.info(s"Handling migration request ${request.id}")
     request.body.validate[List[MasheryUser]] match {
       case JsSuccess(masheryUsers, _) => {
         Future.traverse(masheryUsers)(masheryUser => handleMasheryUser(masheryUser)) map { userResults =>
-          val count = handleUserResult(userResults)
-          Logger.info(s"Number of successful users: $count")
-          Ok(Json.toJson(count))
+          val result = handleUserResult(userResults)
+          Logger.info(s"Returning result for migration request ${request.id}. Result: $result")
+          Ok(Json.toJson(result))
         }
       }
       case JsError(errorMessage) => {
@@ -37,12 +38,11 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
   }
 
   private def handleUserAndKeys(bonoboUser: BonoboUser, masheryKeys: List[MasheryKey]): Future[MigrateUserResult] = {
-    dynamo.getUserWithEmail(bonoboUser.email) match {
-      case Some(user) => Future.successful(EmailConflict(user.email))
-      case None => {
-        dynamo.saveUser(bonoboUser)
-        Future.traverse(masheryKeys)(key => createKeyForUser(bonoboUser, key)).map { keyResult => MigratedUser(keyResult) }
-      }
+    if (dynamo.isEmailInUse(bonoboUser.email)) {
+      Future.successful(EmailConflict(bonoboUser.email))
+    } else {
+      dynamo.saveUser(bonoboUser)
+      Future.traverse(masheryKeys)(key => createKeyForUser(bonoboUser, key)).map { keyResult => MigratedUser(keyResult) }
     }
   }
 

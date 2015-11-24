@@ -31,14 +31,13 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       dynamo.saveKey(newKongKey)
     }
 
-    dynamo.getUserWithEmail(form.email) match {
-      case Some(a) => Future.failed(ConflictFailure("Email already taken."))
-      case None => {
-        kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
-          consumer =>
-            saveUserAndKeyOnDB(consumer, form)
-            consumer.key
-        }
+    if (dynamo.isEmailInUse(form.email))
+      Future.failed(ConflictFailure("Email already taken."))
+    else {
+      kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
+        consumer =>
+          saveUserAndKeyOnDB(consumer, form)
+          consumer.key
       }
     }
   }

@@ -52,11 +52,12 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       }
     }
 
-    val user = dynamo.getUserWithEmail(form.email)
-    Logger.info(s"ApplicationLogic: Check if user with email ${form.email} already exists: ${user.isDefined}")
-    if (user.isDefined)
+    val emailAlreadyTaken = dynamo.isEmailInUse(form.email)
+    Logger.info(s"ApplicationLogic: Check if user with email ${form.email} already exists: $emailAlreadyTaken")
+    if (emailAlreadyTaken)
       Future.failed(ConflictFailure("Email already taken. You cannot have two users with the same email."))
-    else checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
+    else
+      checkingIfKeyAlreadyTaken(form.key)(createConsumerAndKey)
   }
 
   def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
@@ -67,7 +68,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     }
     dynamo.getUserWithId(userId) match {
       case Some(oldUser) => {
-        if (oldUser.email != form.email && dynamo.getUserWithEmail(form.email).isDefined)
+        if (oldUser.email != form.email && dynamo.isEmailInUse(form.email))
           Left(s"A user with the email ${form.email} already exists.")
         else updateUserOnDB(oldUser)
       }

@@ -19,6 +19,12 @@ trait DB {
 
   def getUserWithId(id: String): Option[BonoboUser]
 
+  def isEmailInUse(email: String): Boolean
+
+  /**
+   * Note: Only use this method if you actually need to look up the user.
+   * If you only want to check if the email is registered, use [[isEmailInUse(String)]], which is much faster.
+   */
   def getUserWithEmail(email: String): Option[BonoboUser]
 
   def saveKey(kongKey: KongKey): Unit
@@ -93,6 +99,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       .withValueMap(new ValueMap().withString(":i", id))
       .withMaxResultSize(1)
     BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
+  }
+
+  def isEmailInUse(email: String): Boolean = {
+    val emailQuery = new QuerySpec()
+      .withKeyConditionExpression("email = :e")
+      .withValueMap(new ValueMap().withString(":e", email))
+      .withMaxResultSize(1)
+    BonoboTable.getIndex("email-index").query(emailQuery).iterator().hasNext
   }
 
   def getUserWithEmail(email: String): Option[BonoboUser] = {

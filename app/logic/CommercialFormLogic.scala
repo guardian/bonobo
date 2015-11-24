@@ -23,9 +23,9 @@ class CommercialFormLogic(dynamo: DB, kong: Kong) {
       newBonoboUser
     }
 
-    dynamo.getUserWithEmail(form.email) match {
-      case Some(a) => Left("Email already taken.")
-      case None => Right(saveUserOnDB(form))
-    }
+    if (dynamo.isEmailInUse(form.email))
+      Left("Email already taken.")
+    else
+      Right(saveUserOnDB(form))
   }
 }
