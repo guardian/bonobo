@@ -9,8 +9,12 @@ trait BonoboUserTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
   val usersTableName = randomTableName("integration-test-bonobo-users")
 
   override def beforeAll() {
-    val attributeDefinitions: List[AttributeDefinition] = new AttributeDefinition().withAttributeName("id").withAttributeType("S") :: Nil
+    val attributeDefinitions: List[AttributeDefinition] = List(
+      new AttributeDefinition().withAttributeName("id").withAttributeType("S"),
+      new AttributeDefinition().withAttributeName("email").withAttributeType("S")
+    )
     val keySchema: List[KeySchemaElement] = new KeySchemaElement().withAttributeName("id").withKeyType(KeyType.HASH) :: Nil
+    val indexKeySchema: List[KeySchemaElement] = new KeySchemaElement().withAttributeName("email").withKeyType(KeyType.HASH) :: Nil
 
     val createTableRequest: CreateTableRequest = new CreateTableRequest()
       .withTableName(usersTableName)
@@ -19,6 +23,13 @@ trait BonoboUserTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
       .withProvisionedThroughput(new ProvisionedThroughput()
         .withReadCapacityUnits(5L)
         .withWriteCapacityUnits(5L))
+      .withGlobalSecondaryIndexes(new GlobalSecondaryIndex()
+        .withIndexName("email-index")
+        .withKeySchema(indexKeySchema.asJava)
+        .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
+        .withProvisionedThroughput(new ProvisionedThroughput()
+          .withReadCapacityUnits(5L)
+          .withWriteCapacityUnits(5L)))
 
     println(s"Creating users table $usersTableName")
     dynamoClient.createTable(createTableRequest)
