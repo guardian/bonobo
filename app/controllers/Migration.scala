@@ -58,9 +58,9 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
             val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, masheryKey.productName, masheryKey.productUrl, masheryKey.status, masheryKey.createdAt)
             dynamo.saveKey(kongKey)
             if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id)
+            MigratedKey
           }
       }
-      Future.successful(MigratedKey)
     }
   }
 
