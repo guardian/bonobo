@@ -78,6 +78,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       Try {
         "docker kill kong".!!
         println("Killed Kong container")
+        Thread.sleep(2000L)
       } recover {
         case e => println(s"Failed to kill Kong container. Exception: $e}")
       }
@@ -85,6 +86,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       Try {
         "docker kill cassandra".!!
         println("Killed Cassandra container")
+        Thread.sleep(2000L)
       } recover {
         case e => println(s"Failed to kill Cassandra container. Exception: $e}")
       }
