@@ -19,6 +19,12 @@ trait DB {
 
   def getUserWithId(id: String): Option[BonoboUser]
 
+  def isEmailInUse(email: String): Boolean
+
+  /**
+   * Note: Only use this method if you actually need to look up the user.
+   * If you only want to check if the email is registered, use [[isEmailInUse()]], which is much faster.
+   */
   def getUserWithEmail(email: String): Option[BonoboUser]
 
   def saveKey(kongKey: KongKey): Unit
@@ -27,6 +33,12 @@ trait DB {
 
   def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo]
 
+  def isKeyPresent(key: String): Boolean
+
+  /**
+   * Note: Only use this method if you actually need to look up the key.
+   * If you only want to check if the key is already registered, use [[isKeyPresent()]], which is much faster.
+   */
   def getKeyWithValue(key: String): Option[KongKey]
 
   def getKeysWithUserId(id: String): List[KongKey]
@@ -95,6 +107,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
   }
 
+  def isEmailInUse(email: String): Boolean = {
+    val emailQuery = new QuerySpec()
+      .withKeyConditionExpression("email = :e")
+      .withValueMap(new ValueMap().withString(":e", email))
+      .withMaxResultSize(1)
+    BonoboTable.getIndex("email-index").query(emailQuery).iterator().hasNext
+  }
+
   def getUserWithEmail(email: String): Option[BonoboUser] = {
     val userScan = new ScanSpec()
       .withFilterExpression("email = :e")
@@ -127,6 +147,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       case "next" => getKeysAfter(range, limit)
       case _ => ResultsPage(List.empty, hasNext = false)
     }
+  }
+
+  def isKeyPresent(keyValue: String): Boolean = {
+    val query = new QuerySpec()
+      .withKeyConditionExpression("keyValue = :k")
+      .withValueMap(new ValueMap().withString(":k", keyValue))
+    KongTable.getIndex("keyValue-index").query(query).iterator().hasNext
   }
 
   def getKeyWithValue(keyValue: String): Option[KongKey] = {

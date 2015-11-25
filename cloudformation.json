@@ -173,7 +173,7 @@
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
         "ImageId": "ami-fd67518a",
-        "InstanceType": "t2.micro",
+        "InstanceType": "t2.medium",
         "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups": [
           {
@@ -284,6 +284,10 @@
           {
             "AttributeName":"id",
             "AttributeType":"S"
+          },
+          {
+            "AttributeName":"email",
+            "AttributeType":"S"
           }
         ],
         "KeySchema": [
@@ -295,7 +299,18 @@
         "ProvisionedThroughput":{
           "ReadCapacityUnits": 20,
           "WriteCapacityUnits": 10
-        }
+        },
+        "GlobalSecondaryIndexes": [
+          {
+            "IndexName": "email-index",
+            "KeySchema": [ { "AttributeName": "email", "KeyType": "HASH" } ],
+            "Projection": { "ProjectionType": "KEYS_ONLY" },
+            "ProvisionedThroughput": {
+              "ReadCapacityUnits": 20,
+              "WriteCapacityUnits": 10
+            }
+          }
+        ]
       }
     },
     "KeysTable": {

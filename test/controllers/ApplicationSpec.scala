@@ -32,6 +32,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getUserWithId(id: String): Option[BonoboUser] = ???
 
+      def isEmailInUse(email: String): Boolean = ???
+
       def getUserWithEmail(email: String): Option[BonoboUser] = ???
 
       def saveKey(kongKey: KongKey): Unit = ???
@@ -45,6 +47,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       }
 
       def getKeyWithUserId(id: String): Option[KongKey] = ???
+
+      def isKeyPresent(key: String): Boolean = ???
 
       def getKeyWithValue(key: String): Option[KongKey] = ???
 

@@ -56,7 +56,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
     println(s"Created Cassandra container")
 
-    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong".!
+    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.5.1".!
     println(s"Created Kong container")
 
     "docker start cassandra".!
@@ -78,6 +78,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       Try {
         "docker kill kong".!!
         println("Killed Kong container")
+        Thread.sleep(2000L)
       } recover {
         case e => println(s"Failed to kill Kong container. Exception: $e}")
       }
@@ -85,6 +86,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       Try {
         "docker kill cassandra".!!
         println("Killed Cassandra container")
+        Thread.sleep(2000L)
       } recover {
         case e => println(s"Failed to kill Cassandra container. Exception: $e}")
       }
