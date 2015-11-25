@@ -181,7 +181,7 @@ case class MasheryKey(
   status: String,
   createdAt: DateTime)
 
-case class MigrationResult(successfullyManagedUsers: Int, successfullyManagedKeys: Int, userConflicts: List[EmailConflict], keyConflicts: List[KeyConflict])
+case class MigrationResult(successfullyManagedUsers: Int, successfullyManagedKeys: Int, userConflicts: List[EmailConflict], failedKeys: List[String])
 
 sealed trait MigrateUserResult
 case class MigratedUser(keyResults: List[MigrateKeyResult]) extends MigrateUserResult
@@ -190,6 +190,7 @@ case class EmailConflict(email: String) extends MigrateUserResult
 sealed trait MigrateKeyResult
 case object MigratedKey extends MigrateKeyResult
 case class KeyConflict(key: String) extends MigrateKeyResult
+case class ThrewException(key: String) extends MigrateKeyResult
 
 case object EmailConflict {
   implicit val emailConflictWrites = Json.writes[EmailConflict]
