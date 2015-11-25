@@ -32,7 +32,7 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
   private def handleMasheryUser(user: MasheryUser): Future[MigrateUserResult] = {
     val bonoboId = java.util.UUID.randomUUID().toString
     val additionalInfo = AdditionalUserInfo(user.createdAt, MasheryRegistration)
-    val bonoboUser = BonoboUser(bonoboId, user.email, user.name, unspecifiedIfEmpty(user.companyName), unspecifiedIfEmpty(user.companyUrl), additionalInfo)
+    val bonoboUser = BonoboUser(bonoboId, user.email, unspecifiedIfEmpty(user.name), unspecifiedIfEmpty(user.companyName), unspecifiedIfEmpty(user.companyUrl), additionalInfo)
     handleUserAndKeys(bonoboUser, user.keys)
   }
 
@@ -55,7 +55,7 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
       kong.createConsumerAndKey(masheryKey.tier, rateLimits, Option(masheryKey.key)) map {
         consumer =>
           {
-            val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, masheryKey.productName, masheryKey.productUrl, masheryKey.status, masheryKey.createdAt)
+            val kongKey = KongKey(bonoboUser.bonoboId, consumer, RateLimits(masheryKey.requestsPerMinute, masheryKey.requestsPerDay), masheryKey.tier, unspecifiedIfEmpty(masheryKey.productName), unspecifiedIfEmpty(masheryKey.productUrl), masheryKey.status, masheryKey.createdAt)
             dynamo.saveKey(kongKey)
             if (masheryKey.status == KongKey.Inactive) kong.deleteKey(consumer.id)
           }
