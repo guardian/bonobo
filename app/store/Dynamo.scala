@@ -151,7 +151,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def isKeyPresent(keyValue: String): Boolean = {
     val query = new QuerySpec()
-      .withConsistentRead(true)
       .withKeyConditionExpression("keyValue = :k")
       .withValueMap(new ValueMap().withString(":k", keyValue))
     KongTable.getIndex("keyValue-index").query(query).iterator().hasNext
