@@ -160,7 +160,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
   private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: => Future[A]): Future[A] = key match {
     case Some(value) =>
-      if (dynamo.getKeyWithValue(value).isDefined)
+      if (dynamo.isKeyPresent(value))
         Future.failed(ConflictFailure("Key already taken."))
       else f
     case None => f

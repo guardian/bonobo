@@ -47,7 +47,7 @@ class Migration(dynamo: DB, kong: Kong) extends Controller {
   }
 
   private def createKeyForUser(bonoboUser: BonoboUser, masheryKey: MasheryKey): Future[MigrateKeyResult] = {
-    if (dynamo.getKeyWithValue(masheryKey.key).isDefined) {
+    if (dynamo.isKeyPresent(masheryKey.key)) {
       Logger.info(s"Key ${masheryKey.key} already taken")
       Future.successful(KeyConflict(masheryKey.key))
     } else {
