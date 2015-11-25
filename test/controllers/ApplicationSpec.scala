@@ -48,6 +48,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getKeyWithUserId(id: String): Option[KongKey] = ???
 
+      def isKeyPresent(key: String): Boolean = ???
+
       def getKeyWithValue(key: String): Option[KongKey] = ???
 
       def getKeysWithUserId(id: String): List[KongKey] = ???
