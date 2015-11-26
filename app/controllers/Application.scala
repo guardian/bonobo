@@ -62,7 +62,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
       logic.createUser(formData) flatMap { consumer =>
         awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
-          result => Redirect(routes.Application.editUserPage(consumer.id))
+          result => Redirect(routes.Application.editUserPage(consumer.id, dancing = Some(true)))
         } recover {
           case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
         }
@@ -74,12 +74,12 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editUserPage(id: String) = maybeAuth { implicit request =>
+  def editUserPage(id: String, dancing: Option[Boolean]) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) => {
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl))
-        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
+        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle, dancing = dancing))
       }
       case None => {
         NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
