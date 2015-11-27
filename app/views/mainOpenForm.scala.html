@@ -1,4 +1,4 @@
-@(title: String, success: Option[String] = None, error: Option[String] = None)(content: Html)
+@(title: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -10,7 +10,7 @@
     </head>
     <body role="document">
         <div class="container" role="main" style="margin-top: 20px;">
-            @renderMessage(success, error)
+            @renderMessage(success, error, flash)
             @content
         </div>
     </body>
