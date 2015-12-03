@@ -25,7 +25,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productName" -> "http://blabla",
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
-      "key" -> "123124-13434-32323-3439"
+      "key" -> "123124-13434-32323-3439",
+      "sendEmail" -> "false"
     )).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
@@ -57,7 +58,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
-      "key" -> "the-dark"
+      "key" -> "the-dark",
+      "sendEmail" -> "true"
     )).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
@@ -75,7 +77,9 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productName" -> "http://blabla",
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
-      "key" -> "")).get
+      "key" -> "",
+      "sendEmail" -> "false"
+    )).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -106,7 +110,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
-      "key" -> "the-dark-knight"
+      "key" -> "the-dark-knight",
+      "sendEmail" -> "false"
     )).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
@@ -117,7 +122,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
-      "key" -> "the-dark-day"
+      "key" -> "the-dark-day",
+      "sendEmail" -> "false"
     )).get
 
     status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
@@ -147,7 +153,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
-      "key" -> "testing-inactive"
+      "key" -> "testing-inactive",
+      "sendEmail" -> "false"
     )).get
 
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
@@ -185,7 +192,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk-2",
       "tier" -> "RightsManaged",
-      "key" -> "testing-inactive"
+      "key" -> "testing-inactive",
+      "sendEmail" -> "false"
     )).get
 
     // check we return a conflict error, and that the key table is still inactive
@@ -205,7 +213,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
-      "key" -> "testing-update-rate-limits"
+      "key" -> "testing-update-rate-limits",
+      "sendEmail" -> "false"
     )).get
 
     status(request) shouldBe 303
@@ -240,7 +249,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
-      "key" -> "testing-duplicate-keys"
+      "key" -> "testing-duplicate-keys",
+      "sendEmail" -> "false"
     )).get
 
     status(req1) shouldBe 303
@@ -254,7 +264,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
-      "key" -> "testing-duplicate-keys"
+      "key" -> "testing-duplicate-keys",
+      "sendEmail" -> "false"
     )).get
 
     // check we return a conflict error, and no user is added on Bonobo-Keys
