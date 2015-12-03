@@ -54,9 +54,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
 
   def search(query: String, limit: Int = 20): List[BonoboInfo] = {
     val keysScan = new ScanSpec()
-      .withFilterExpression("contains (#1, :s)")
+      .withFilterExpression("contains (#1, :s) OR contains (#2, :s)")
       .withNameMap(new NameMap()
         .`with`("#1", "keyValue")
+        .`with`("#2", "productName")
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
@@ -66,12 +67,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     Logger.info(s"DynamoDB: Searching '${query}' found ${resultForKeysSearch.length} matching key(s)")
 
     val userScan = new ScanSpec()
-      .withFilterExpression("contains (#1, :s) OR contains (#2, :s) OR contains (#3, :s) OR contains (#4, :s)")
+      .withFilterExpression("contains (#1, :s) OR contains (#2, :s) OR contains (#3, :s)")
       .withNameMap(new NameMap()
         .`with`("#1", "email")
         .`with`("#2", "name")
         .`with`("#3", "companyName")
-        .`with`("#4", "productName")
       )
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
