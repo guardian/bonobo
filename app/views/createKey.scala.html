@@ -7,7 +7,7 @@
     <div class="row">
       <div class="col-md-6 col-md-offset-2 column">
       @b3.form(routes.Application.createKey(userId)) {
-        @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Insert custom key")
+        @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key")
         @b3.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
         @b3.text( keyForm("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
         @b3.select(keyForm("tier"), options = Seq("Developer" -> "Developer", "RightsManaged" -> "Rights managed", "Internal" -> "Internal"), '_label -> "Tier")

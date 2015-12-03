@@ -5,9 +5,9 @@
   <div class="row">
     <div class="col-md-6 col-md-offset-2 column">
     @b3.form(routes.Application.editUser(id)) {
-      @b3.text( form("name"), '_label -> "Name *", 'placeholder -> "Name")
-      @b3.text( form("email"), '_label -> "Email *", 'placeholder -> "Email")
-      @b3.text( form("companyName"), '_label -> "Company name *", 'placeholder -> "Company name" )
+      @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name")
+      @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
+      @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
       @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
       @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
     }
