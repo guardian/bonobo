@@ -4,11 +4,11 @@ import models.Tier
 
 object Forms {
 
-  case class CreateUserFormData(name: String, email: String, companyName: String, companyUrl: String, productName: String, productUrl: String, tier: Tier, key: Option[String] = None)
+  case class CreateUserFormData(name: String, email: String, companyName: String, companyUrl: String, productName: String, productUrl: String, tier: Tier, key: Option[String] = None, sendEmail: Boolean)
 
   case class EditUserFormData(name: String, email: String, companyName: String, companyUrl: String)
 
-  case class CreateKeyFormData(key: Option[String], tier: Tier, productName: String, productUrl: String)
+  case class CreateKeyFormData(key: Option[String], tier: Tier, productName: String, productUrl: String, sendEmail: Boolean)
 
   case class EditKeyFormData(key: String, productName: String, productUrl: String, requestsPerDay: Int, requestsPerMinute: Int, tier: Tier, defaultRequests: Boolean, status: String) {
     def validateRequests: Boolean = requestsPerDay >= requestsPerMinute
