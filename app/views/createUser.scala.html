@@ -11,8 +11,8 @@
                 @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
                 @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
                 @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
-                @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier *" )
-                @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Insert custom key" )
+                @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+                @b3.text( form("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
                 @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
             }
         </div>

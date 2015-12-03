@@ -7,13 +7,13 @@
         @b3.form(routes.CommercialForm.requestKey()) {
             <div class="row">
                 <div class="col-md-6">
-                    @b3.text(keyForm("name"), '_label -> "Name *")
-                    @b3.text(keyForm("productName"), '_label -> "Product Name *")
-                    @b3.text(keyForm("companyName"), '_label -> "Company Name *")
+                    @b3.text(keyForm("name"), '_label -> "Name")
+                    @b3.text(keyForm("productName"), '_label -> "Product Name")
+                    @b3.text(keyForm("companyName"), '_label -> "Company Name")
                 </div>
                 <div class="col-md-6">
-                    @b3.email(keyForm("email"), '_label -> "Email address *")
-                    @b3.text(keyForm("productUrl"), '_label -> "Product URL *")
+                    @b3.email(keyForm("email"), '_label -> "Email address")
+                    @b3.text(keyForm("productUrl"), '_label -> "Product URL")
                     @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
                 </div>
             </div>

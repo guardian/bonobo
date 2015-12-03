@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
-            @b3.text( form("key"), '_label -> "Key", 'placeholder -> "Key", 'readonly -> true )
+            @b3.text( form("key"), '_label -> "Key", 'readonly -> true )
             @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
             @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
