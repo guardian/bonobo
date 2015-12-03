@@ -7,14 +7,14 @@
         @b3.form(routes.DeveloperForm.createKey()) {
             <div class="row">
                 <div class="col-md-6">
-                    @b3.text(keyForm("name"), '_label -> "Name")
-                    @b3.text(keyForm("productName"), '_label -> "Product Name")
-                    @b3.text(keyForm("companyName"), '_label -> "Company Name")
+                    @b3.text(keyForm("name"), '_label -> "Name", 'tabIndex -> "1")
+                    @b3.text(keyForm("productName"), '_label -> "Product Name", 'tabIndex -> "3")
+                    @b3.text(keyForm("companyName"), '_label -> "Company Name", 'tabIndex -> "5")
                 </div>
                 <div class="col-md-6">
-                    @b3.email(keyForm("email"), '_label -> "Email address")
-                    @b3.text(keyForm("productUrl"), '_label -> "Product URL")
-                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL")
+                    @b3.email(keyForm("email"), '_label -> "Email address", 'tabIndex -> "2")
+                    @b3.text(keyForm("productUrl"), '_label -> "Product URL", 'tabIndex -> "4")
+                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL", 'tabIndex -> "6")
                 </div>
             </div>
             @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
