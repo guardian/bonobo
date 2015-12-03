@@ -65,7 +65,17 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
   }
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = {
-    val message = s"A new key has been created for you: $key"
+    val message =
+      s"""Hello from the Guardian.
+         |
+         |Thank you for registering with the open platform.
+         |
+         |A new key has been created for you: $key
+         |
+         |You can try this key by accessing https://content.guardianapis.com/search?api-key=$key in your browser.
+         |
+         |For more details on how to use the open platform API, check out the documentation available at http://open-platform.theguardian.com/documentation/
+         |""".stripMargin
     sendEmail(toEmail, "New Key Created", message)
   }
 }
