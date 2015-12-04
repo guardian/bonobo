@@ -83,12 +83,13 @@ trait CSRFComponent { self: BuiltInComponents =>
 
 trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent =>
   def enableAuth: Boolean
+  def enableEmail: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  def appController = new Application(dynamo, kong, awsEmail, messagesApi, googleAuthConfig, enableAuth)
+  def appController = new Application(dynamo, kong, awsEmail, enableEmail, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
 
-  val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
-  val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
+  val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, enableEmail, messagesApi)
+  val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, enableEmail, messagesApi)
   val migrationController = new Migration(dynamo, kong)
 
   val assets = new controllers.Assets(httpErrorHandler)
@@ -105,4 +106,5 @@ class AppComponents(context: Context)
     with ControllersComponent
     with CSRFComponent {
   def enableAuth = true
+  def enableEmail: Boolean = configuration.getBoolean("email-enabled") getOrElse false
 }

@@ -12,7 +12,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, enableEmail: Boolean, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
 
@@ -29,11 +29,13 @@ class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesAp
 
     def handleValidForm(formData: DeveloperCreateKeyFormData): Future[Result] = {
       logic.createUser(formData) flatMap { consumerKey =>
-        awsEmail.sendEmailNewKey(formData.email, consumerKey) map {
-          result => Redirect(routes.DeveloperForm.showKey(consumerKey))
-        } recover {
-          case _ => Redirect(routes.DeveloperForm.showKey(consumerKey)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
-        }
+        if (enableEmail) {
+          awsEmail.sendEmailNewKey(formData.email, consumerKey) map {
+            result => Redirect(routes.DeveloperForm.showKey(consumerKey))
+          } recover {
+            case _ => Redirect(routes.DeveloperForm.showKey(consumerKey)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+          }
+        } else Future.successful(Redirect(routes.DeveloperForm.showKey(consumerKey)))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
         case GenericFailure(errorMessage) => InternalServerError(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))

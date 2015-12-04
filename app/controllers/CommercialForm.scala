@@ -14,7 +14,7 @@ import store.DB
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, enableEmail: Boolean, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import CommercialForm._
   import Forms.CommercialRequestKeyFormData
 
@@ -33,11 +33,13 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
       logic.sendRequest(formData) match {
         case Left(error) => Future.successful(BadRequest(views.html.commercialRequestKey(requestKeyForm.fill(formData), error = Some(error))))
         case Right(user) => {
-          awsEmail.sendEmailCommercialRequest(user, formData.productName, formData.productUrl) map {
-            result => Redirect(routes.CommercialForm.requestMessage())
-          } recover {
-            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact content.delivery@theguardian.com for further instructions")
-          }
+          if (enableEmail) {
+            awsEmail.sendEmailCommercialRequest(user, formData.productName, formData.productUrl) map {
+              result => Redirect(routes.CommercialForm.requestMessage())
+            } recover {
+              case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact content.delivery@theguardian.com for further instructions")
+            }
+          } else Future.successful(Redirect(routes.CommercialForm.requestMessage()))
         }
       }
     }
