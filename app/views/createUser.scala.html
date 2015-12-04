@@ -1,10 +1,12 @@
-@(form: Form[controllers.Forms.CreateUserFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@import controllers.csrf.CSRFSupport
+@(form: Form[controllers.Forms.CreateUserFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Create user", firstName, pageTitle, success, error) {
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
             @b3.form(routes.Application.createUser) {
+                @CSRFSupport.formField
                 @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name" )
                 @b3.email( form("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
                 @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )

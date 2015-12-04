@@ -1,10 +1,12 @@
-@(keyForm: Form[controllers.Forms.CommercialRequestKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@import controllers.csrf.CSRFSupport
+@(keyForm: Form[controllers.Forms.CommercialRequestKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.vertical.fieldConstructor }
 
 @mainOpenForm("Request a key", success, error) {
     <div class="row">
         <div class="col-md-8 col-md-offset-2 column">
         @b3.form(routes.CommercialForm.requestKey()) {
+            @CSRFSupport.formField
             <div class="row">
                 <div class="col-md-6">
                     @b3.text(keyForm("name"), '_label -> "Name")
