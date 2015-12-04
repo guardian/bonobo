@@ -17,7 +17,7 @@ import play.filters.csrf.CSRF
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, enableEmail: Boolean, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
@@ -61,7 +61,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, enableEmail: Boo
 
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
       logic.createUser(formData) flatMap { consumer =>
-        if (formData.sendEmail && enableEmail) {
+        if (formData.sendEmail) {
           awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
             result => Redirect(routes.Application.editUserPage(consumer.id))
           } recover {
@@ -123,7 +123,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, enableEmail: Boo
         val user = dynamo.getUserWithId(userId)
         user match {
           case Some(u) => {
-            if (form.sendEmail && enableEmail) {
+            if (form.sendEmail) {
               awsEmail.sendEmailNewKey(u.email, key) map {
                 result => Redirect(routes.Application.editUserPage(userId))
               } recover {
