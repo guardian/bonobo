@@ -1,10 +1,12 @@
-@(userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@import controllers.csrf.CSRFSupport
+@(userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit key", firstName, pageTitle, success, error) {
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
+            @CSRFSupport.formField
             @b3.text( form("key"), '_label -> "Key", 'readonly -> true )
             @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
             @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )

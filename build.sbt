@@ -20,6 +20,7 @@ riffRaffManifestProjectName := {
 
 libraryDependencies ++= Seq(
   ws,
+  filters,
   "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20",
   "com.amazonaws" % "aws-java-sdk-ses" % "1.10.20",
   "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",

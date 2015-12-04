@@ -1,6 +1,5 @@
 package controllers
 
-import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
 import logic.ApplicationLogic
 import models._
@@ -13,6 +12,7 @@ import play.api.mvc._
 import store._
 import kong._
 import kong.Kong._
+import play.filters.csrf.CSRF
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
