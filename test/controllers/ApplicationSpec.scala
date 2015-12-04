@@ -56,21 +56,21 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getNumberOfKeys(): Long = 1
     }
-    val application = new Application(dynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(dynamo, mockKong, mockEmail, false, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())
     contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
-    val application = new Application(mockDynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(mockDynamo, mockKong, mockEmail, false, messagesApi, null, false)
 
     val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
-    val application = new Application(mockDynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(mockDynamo, mockKong, mockEmail, false, messagesApi, null, false)
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
