@@ -1,0 +1,133 @@
+{
+  "objects": [
+    {
+      "period": "1 days",
+      "name": "Every 1 day",
+      "id": "DefaultSchedule",
+      "type": "Schedule",
+      "startAt": "FIRST_ACTIVATION_DATE_TIME"
+    },
+    {
+      "bootstrapAction": "s3://#{myRegion}.elasticmapreduce/bootstrap-actions/configure-hadoop, --yarn-key-value,yarn.nodemanager.resource.memory-mb=11520,--yarn-key-value,yarn.scheduler.maximum-allocation-mb=11520,--yarn-key-value,yarn.scheduler.minimum-allocation-mb=1440,--yarn-key-value,yarn.app.mapreduce.am.resource.mb=2880,--mapred-key-value,mapreduce.map.memory.mb=5760,--mapred-key-value,mapreduce.map.java.opts=-Xmx4608M,--mapred-key-value,mapreduce.reduce.memory.mb=2880,--mapred-key-value,mapreduce.reduce.java.opts=-Xmx2304m,--mapred-key-value,mapreduce.map.speculative=false",
+      "name": "EmrClusterForBackup",
+      "coreInstanceCount": "1",
+      "coreInstanceType": "m3.xlarge",
+      "amiVersion": "3.8.0",
+      "masterInstanceType": "m3.xlarge",
+      "id": "EmrClusterForBackup",
+      "region": "#{myRegion}",
+      "type": "EmrCluster",
+      "terminateAfter": "10 Minutes"
+    },
+    {
+      "failureAndRerunMode": "CASCADE",
+      "schedule": {
+        "ref": "DefaultSchedule"
+      },
+      "resourceRole": "DataPipelineDefaultResourceRole",
+      "role": "DataPipelineDefaultRole",
+      "pipelineLogUri": "#{myOutputS3Bucket}/error-logs",
+      "scheduleType": "cron",
+      "name": "Default",
+      "id": "Default"
+    },
+    {
+      "output": {
+        "ref": "KeysS3BackupLocation"
+      },
+      "input": {
+        "ref": "KeysDDBSourceTable"
+      },
+      "maximumRetries": "2",
+      "name": "KeysTableBackupActivity",
+      "step": "s3://dynamodb-emr-#{myRegion}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbExport,#{output.directoryPath},#{input.tableName},#{input.readThroughputPercent}",
+      "id": "KeysTableBackupActivity",
+      "runsOn": {
+        "ref": "EmrClusterForBackup"
+      },
+      "type": "EmrActivity",
+      "resizeClusterBeforeRunning": "true"
+    },
+    {
+      "output": {
+        "ref": "UsersS3BackupLocation"
+      },
+      "input": {
+        "ref": "UsersDDBSourceTable"
+      },
+      "maximumRetries": "2",
+      "name": "UsersTableBackupActivity",
+      "step": "s3://dynamodb-emr-#{myRegion}/emr-ddb-storage-handler/2.1.0/emr-ddb-2.1.0.jar,org.apache.hadoop.dynamodb.tools.DynamoDbExport,#{output.directoryPath},#{input.tableName},#{input.readThroughputPercent}",
+      "id": "UsersTableBackupActivity",
+      "runsOn": {
+        "ref": "EmrClusterForBackup"
+      },
+      "type": "EmrActivity",
+      "resizeClusterBeforeRunning": "true"
+    },
+    {
+      "readThroughputPercent": "#{myDDBReadThroughputRatio}",
+      "name": "KeysDDBSourceTable",
+      "id": "KeysDDBSourceTable",
+      "type": "DynamoDBDataNode",
+      "tableName": "#{myKeysDDBTableName}"
+    },
+    {
+      "readThroughputPercent": "#{myDDBReadThroughputRatio}",
+      "name": "UsersDDBSourceTable",
+      "id": "UsersDDBSourceTable",
+      "type": "DynamoDBDataNode",
+      "tableName": "#{myUsersDDBTableName}"
+    },
+    {
+      "directoryPath": "#{myOutputS3Bucket}/#{myKeysDDBTableName}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}",
+      "name": "KeysS3BackupLocation",
+      "id": "KeysS3BackupLocation",
+      "type": "S3DataNode"
+    },
+    {
+      "directoryPath": "#{myOutputS3Bucket}/#{myUsersDDBTableName}/#{format(@scheduledStartTime, 'YYYY-MM-dd-HH-mm-ss')}",
+      "name": "UsersS3BackupLocation",
+      "id": "UsersS3BackupLocation",
+      "type": "S3DataNode"
+    }
+  ],
+  "parameters": [
+    {
+      "description": "Output S3 bucket",
+      "id": "myOutputS3Bucket",
+      "type": "String"
+    },
+    {
+      "description": "DynamoDB keys table name",
+      "id": "myKeysDDBTableName",
+      "type": "String"
+    },
+    {
+      "description": "DynamoDB users table name",
+      "id": "myUsersDDBTableName",
+      "type": "String"
+    },
+    {
+      "default": "0.25",
+      "watermark": "Enter value between 0.1-1.0",
+      "description": "DynamoDB read throughput ratio",
+      "id": "myDDBReadThroughputRatio",
+      "type": "Double"
+    },
+    {
+      "default": "eu-west-1",
+      "watermark": "eu-west-1",
+      "description": "Region of the DynamoDB tables",
+      "id": "myRegion",
+      "type": "String"
+    }
+  ],
+  "values": {
+    "myRegion": "eu-west-1",
+    "myKeysDDBTableName": "bonobo-PROD-keys",
+    "myUsersDDBTableName": "bonobo-PROD-users",
+    "myDDBReadThroughputRatio": "0.25",
+    "myOutputS3Bucket": "s3://content-api-dynamo-db-backups"
+  }
+}
