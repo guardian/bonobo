@@ -1,4 +1,5 @@
-@(userId: String, keyForm: Form[controllers.Forms.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages)
+@import controllers.csrf.CSRFSupport
+@(userId: String, keyForm: Form[controllers.Forms.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Add a key for existing user", firstName, pageTitle, success, error) {
@@ -7,6 +8,7 @@
     <div class="row">
       <div class="col-md-6 col-md-offset-2 column">
       @b3.form(routes.Application.createKey(userId)) {
+        @CSRFSupport.formField
         @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key")
         @b3.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
         @b3.text( keyForm("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )

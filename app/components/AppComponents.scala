@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import controllers._
 import com.gu.googleauth.GoogleAuthConfig
+import controllers.csrf.CSRFFilter
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
 import org.joda.time.Duration
@@ -14,6 +15,8 @@ import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 import play.api.routing.Router
 import play.api.{ BuiltInComponents, BuiltInComponentsFromContext }
+import play.filters.csrf.CSRF.ConfigTokenProvider
+import play.filters.csrf.CSRFConfig
 import store.Dynamo
 import util.AWSConstants._
 import router.Routes
@@ -74,6 +77,10 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
   }
 }
 
+trait CSRFComponent { self: BuiltInComponents =>
+  override lazy val httpFilters = Seq(CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())))
+}
+
 trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent =>
   def enableAuth: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
@@ -95,6 +102,7 @@ class AppComponents(context: Context)
     with DynamoComponentImpl
     with KongComponentImpl
     with AwsEmailComponentImpl
-    with ControllersComponent {
+    with ControllersComponent
+    with CSRFComponent {
   def enableAuth = true
 }

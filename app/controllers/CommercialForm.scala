@@ -1,6 +1,5 @@
 package controllers
 
-import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
 import kong.Kong
 import logic.CommercialFormLogic
@@ -8,6 +7,8 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.mvc._
+import play.filters.csrf.CSRF.Token
+import play.filters.csrf.{ CSRFConfig, CSRF }
 import store.DB
 
 import scala.concurrent.Future
