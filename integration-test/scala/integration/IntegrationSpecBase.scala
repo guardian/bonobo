@@ -61,7 +61,6 @@ trait IntegrationSpecBase
       with FakeAwsEmailComponent
       with ControllersComponent {
     def enableAuth = false
-    def enableEmail = true
   }
 
   val context = ApplicationLoader.createContext(

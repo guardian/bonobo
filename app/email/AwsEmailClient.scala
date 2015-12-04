@@ -15,7 +15,7 @@ trait MailClient {
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
 
-class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String) extends MailClient {
+class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String, enableEmail: Boolean) extends MailClient {
 
   private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     Logger.debug(s"Sending $subject to $address")
@@ -43,7 +43,9 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
         promise.success(result)
       }
     }
-    amazonMailClient.sendEmailAsync(request, responseHandler)
+    if (enableEmail) {
+      amazonMailClient.sendEmailAsync(request, responseHandler)
+    }
     promise.future
   }
 
