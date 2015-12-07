@@ -2,7 +2,7 @@
 @(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
-@main("Edit user", firstName, pageTitle, success, error, flash = Option(flash)) {
+@main("Edit User", firstName, pageTitle, success, error, flash = Option(flash)) {
   <div class="row">
     <div class="col-md-6 col-md-offset-2 column">
     @b3.form(routes.Application.editUser(id)) {
@@ -17,7 +17,7 @@
   </div>
 
   <div class="row">
-    <h4 class="text-primary">Additional information</h4>
+    <h4 class="text-primary">Additional Information</h4>
     <div class="col-md-12 column form-horizontal">
       <div>
         <label class="control-label col-md-4">Created at:</label>
@@ -53,18 +53,18 @@
   </div>
 
   <div class="row">
-    <h4 class="text-primary">Keys for the current user</h4>
+    <h4 class="text-primary">Keys for the Current User</h4>
     @if(keys.length > 0){
       <table class="table table-responsive table-striped">
         <thead>
           <tr>
             <th>Key</th>
-            <th>Product Name</th>
-            <th>Product Url</th>
+            <th>Product name</th>
+            <th>Product url</th>
             <th>Tier</th>
             <th>Requests per minute</th>
             <th>Requests per day</th>
-            <th>Created At</th>
+            <th>Created at</th>
             <th>Status</th>
           </tr>
         </thead>
