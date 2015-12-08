@@ -66,6 +66,7 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
 
 trait AwsEmailComponent {
   def awsEmail: MailClient
+
 }
 
 trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents =>
@@ -73,7 +74,8 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
     val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
     val amazonSesClient: AmazonSimpleEmailServiceAsyncClient = new AmazonSimpleEmailServiceAsyncClient(CredentialsProvider).withRegion(awsRegion)
     val fromAddress = "no-reply@open-platform.theguardian.com" //The open-platform.theguardian.com domain is verified, therefore any email can be used (e.g. test@open-platform.theguardian.com)
-    new AwsEmailClient(amazonSesClient, fromAddress)
+    val enableEmail = configuration.getBoolean("email.enabled") getOrElse false
+    new AwsEmailClient(amazonSesClient, fromAddress, enableEmail)
   }
 }
 
