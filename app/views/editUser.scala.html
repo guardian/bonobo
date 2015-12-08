@@ -70,7 +70,7 @@
         </thead>
         <tbody>
         @for(key <- keys) {
-          <tr>
+          <tr onclick="window.location='@routes.Application.editKeyPage(key.key)'" style="cursor : pointer ;">
             <td>@key.key</td>
             <td>@key.productName</td>
             <td>@key.productUrl</td>
@@ -79,7 +79,6 @@
             <td>@key.requestsPerDay</td>
             <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
             <td>@key.status</td>
-            <td><a href="@routes.Application.editKeyPage(key.key)" class="text-info">Edit key</a></td>
           </tr>
         }
         </tbody>
