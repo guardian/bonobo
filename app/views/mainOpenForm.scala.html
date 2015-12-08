@@ -6,10 +6,39 @@
     <head>
         <title>@title</title>
         <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="/assets/stylesheets/open-platform.css"></link>
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
     </head>
     <body role="document">
-        <div class="container" role="main" style="margin-top: 20px;">
+        <nav class="navbar navbar-default navbar-fixed-top" id="top" role="banner">
+          <div class="container" style="margin-bottom: 0px">
+              <div class="navbar-header">
+                <a href="http://open-platform.theguardian.com/" class="navbar-brand"><img src="/assets/images/guardian-logo.svg" alt="Guardian"/> <span>/ open platform</span></a>
+              
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              </div>
+              <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                  <li>
+                    <a href="http://open-platform.theguardian.com/access">get started</a>
+                  </li>
+                  <li>
+                    <a href="http://open-platform.theguardian.com/explore">explore</a>
+                  </li>
+                  <li>
+                    <a href="http://open-platform.theguardian.com/documentation">documentation</a>
+                  </li>
+                  <li><a href="https://groups.google.com/forum/#!forum/guardian-api-talk">support</a></li>
+                </ul>
+              </div>
+          </div>
+        </nav>
+        <div class="container" role="main" style="margin-top: 70px;">
             @renderMessage(success, error, flash)
             @content
         </div>
