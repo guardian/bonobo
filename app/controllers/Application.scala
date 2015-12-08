@@ -61,16 +61,13 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
 
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
       logic.createUser(formData) flatMap { consumer =>
-        formData.sendEmail match {
-          case true => {
-            awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
-              result => Redirect(routes.Application.editUserPage(consumer.id))
-            } recover {
-              case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
-            }
+        if (formData.sendEmail) {
+          awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
+            result => Redirect(routes.Application.editUserPage(consumer.id))
+          } recover {
+            case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
           }
-          case false => Future.successful(Redirect(routes.Application.editUserPage(consumer.id)))
-        }
+        } else Future.successful(Redirect(routes.Application.editUserPage(consumer.id)))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
         case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
@@ -126,17 +123,13 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
         val user = dynamo.getUserWithId(userId)
         user match {
           case Some(u) => {
-            form.sendEmail match {
-              case true => {
-                awsEmail.sendEmailNewKey(u.email, key) map {
-                  result => Redirect(routes.Application.editUserPage(userId))
-                } recover {
-                  case _ => Redirect(routes.Application.editUserPage(userId)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${u.email}.")
-                }
+            if (form.sendEmail) {
+              awsEmail.sendEmailNewKey(u.email, key) map {
+                result => Redirect(routes.Application.editUserPage(userId))
+              } recover {
+                case _ => Redirect(routes.Application.editUserPage(userId)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${u.email}.")
               }
-              case false => Future.successful(Redirect(routes.Application.editUserPage(userId)))
-            }
-
+            } else Future.successful(Redirect(routes.Application.editUserPage(userId)))
           }
           case None => Future.successful(NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
         }
