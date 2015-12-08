@@ -17,12 +17,11 @@
                         <th>Tier</th>
                         <th>Status</th>
                         <th>Created at</th>
-                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                 @for(key <- keys) {
-                    <tr>
+                    <tr onclick="window.location='@routes.Application.editUserPage(key.kongKey.bonoboId)'" style="cursor: pointer;">
                         <td>@key.kongKey.key</td>
                         <td>@key.bonoboUser.name</td>
                         <td>@key.bonoboUser.email</td>
@@ -31,7 +30,6 @@
                         <td>@key.kongKey.tier.friendlyName</td>
                         <td>@key.kongKey.status</td>
                         <td>@key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")</td>
-                        <td><a href="@routes.Application.editUserPage(key.kongKey.bonoboId)" class="text-info">Edit user</a></td>
                     </tr>
                 }
                 </tbody>
