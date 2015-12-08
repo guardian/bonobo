@@ -45,8 +45,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     }
     if (enableEmail) {
       amazonMailClient.sendEmailAsync(request, responseHandler)
-    }
-    else {
+    } else {
       Logger.info("Emails are not enabled. The email was not sent.")
     }
     promise.future
