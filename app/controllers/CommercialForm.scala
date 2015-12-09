@@ -33,10 +33,18 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
       logic.sendRequest(formData) match {
         case Left(error) => Future.successful(BadRequest(views.html.commercialRequestKey(requestKeyForm.fill(formData), error = Some(error))))
         case Right(user) => {
-          awsEmail.sendEmailCommercialRequest(user, formData.productName, formData.productUrl) map {
-            result => Redirect(routes.CommercialForm.requestMessage())
+          awsEmail.sendEmailCommercialRequestToModerators(user, formData.productName, formData.productUrl) flatMap {
+            resultEmailModerators =>
+              {
+                awsEmail.sendEmailCommercialRequestToUser(formData.email) map {
+                  resultEmailUser =>
+                    Redirect(routes.CommercialForm.requestMessage())
+                } recover {
+                  case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send you a confirmation email.")
+                }
+              }
           } recover {
-            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact content.delivery@theguardian.com for further instructions")
+            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact content.delivery@theguardian.com for further instructions.")
           }
         }
       }

@@ -10,7 +10,9 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.{ Future, Promise }
 
 trait MailClient {
-  def sendEmailCommercialRequest(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult]
+  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult]
+
+  def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult]
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
@@ -51,7 +53,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     promise.future
   }
 
-  def sendEmailCommercialRequest(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult] = {
+  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult] = {
     val message = s"""Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}
       |Name: ${user.name}
       |Email: ${user.email}
@@ -66,6 +68,19 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       |Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
       |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}""".stripMargin
     sendEmail("content.delivery@theguardian.com", "Commercial Key Request", message)
+  }
+
+  def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult] = {
+    val message =
+      s"""Thank you for your interest in working with Guardian News & Media. We have just received your registration for a key to use our Open Platform API commercially.
+         |
+         |We are always excited to learn about new digital distribution opportunities for our award-winning journalism. A member of our team will be in touch with you shortly to discuss a potential commercial partnership.
+         |
+         |Please refer to the following link to review our current content sales terms and conditions: http://www.theguardian.com/info/2011/jul/15/gnm-content-sales-terms-conditions#Schedule
+         |
+         |We are looking forward to getting in touch.
+         |""".stripMargin
+    sendEmail(toEmail, "New Key Created", message)
   }
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = {
