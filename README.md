@@ -6,27 +6,13 @@ Key management for Kong
 
 ## Prerequisites for development
 
-Bonobo needs an instance of Kong to connect to, so you will need Kong and Cassandra running somewhere. We recommend running them in Docker containers. See the "To run the integration tests" section below for instructions on setting this up.
+Bonobo needs an instance of Kong to connect to, so you will need Kong and Cassandra running somewhere. We recommend running them in Docker containers. See instructions below on how to set this up.
 
-## To run locally
+## To run locally using Docker
 
-Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster.
+Install Docker Toolkit, following the instructions on the [Docker website](http://docs.docker.com/).
 
-Then start the Play app:
-
-```
-$ sbt run
-```
-
-It should now be running at http://localhost:9000/
-
-You will need a Guardian Google account in order to login.
-
-## To run the integration tests
-
-The integration tests rely on Docker to run Kong. Install Docker Toolkit, following the instructions on the [Docker website](http://docs.docker.com/).
-
-Make sure your Docker VM is running:
+1. Make sure your Docker VM is running:
 
 ```
 $ docker-machine ls
@@ -34,7 +20,7 @@ NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
 dev    *        virtualbox   Running   tcp://192.168.99.100:2376
 ```
 
-Make sure `$DOCKER_HOST` is set:
+2. Make sure `$DOCKER_HOST` is set:
 
 ```
 $ echo $DOCKER_HOST
@@ -53,7 +39,30 @@ export DOCKER_MACHINE_NAME="dev"
 # eval "$(docker-machine env dev)"
 ```
 
-Now you can run the integration tests:
+3. Run the `configure-docker.sh` script passing the Kong url:
+
+```
+./scripts/configure-docker.sh http://192.168.99.100:8001
+```
+This will create two containers - one for Cassandra and one for Kong - and start them. Then it will add an API in Kong with the key-auth plugin enabled.
+
+4. Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster (in this example: `http://192.168.99.100:8001`). In the same file you can configure `aws.dynamo.usersTableName` and `aws.dynamo.keysTableName` to point to the DynamoDB tables you are going to use.
+
+5. Then start the Play app:
+
+```
+$ sbt run
+```
+
+It should now be running at http://localhost:9000/
+
+You will need a Guardian Google account in order to login.
+
+## To run the integration tests
+
+The integration tests rely on Docker to run Kong.
+
+Make sure you have completed step 1 and 2 from the previous section and then run:
 
 ```
 $ sbt it:test
