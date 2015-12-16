@@ -1,17 +1,43 @@
 #! /bin/bash
 
-kong_url=${1?Input file parameter missing}
+container_host=${1?Input file parameter missing}
 
-docker create -p 9042:9042 --name cassandra mashape/cassandra
+function start_service {
+    name=${1?Name parameter missing}
+    port_number=${2?Port parameter missing}
 
-docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.5.3
+    docker start ${name}
 
-docker start cassandra
+    nc -z ${container_host} ${port_number}
+    while [ $? -ne 0 ]; do
+        echo Waiting for ${name} to start listening ...
+        sleep 1
+        nc -z ${container_host} ${port_number}
+    done
+}
 
-docker start kong
+if docker ps | grep cassandra -q; then
+    echo Cassandra container already exists
+else
+    echo Creating cassandra container ...
+    docker create -p 9042:9042 --name cassandra mashape/cassandra
+fi
 
-sleep 5
 
-curl -sS -X POST ${kong_url}/apis -d name=internal -d request_host=foo.com -d upstream_url=http://example.com
+if docker ps | grep kong -q; then
+    echo Kong container already exists
+else
+    echo Creating kong container ...
+    docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.5.3
+fi
 
-curl -sS --url ${kong_url}/apis/internal/plugins/ -d name=key-auth
+start_service cassandra 9042
+
+start_service kong 8001
+
+echo Adding API ...
+curl -sS -X POST http://${container_host}:8001/apis -d name=internal -d request_host=foo.com -d upstream_url=http://example.com
+
+echo Activating key-auth plugin ...
+curl -sS --url http://${container_host}:8001/apis/internal/plugins/ -d name=key-auth
+
