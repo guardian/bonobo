@@ -39,10 +39,10 @@ export DOCKER_MACHINE_NAME="dev"
 # eval "$(docker-machine env dev)"
 ```
 
-3. Run the `configure-docker.sh` script passing the Kong url:
+3. Run the `configure-docker.sh` script:
 
 ```
-./scripts/configure-docker.sh http://192.168.99.100:8001
+./scripts/configure-docker.sh
 ```
 This will create two containers - one for Cassandra and one for Kong - and start them. Then it will add an API in Kong with the key-auth plugin enabled.
 
