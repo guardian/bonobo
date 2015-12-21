@@ -1,6 +1,8 @@
 #! /bin/bash
 
-container_host=${1?Input file parameter missing}
+docker_host=${DOCKER_HOST?Docker host is not set}
+
+container_host=$(echo ${docker_host} | sed -e 's/tcp:\/\/\(.*\):.*/\1/')
 
 function start_service {
     name=${1?Name parameter missing}
@@ -39,5 +41,5 @@ echo Adding API ...
 curl -sS -X POST http://${container_host}:8001/apis -d name=internal -d request_host=foo.com -d upstream_url=http://example.com
 
 echo Activating key-auth plugin ...
-curl -sS --url http://${container_host}:8001/apis/internal/plugins/ -d name=key-auth
+curl -sS -X POST http://${container_host}:8001/apis/internal/plugins/ -d name=key-auth
 
