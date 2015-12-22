@@ -37,10 +37,10 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
       val labelIds = formData.labelIds match {
-        case Some(ids) => Some(ids.split(", ").toList)
+        case Some(ids) => Some(ids.split(",").toList)
         case None => None
       }
-
+      Logger.info(s"Labels to be assigned with the ${form.name}: $labelIds")
       val newBonoboUser = BonoboUser(consumer.id, formData, labelIds)
       dynamo.saveUser(newBonoboUser)
 
