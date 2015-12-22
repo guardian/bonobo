@@ -1,5 +1,6 @@
 package controllers
 
+import components.LabelsComponent
 import email.MailClient
 import models._
 import org.joda.time.DateTime
@@ -43,7 +44,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo] = {
         ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", "product url", "rangekey"),
           BonoboUser("id", "name", "email", "company name", "company url",
-            AdditionalUserInfo(DateTime.now(), ManualRegistration)))), false)
+            AdditionalUserInfo(DateTime.now(), ManualRegistration), None))), false)
       }
 
       def getKeyWithUserId(id: String): Option[KongKey] = ???
@@ -55,22 +56,27 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def getKeysWithUserId(id: String): List[KongKey] = ???
 
       def getNumberOfKeys(): Long = 1
+
+      /**
+       * The following methods are used for labeling an user
+       */
+      def getLabels(): List[Label] = ???
     }
-    val application = new Application(dynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(dynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())
     contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
-    val application = new Application(mockDynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(mockDynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
 
     val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
-    val application = new Application(mockDynamo, mockKong, mockEmail, messagesApi, null, false)
+    val application = new Application(mockDynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
