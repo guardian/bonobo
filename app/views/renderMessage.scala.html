@@ -10,4 +10,7 @@
     @for(f <- flash; e <- f.get("error")){
         <p class="alert alert-danger">@e</p>
     }
+    @for(f <- flash; s <- f.get("success")){
+        <p class="alert alert-success">@s</p>
+    }
 </div>

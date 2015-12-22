@@ -9,7 +9,6 @@ import org.joda.time.DateTime
 import play.api.Logger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
 trait DB {
   def search(query: String, limit: Int = 20): List[BonoboInfo]
@@ -101,7 +100,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyName").put(bonoboUser.companyUrl)
+      new AttributeUpdate("companyName").put(bonoboUser.companyUrl),
+      bonoboUser.labelIds match {
+        case Some(ids) => new AttributeUpdate("labelIds").put(ids.mkString(","))
+        case None => new AttributeUpdate("labelIds").delete()
+      }
     )
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
   }
@@ -282,7 +285,7 @@ object Dynamo {
     bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
     bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
 
-    bonoboKey.labelIds.fold(item) { ids => item.withList("labelIds", ids: _*) }
+    bonoboKey.labelIds.fold(item) { ids => item.withString("labelIds", ids.mkString(",")) }
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
@@ -306,7 +309,7 @@ object Dynamo {
         content = Option(item.getString("content")),
         contentFormat = Option(item.getString("contentFormat")),
         articlesPerDay = Option(item.getString("articlesPerDay"))),
-      labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList)
+      labelIds = Option(item.getString("labelIds")) map (_.split(",").toList)
     )
   }
 

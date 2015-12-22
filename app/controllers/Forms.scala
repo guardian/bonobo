@@ -6,7 +6,7 @@ object Forms {
 
   case class CreateUserFormData(name: String, email: String, companyName: String, companyUrl: String, productName: String, productUrl: String, tier: Tier, key: Option[String] = None, sendEmail: Boolean, labelIds: Option[String] = None)
 
-  case class EditUserFormData(name: String, email: String, companyName: String, companyUrl: String)
+  case class EditUserFormData(name: String, email: String, companyName: String, companyUrl: String, labelIds: Option[String] = None)
 
   case class CreateKeyFormData(key: Option[String], tier: Tier, productName: String, productUrl: String, sendEmail: Boolean)
 
