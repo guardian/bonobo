@@ -4,7 +4,7 @@ import models.Tier
 
 object Forms {
 
-  case class CreateUserFormData(name: String, email: String, companyName: String, companyUrl: String, productName: String, productUrl: String, tier: Tier, key: Option[String] = None, sendEmail: Boolean)
+  case class CreateUserFormData(name: String, email: String, companyName: String, companyUrl: String, productName: String, productUrl: String, tier: Tier, key: Option[String] = None, sendEmail: Boolean, labelIds: Option[String] = None)
 
   case class EditUserFormData(name: String, email: String, companyName: String, companyUrl: String)
 
