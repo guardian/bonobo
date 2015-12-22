@@ -17,7 +17,7 @@ import play.filters.csrf.CSRF
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[String, LabelProperties], val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
@@ -51,12 +51,12 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
   }
 
   def createUserPage = maybeAuth { implicit request =>
-    Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle))
+    Ok(views.html.createUser(createUserForm, labelsMap, request.user.firstName, createUserPageTitle))
   }
 
   def createUser = maybeAuth.async { implicit request =>
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createUser(form, labelsMap, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
@@ -69,8 +69,8 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
           }
         } else Future.successful(Redirect(routes.Application.editUserPage(consumer.id)))
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
@@ -208,7 +208,8 @@ object Application {
       "productUrl" -> nonEmptyText,
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
-      "sendEmail" -> boolean
+      "sendEmail" -> boolean,
+      "ids" -> optional(text)
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 

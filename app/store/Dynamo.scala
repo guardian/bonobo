@@ -44,13 +44,19 @@ trait DB {
   def getKeysWithUserId(id: String): List[KongKey]
 
   def getNumberOfKeys(): Long
+
+  /**
+   * The following methods are used for labeling an user
+   */
+  def getLabels(): List[Label]
 }
 
-class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
+class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: String) extends DB {
   import Dynamo._
 
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
+  private val LableTable = db.getTable(labelTable)
 
   def search(query: String, limit: Int = 20): List[BonoboInfo] = {
     val keysScan = new ScanSpec()
@@ -247,6 +253,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       case _ => ResultsPage(result, hasNext = true)
     }
   }
+
+  /**
+   * The following methods are used for labeling an user
+   */
+  def getLabels(): List[Label] = {
+    LableTable.scan(new ScanSpec()).asScala.toList.map(toLabel)
+  }
 }
 
 object Dynamo {
@@ -267,6 +280,8 @@ object Dynamo {
     bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
     bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
     bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
+
+    bonoboKey.labelIds.fold(item) { ids => item.withList("labelIds", ids) }
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
@@ -289,7 +304,8 @@ object Dynamo {
         commercialModel = Option(item.getString("commercialModel")),
         content = Option(item.getString("content")),
         contentFormat = Option(item.getString("contentFormat")),
-        articlesPerDay = Option(item.getString("articlesPerDay")))
+        articlesPerDay = Option(item.getString("articlesPerDay"))),
+      labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList)
     )
   }
 
@@ -328,5 +344,21 @@ object Dynamo {
       productUrl = item.getString("productUrl"),
       rangeKey = item.getString("rangekey")
     )
+  }
+
+  def toLabel(item: Item): Label = {
+    Label(
+      id = item.getString("id"),
+      properties = LabelProperties(
+        name = item.getString("name"),
+        colour = item.getString("colour"))
+    )
+  }
+
+  def fromLabel(label: Label): Item = {
+    new Item()
+      .withPrimaryKey("id", label.id)
+      .withString("name", label.properties.name)
+      .withString("colour", label.properties.colour)
   }
 }

@@ -36,7 +36,12 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   def createUser(form: CreateUserFormData): Future[ConsumerCreationResult] = {
     Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
-      val newBonoboUser = BonoboUser(consumer.id, formData)
+      val labelIds = formData.labelIds match {
+        case Some(ids) => Some(ids.split(", ").toList)
+        case None => None
+      }
+
+      val newBonoboUser = BonoboUser(consumer.id, formData, labelIds)
       dynamo.saveUser(newBonoboUser)
 
       // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same

@@ -14,9 +14,9 @@ import play.api.libs.json._
 
 class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
 
-  behavior of "creating a new user with a custom key"
+  behavior of "create a new user"
 
-  it should "add a Bonobo user and key to Dynamo" in {
+  it should "add a Bonobo user and a custom key to Dynamo" in {
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "test@thetestcompany.com",
       "name" -> "Joe Bloggs",
@@ -66,8 +66,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     flash(result).get("error") shouldBe defined
   }
 
-  behavior of "creating a new user without specifying a custom key"
-
   it should "add a Bonobo user and a randomly generated key" in {
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "fsdlfkjsd@email.com",
@@ -96,6 +94,62 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+  }
+
+  it should "add a new user with associated labels and a key" in {
+    val userToSave = BonoboUser(
+      bonoboId = "id-user-with-labels",
+      name = "Labels Guy",
+      email = "labels@createuser.com",
+      companyName = "The Labels Company",
+      companyUrl = "http://thelabelscompany.co.uk",
+      additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration),
+      labelIds = Some(List("id-label-1", "id-label-3")))
+    val keyToSave = KongKey(
+      bonoboId = "id-user-with-labels",
+      kongId = "te-be-created",
+      key = "labels-key",
+      requestsPerDay = 10,
+      requestsPerMinute = 1,
+      tier = Tier.Developer,
+      status = "Active",
+      createdAt = DateTime.now(),
+      productName = "Label Product",
+      productUrl = "www.labels.com",
+      rangeKey = "123"
+    )
+    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "name" -> userToSave.name,
+      "email" -> userToSave.email,
+      "companyName" -> userToSave.companyName,
+      "companyUrl" -> userToSave.companyUrl,
+      "productName" -> keyToSave.productName,
+      "productUrl" -> keyToSave.productUrl,
+      "tier" -> keyToSave.tier.friendlyName,
+      "key" -> keyToSave.key,
+      "labelIds" -> userToSave.labelIds.value.mkString(","),
+      "sendEmail" -> "false"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
+
+    val dynamoBonoboUser = dynamo.getUserWithEmail(userToSave.email)
+    val consumerId = dynamoBonoboUser.value.bonoboId
+    val dynamoKongKey = dynamo.getKeyWithValue(keyToSave.key)
+
+    dynamoBonoboUser.value.labelIds shouldBe userToSave.labelIds
+
+    dynamoBonoboUser.value shouldBe userToSave.copy(
+      bonoboId = consumerId,
+      additionalInfo = userToSave.additionalInfo.copy(createdAt = dynamoBonoboUser.value.additionalInfo.createdAt))
+
+    dynamoKongKey.value shouldBe keyToSave.copy(
+      bonoboId = consumerId,
+      kongId = dynamoKongKey.value.kongId,
+      requestsPerDay = dynamoKongKey.value.requestsPerDay,
+      requestsPerMinute = dynamoKongKey.value.requestsPerMinute,
+      createdAt = dynamoKongKey.value.createdAt,
+      rangeKey = dynamoKongKey.value.rangeKey)
   }
 
   behavior of "adding a second key to an existing user"
@@ -320,7 +374,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
-        registrationType = CommercialRegistration))
+        registrationType = CommercialRegistration),
+        labelIds = None)
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
@@ -359,7 +414,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
-        registrationType = CommercialRegistration))
+        registrationType = CommercialRegistration),
+        labelIds = None)
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
