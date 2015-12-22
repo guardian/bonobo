@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 trait DB {
   def search(query: String, limit: Int = 20): List[BonoboInfo]
@@ -281,7 +282,7 @@ object Dynamo {
     bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
     bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
 
-    bonoboKey.labelIds.fold(item) { ids => item.withList("labelIds", ids) }
+    bonoboKey.labelIds.fold(item) { ids => item.withList("labelIds", ids: _*) }
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {

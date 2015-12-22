@@ -1,5 +1,5 @@
 @import controllers.csrf.CSRFSupport
-@(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
+@(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: Option[List[String]], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit User", firstName, pageTitle, success, error, flash = Option(flash)) {
@@ -11,6 +11,15 @@
       @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
       @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
       @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
+      @b3.free(){
+        <div id="divChosenLabels">
+        @for(idsList <- userLabels){
+          @for(labelId <- idsList){
+            <span class="label label-default" data-id="@labelId" data-used="true" style="background-color: @labelMap.get(labelId).map(_.colour)">@labelMap.get(labelId).map(_.name)</span>
+          }
+        }
+        </div>
+      }
       @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
     }
     </div>
@@ -86,4 +95,5 @@
     }
     <a href="@routes.Application.createKeyPage(id)" class="btn btn-success" style="margin-bottom: 20px;"><span class="glyphicon glyphicon-plus"></span> Add new key</a>
   </div>
+  <link href="@routes.Assets.versioned("stylesheets/labelStyle.css")" type="text/css" rel="stylesheet"/>
 }
