@@ -79,13 +79,15 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
-      case Some(consumer) => {
-        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl))
+      case Some(consumer) =>
+        val idsString = consumer.labelIds match {
+          case Some(ids) => Some(ids.mkString(","))
+          case None => None
+        }
+        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl, idsString))
         Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), consumer.labelIds, labelsMap, request.user.firstName, userKeys, editUserPageTitle))
-      }
-      case None => {
+      case None =>
         NotFound(views.html.editUser(id, editUserForm, None, None, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
-      }
     }
   }
 
@@ -107,7 +109,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     def handleValidForm(form: EditUserFormData): Result = {
       logic.updateUser(id, form) match {
         case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
-        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+        case Right(_) => Redirect(routes.Application.editUserPage(id)).flashing("success" -> "The user has been successfully updated.") //Ok(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
       }
     }
 
@@ -223,7 +225,8 @@ object Application {
       "name" -> nonEmptyText,
       "email" -> email,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> nonEmptyText
+      "companyUrl" -> nonEmptyText,
+      "labelIds" -> optional(text)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 

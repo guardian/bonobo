@@ -2,11 +2,12 @@ var divAllLabels = document.getElementById("divAllLabels")
 var divAllLabelsContainer = document.getElementById("divAllLabelsContainer")
 var divChosenLabels = document.getElementById("divChosenLabels")
 var btnAddLabels = document.getElementById("btnAddLabels")
-var listLabels = divAllLabelsContainer.getElementsByClassName("label")
+var listLabels = document.getElementsByClassName("label")
 var hiddenLabelIds = document.getElementById("labelIds")
 
 document.addEventListener("DOMContentLoaded", function() {
     divAllLabels.style.display = 'none'
+    document.getElementById("labelIds_field").style.display = 'none'
 });
 
 btnAddLabels.addEventListener("click", function(){
@@ -24,12 +25,14 @@ for(var i = 0; i < listLabels.length; i++)
         if(this.dataset.used == 'false') {
             divChosenLabels.appendChild(this)
             this.dataset.used = 'true'
-            hiddenLabelIds.value = hiddenLabelIds.value + id + ","
+            hiddenLabelIds.value = hiddenLabelIds.value + "," + id
+            console.log(hiddenLabelIds.value)
         }
         else if(this.dataset.used == 'true') {
             divAllLabelsContainer.appendChild(this)
             this.dataset.used = 'false'
-            hiddenLabelIds.value = hiddenLabelIds.value.replace(id + ",", "")
+            hiddenLabelIds.value = hiddenLabelIds.value.replace(id, "")
+            console.log(hiddenLabelIds.value)
         }
     })
 }

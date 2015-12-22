@@ -11,6 +11,8 @@
       @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
       @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
       @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
+      @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
+      @b3.text( form("labelIds") )
       @b3.free(){
         <div id="divChosenLabels">
         @for(idsList <- userLabels){
@@ -22,6 +24,18 @@
       }
       @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
     }
+    </div>
+    <div id="divAllLabels" class="col-md-4">
+      <div class="panel panel-default">
+        <div class="panel-heading">Labels <span id="btnCloseLabels" class="pull-right glyphicon glyphicon-remove" style="cursor: pointer"></span></div>
+        <div id="divAllLabelsContainer" class="panel-body">
+        @for(label <- labelMap){
+          @if(!userLabels.get.contains(label._1)){
+            <span class="label label-default" data-id="@label._1" data-used="false" style="background-color: @label._2.colour">@label._2.name</span>
+          }
+        }
+        </div>
+      </div>
     </div>
   </div>
 
@@ -95,5 +109,6 @@
     }
     <a href="@routes.Application.createKeyPage(id)" class="btn btn-success" style="margin-bottom: 20px;"><span class="glyphicon glyphicon-plus"></span> Add new key</a>
   </div>
+  <script src="@routes.Assets.versioned("javascripts/createUser.js")" type="text/javascript"></script>
   <link href="@routes.Assets.versioned("stylesheets/labelStyle.css")" type="text/css" rel="stylesheet"/>
 }
