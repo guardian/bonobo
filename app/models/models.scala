@@ -82,10 +82,6 @@ object KongKey {
     new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
-  /* model used in the migration endpoint */
-  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String, status: String, date: DateTime): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, status, date, productName, productUrl, uniqueRangeKey(date))
-  }
 }
 
 /* model used for show all keys table */
@@ -151,58 +147,4 @@ case object ManualRegistration extends RegistrationType {
 }
 case object MasheryRegistration extends RegistrationType {
   def friendlyName: String = "Imported from Mashery"
-}
-
-case class MasheryUser(
-  name: String,
-  email: String,
-  companyName: String,
-  companyUrl: String,
-  createdAt: DateTime,
-  keys: List[MasheryKey])
-
-object MasheryKey {
-  implicit val dateReads = Reads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  implicit val keyRead = Json.reads[MasheryKey]
-}
-
-object MasheryUser {
-  implicit val dateReads = Reads.jodaDateReads("yyyy-MM-dd'T'HH:mm:ss'Z'")
-  implicit val userRead = Json.reads[MasheryUser]
-}
-
-case class MasheryKey(
-  key: String,
-  productName: String,
-  productUrl: String,
-  requestsPerDay: Int,
-  requestsPerMinute: Int,
-  tier: Tier,
-  status: String,
-  createdAt: DateTime)
-
-case class MigrationResult(successfullyManagedUsers: Int, successfullyManagedKeys: Int, userConflicts: List[EmailConflict], failedKeys: List[String])
-
-sealed trait MigrateUserResult
-case class MigratedUser(keyResults: List[MigrateKeyResult]) extends MigrateUserResult
-case class EmailConflict(email: String) extends MigrateUserResult
-
-sealed trait MigrateKeyResult
-case object MigratedKey extends MigrateKeyResult
-case class KeyConflict(key: String) extends MigrateKeyResult
-case class ThrewException(key: String) extends MigrateKeyResult
-
-case object EmailConflict {
-  implicit val emailConflictWrites = Json.writes[EmailConflict]
-  implicit val emailConflictReads = Json.reads[EmailConflict]
-}
-
-case object KeyConflict {
-  implicit val keyConflictWrites = Json.writes[KeyConflict]
-  implicit val keyConflictReads = Json.reads[KeyConflict]
-}
-
-case object MigrationResult {
-  implicit val migrationResultWrites = Json.writes[MigrationResult]
-  implicit val migrationResultReads = Json.reads[MigrationResult]
 }
