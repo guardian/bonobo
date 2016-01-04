@@ -5,7 +5,7 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
-import models.BonoboUser
+import models.{LabelProperties, BonoboUser}
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.mvc.RequestHeader
 import store.Dynamo
@@ -38,12 +38,13 @@ class FakeEmailClient extends MailClient {
 trait IntegrationSpecBase
     extends BonoboKeysTableFixture
     with BonoboUserTableFixture
+    with BonoboLabelsTableFixture
     with DynamoDbClientFixture
     with DynamoDbLocalServerFixture
     with KongFixture
     with OneAppPerSuite { self: Suite =>
 
-  val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName)
+  val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
   trait FakeDynamoComponent extends DynamoComponent {
     val dynamo = self.dynamo
@@ -54,6 +55,11 @@ trait IntegrationSpecBase
   trait FakeAwsEmailComponent extends AwsEmailComponent {
     val awsEmail = new FakeEmailClient()
   }
+  trait FakeLabelsComponent extends LabelsComponent {
+    val labelsMap = Map("id-label-1" -> LabelProperties("label-1", "#121212"),
+      "id-label-2" -> LabelProperties("label-2", "#123123"),
+      "id-label-3" -> LabelProperties("label-3", "#123412"))
+  }
   class TestComponents(context: Context)
       extends BuiltInComponentsFromContext(context)
       with NingWSComponents
@@ -61,6 +67,7 @@ trait IntegrationSpecBase
       with FakeDynamoComponent
       with FakeKongComponent
       with FakeAwsEmailComponent
+      with FakeLabelsComponent
       with ControllersComponent {
     def enableAuth = false
   }

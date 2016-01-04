@@ -17,7 +17,7 @@ import play.filters.csrf.CSRF
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
+class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[String, LabelProperties], val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
     with AuthActions
     with I18nSupport {
 
@@ -51,12 +51,12 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
   }
 
   def createUserPage = maybeAuth { implicit request =>
-    Ok(views.html.createUser(createUserForm, request.user.firstName, createUserPageTitle))
+    Ok(views.html.createUser(createUserForm, labelsMap, request.user.firstName, createUserPageTitle))
   }
 
   def createUser = maybeAuth.async { implicit request =>
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.createUser(form, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createUser(form, labelsMap, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
@@ -69,8 +69,8 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
           }
         } else Future.successful(Redirect(routes.Application.editUserPage(consumer.id)))
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
@@ -79,30 +79,28 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi:
   def editUserPage(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
-      case Some(consumer) => {
-        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl))
-        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), request.user.firstName, userKeys, editUserPageTitle))
-      }
-      case None => {
-        NotFound(views.html.editUser(id, editUserForm, None, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
-      }
+      case Some(consumer) =>
+        val idsString = consumer.labelIds.mkString(",")
+        val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl, idsString))
+        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), consumer.labelIds, labelsMap, request.user.firstName, userKeys, editUserPageTitle))
+      case None =>
+        NotFound(views.html.editUser(id, editUserForm, None, List.empty, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
     }
   }
 
   def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
-    val additionalInfo = dynamo.getUserWithId(id) match {
-      case Some(user) => Some(user.additionalInfo)
-      case None => None
-    }
+    val user = dynamo.getUserWithId(id)
+    val additionalInfo = user.map(_.additionalInfo)
+    val userLabels = user.map(_.labelIds).getOrElse(List.empty)
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
-      BadRequest(views.html.editUser(id, form, additionalInfo, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
+      BadRequest(views.html.editUser(id, form, additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
 
     def handleValidForm(form: EditUserFormData): Result = {
       logic.updateUser(id, form) match {
-        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
-        case Right(_) => Ok(views.html.editUser(id, editUserForm.fill(form), additionalInfo, request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
+        case Right(_) => Redirect(routes.Application.editUserPage(id)).flashing("success" -> "The user has been successfully updated.")
       }
     }
 
@@ -208,7 +206,8 @@ object Application {
       "productUrl" -> nonEmptyText,
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
-      "sendEmail" -> boolean
+      "sendEmail" -> boolean,
+      "labelIds" -> text
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -217,7 +216,8 @@ object Application {
       "name" -> nonEmptyText,
       "email" -> email,
       "companyName" -> nonEmptyText,
-      "companyUrl" -> nonEmptyText
+      "companyUrl" -> nonEmptyText,
+      "labelIds" -> text
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 

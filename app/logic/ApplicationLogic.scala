@@ -36,7 +36,9 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   def createUser(form: CreateUserFormData): Future[ConsumerCreationResult] = {
     Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
-      val newBonoboUser = BonoboUser(consumer.id, formData)
+      val labelIds = formData.labelIds.split(",").toList.filter(_.nonEmpty)
+      Logger.info(s"Labels to be assigned with the ${form.name}: $labelIds")
+      val newBonoboUser = BonoboUser(consumer.id, formData, labelIds)
       dynamo.saveUser(newBonoboUser)
 
       // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same
@@ -61,9 +63,11 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   }
 
   def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
-    Logger.info(s"ApplicationLogic: Updating user with id ${userId}")
+    Logger.info(s"ApplicationLogic: Updating user with id $userId")
     def updateUserOnDB(oldUser: BonoboUser) = {
-      val updatedUser = BonoboUser(userId, form, oldUser.additionalInfo.createdAt, oldUser.additionalInfo.registrationType)
+      val labelIds = form.labelIds.split(",").toList.filter(_.nonEmpty)
+      Logger.info(s"Labels to be assigned with the ${form.name}: $labelIds")
+      val updatedUser = BonoboUser(userId, form, oldUser.additionalInfo.createdAt, oldUser.additionalInfo.registrationType, labelIds)
       Right(dynamo.updateUser(updatedUser))
     }
     dynamo.getUserWithId(userId) match {
@@ -81,7 +85,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
    * The key will be randomly generated if no custom key is specified.
    */
   def createKey(userId: String, form: CreateKeyFormData): Future[String] = {
-    Logger.info(s"ApplicationLogic: Creating key for user with id ${userId}")
+    Logger.info(s"ApplicationLogic: Creating key for user with id $userId")
     def createConsumerAndKey: Future[String] = {
       val rateLimits: RateLimits = form.tier.rateLimit
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {

@@ -44,13 +44,19 @@ trait DB {
   def getKeysWithUserId(id: String): List[KongKey]
 
   def getNumberOfKeys(): Long
+
+  /**
+   * The following methods are used for labeling an user
+   */
+  def getLabels(): List[Label]
 }
 
-class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
+class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: String) extends DB {
   import Dynamo._
 
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
+  private val LableTable = db.getTable(labelTable)
 
   def search(query: String, limit: Int = 20): List[BonoboInfo] = {
     val keysScan = new ScanSpec()
@@ -64,7 +70,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val keys = KongTable.scan(keysScan).asScala.toList.map(fromKongItem)
     val usersForKeysSearch = getUsersForKeys(keys)
     val resultForKeysSearch = matchKeysWithUsers(keys, usersForKeysSearch)
-    Logger.info(s"DynamoDB: Searching '${query}' found ${resultForKeysSearch.length} matching key(s)")
+    Logger.info(s"DynamoDB: Searching '$query' found ${resultForKeysSearch.length} matching key(s)")
 
     val userScan = new ScanSpec()
       .withFilterExpression("contains (#1, :s) OR contains (#2, :s) OR contains (#3, :s)")
@@ -78,7 +84,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
     val users = BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem)
     val keysForUsersSearch = getKeysForUsers(users)
     val resultForUsersSearch = matchKeysWithUsers(keysForUsersSearch, users)
-    Logger.info(s"DynamoDB: Searching '${query}' found ${resultForUsersSearch.length} matching user(s)")
+    Logger.info(s"DynamoDB: Searching '$query' found ${resultForUsersSearch.length} matching user(s)")
 
     (resultForKeysSearch ++ resultForUsersSearch).distinct.sortBy(_.kongKey.createdAt.getMillis).reverse
   }
@@ -94,7 +100,11 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyName").put(bonoboUser.companyUrl)
+      new AttributeUpdate("companyName").put(bonoboUser.companyUrl),
+      bonoboUser.labelIds match {
+        case Nil => new AttributeUpdate("labelIds").delete()
+        case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
+      }
     )
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
   }
@@ -247,6 +257,13 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String) extends DB {
       case _ => ResultsPage(result, hasNext = true)
     }
   }
+
+  /**
+   * The following methods are used for labeling an user
+   */
+  def getLabels(): List[Label] = {
+    LableTable.scan(new ScanSpec()).asScala.toList.map(toLabel)
+  }
 }
 
 object Dynamo {
@@ -260,6 +277,7 @@ object Dynamo {
       .withString("companyUrl", bonoboKey.companyUrl)
       .withLong("createdAt", bonoboKey.additionalInfo.createdAt.getMillis)
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
+      .withList("labelIds", bonoboKey.labelIds.asJava)
 
     bonoboKey.additionalInfo.businessArea.fold(item) { businessArea => item.withString("businessArea", businessArea) }
     bonoboKey.additionalInfo.monthlyUsers.fold(item) { monthlyUsers => item.withString("monthlyUsers", monthlyUsers) }
@@ -289,7 +307,8 @@ object Dynamo {
         commercialModel = Option(item.getString("commercialModel")),
         content = Option(item.getString("content")),
         contentFormat = Option(item.getString("contentFormat")),
-        articlesPerDay = Option(item.getString("articlesPerDay")))
+        articlesPerDay = Option(item.getString("articlesPerDay"))),
+      labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList) getOrElse List.empty
     )
   }
 
@@ -328,5 +347,21 @@ object Dynamo {
       productUrl = item.getString("productUrl"),
       rangeKey = item.getString("rangekey")
     )
+  }
+
+  def toLabel(item: Item): Label = {
+    Label(
+      id = item.getString("id"),
+      properties = LabelProperties(
+        name = item.getString("name"),
+        colour = item.getString("colour"))
+    )
+  }
+
+  def fromLabel(label: Label): Item = {
+    new Item()
+      .withPrimaryKey("id", label.id)
+      .withString("name", label.properties.name)
+      .withString("colour", label.properties.colour)
   }
 }
