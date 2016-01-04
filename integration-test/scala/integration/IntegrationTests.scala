@@ -104,7 +104,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       companyName = "The Labels Company",
       companyUrl = "http://thelabelscompany.co.uk",
       additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration),
-      labelIds = Some(List("id-label-1", "id-label-3")))
+      labelIds = List("id-label-1", "id-label-3"))
     val keyToSave = KongKey(
       bonoboId = "id-user-with-labels",
       kongId = "te-be-created",
@@ -127,7 +127,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> keyToSave.productUrl,
       "tier" -> keyToSave.tier.friendlyName,
       "key" -> keyToSave.key,
-      "labelIds" -> userToSave.labelIds.value.mkString(","),
+      "labelIds" -> userToSave.labelIds.mkString(","),
       "sendEmail" -> "false"
     )).get
 
@@ -375,7 +375,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = None)
+        labelIds = List.empty)
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
@@ -415,7 +415,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = None)
+        labelIds = List.empty)
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
