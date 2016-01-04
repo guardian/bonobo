@@ -89,7 +89,7 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   val labelsMap = {
     val labelsList = dynamo.getLabels()
     labelsList.foldLeft(Map.empty: Map[String, LabelProperties]) { (acc, label) =>
-      acc + (label.id -> LabelProperties(label.properties.name, label.properties.colour))
+      acc + (label.id -> label.properties)
     }
   }
 }

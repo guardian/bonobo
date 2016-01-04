@@ -94,14 +94,8 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
   def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     val user = dynamo.getUserWithId(id)
-    val additionalInfo = user match {
-      case Some(u) => Some(u.additionalInfo)
-      case None => None
-    }
-    val userLabels = user match {
-      case Some(u) => u.labelIds
-      case None => None
-    }
+    val additionalInfo = user.map(_.additionalInfo)
+    val userLabels = user.flatMap(_.labelIds)
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
       BadRequest(views.html.editUser(id, form, additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
@@ -109,7 +103,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     def handleValidForm(form: EditUserFormData): Result = {
       logic.updateUser(id, form) match {
         case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
-        case Right(_) => Redirect(routes.Application.editUserPage(id)).flashing("success" -> "The user has been successfully updated.") //Ok(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, success = Some("The user has been successfully updated.")))
+        case Right(_) => Redirect(routes.Application.editUserPage(id)).flashing("success" -> "The user has been successfully updated.")
       }
     }
 
