@@ -9,6 +9,7 @@ import com.gu.googleauth.GoogleAuthConfig
 import controllers.csrf.CSRFFilter
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
+import models.LabelProperties
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
@@ -46,8 +47,9 @@ trait DynamoComponentImpl extends DynamoComponent { self: BuiltInComponents =>
     val awsRegion = Regions.fromName(configuration.getString("aws.region") getOrElse "eu-west-1")
     val usersTable = configuration.getString("aws.dynamo.usersTableName") getOrElse "Bonobo-Users"
     val keysTable = configuration.getString("aws.dynamo.keysTableName") getOrElse "Bonobo-Keys"
+    val labelsTable = configuration.getString("aws.dynamo.labelsTableName") getOrElse "Bonobo-Labels"
     val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(awsRegion)
-    new Dynamo(new DynamoDB(client), usersTable, keysTable)
+    new Dynamo(new DynamoDB(client), usersTable, keysTable, labelsTable)
   }
 }
 
@@ -79,14 +81,27 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
   }
 }
 
+trait LabelsComponent {
+  def labelsMap: Map[String, LabelProperties]
+}
+
+trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
+  val labelsMap = {
+    val labelsList = dynamo.getLabels()
+    labelsList.foldLeft(Map.empty: Map[String, LabelProperties]) { (acc, label) =>
+      acc + (label.id -> label.properties)
+    }
+  }
+}
+
 trait CSRFComponent { self: BuiltInComponents =>
   override lazy val httpFilters = Seq(CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())))
 }
 
-trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent =>
+trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent =>
   def enableAuth: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
-  def appController = new Application(dynamo, kong, awsEmail, messagesApi, googleAuthConfig, enableAuth)
+  def appController = new Application(dynamo, kong, awsEmail, labelsMap, messagesApi, googleAuthConfig, enableAuth)
   def authController = new Auth(googleAuthConfig, wsApi)
 
   val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
@@ -103,6 +118,7 @@ class AppComponents(context: Context)
     with DynamoComponentImpl
     with KongComponentImpl
     with AwsEmailComponentImpl
+    with LabelsComponentImpl
     with ControllersComponent
     with CSRFComponent {
   def enableAuth = true

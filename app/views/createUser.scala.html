@@ -1,5 +1,5 @@
 @import controllers.csrf.CSRFSupport
-@(form: Form[controllers.Forms.CreateUserFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
+@(userForm: Form[controllers.Forms.CreateUserFormData], labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Create user", firstName, pageTitle, success, error) {
@@ -7,17 +7,34 @@
         <div class="col-md-6 col-md-offset-2 column">
             @b3.form(routes.Application.createUser) {
                 @CSRFSupport.formField
-                @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name" )
-                @b3.email( form("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
-                @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
-                @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
-                @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-                @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
-                @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
-                @b3.text( form("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
-                @b3.checkbox( form("sendEmail"), '_label -> "Send email" )
+                @b3.text( userForm("name"), '_label -> "Name", 'placeholder -> "Name" )
+                @b3.email( userForm("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
+                @b3.text( userForm("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
+                @b3.text( userForm("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
+                @b3.text( userForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
+                @b3.text( userForm("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
+                @b3.select( userForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+                @b3.text( userForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
+                @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
+                @b3.text( userForm("labelIds") )
+                @b3.free() {
+                    <div id="divChosenLabels"></div>
+                }
+                @b3.checkbox( userForm("sendEmail"), '_label -> "Send email" )
                 @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
             }
         </div>
+        <div id="divAllLabels" class="col-md-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">Labels <span id="btnCloseLabels" class="pull-right glyphicon glyphicon-remove" style="cursor: pointer"></span></div>
+                <div id="divAllLabelsContainer" class="panel-body">
+                    @for(label <- labelMap){
+                        <span class="label label-default" data-id="@label._1" data-used="false" style="background-color: @label._2.colour">@label._2.name</span>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
+    <script src="@routes.Assets.versioned("javascripts/createUser.js")" type="text/javascript"></script>
+    <link href="@routes.Assets.versioned("stylesheets/labelStyle.css")" type="text/css" rel="stylesheet"/>
 }
