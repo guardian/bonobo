@@ -14,28 +14,28 @@ case class BonoboUser(
   companyName: String,
   companyUrl: String,
   additionalInfo: AdditionalUserInfo,
-  labelIds: Option[List[String]])
+  labelIds: List[String])
 
 object BonoboUser {
   /* Method used when manually creating a user */
-  def apply(id: String, formData: CreateUserFormData, labelIds: Option[List[String]]): BonoboUser = {
+  def apply(id: String, formData: CreateUserFormData, labelIds: List[String]): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration)
     new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, labelIds)
   }
   /* Method used when editing a user */
-  def apply(id: String, formData: EditUserFormData, createdAt: DateTime, registrationType: RegistrationType, labelIds: Option[List[String]]): BonoboUser = {
+  def apply(id: String, formData: EditUserFormData, createdAt: DateTime, registrationType: RegistrationType, labelIds: List[String]): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(createdAt, registrationType)
     new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, labelIds)
   }
   /* Method used when using the developer form for creating a user */
   def apply(id: String, formData: DeveloperCreateKeyFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), DeveloperRegistration)
-    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, None)
+    new BonoboUser(id, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, List.empty)
   }
   /* Method used when using the commercial form for creating a user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
-    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, None)
+    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, List.empty)
   }
 }
 

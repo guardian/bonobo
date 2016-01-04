@@ -1,5 +1,5 @@
 @import controllers.csrf.CSRFSupport
-@(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: Option[List[String]], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
+@(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: List[String], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
 
 @main("Edit User", firstName, pageTitle, success, error, flash = Option(flash)) {
@@ -15,11 +15,9 @@
       @b3.text( form("labelIds") )
       @b3.free(){
         <div id="divChosenLabels">
-        @for(idsList <- userLabels){
-          @for(labelId <- idsList){
+          @for(labelId <- userLabels){
             <span class="label label-default" data-id="@labelId" data-used="true" style="background-color: @labelMap.get(labelId).map(_.colour)">@labelMap.get(labelId).map(_.name)</span>
           }
-        }
         </div>
       }
       @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
@@ -30,7 +28,7 @@
         <div class="panel-heading">Labels <span id="btnCloseLabels" class="pull-right glyphicon glyphicon-remove" style="cursor: pointer"></span></div>
         <div id="divAllLabelsContainer" class="panel-body">
         @for(label <- labelMap){
-          @if(!userLabels.get.contains(label._1)){
+          @if(!userLabels.contains(label._1)){
             <span class="label label-default" data-id="@label._1" data-used="false" style="background-color: @label._2.colour">@label._2.name</span>
           }
         }

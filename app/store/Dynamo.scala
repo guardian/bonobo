@@ -70,7 +70,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val keys = KongTable.scan(keysScan).asScala.toList.map(fromKongItem)
     val usersForKeysSearch = getUsersForKeys(keys)
     val resultForKeysSearch = matchKeysWithUsers(keys, usersForKeysSearch)
-    Logger.info(s"DynamoDB: Searching '${query}' found ${resultForKeysSearch.length} matching key(s)")
+    Logger.info(s"DynamoDB: Searching '$query' found ${resultForKeysSearch.length} matching key(s)")
 
     val userScan = new ScanSpec()
       .withFilterExpression("contains (#1, :s) OR contains (#2, :s) OR contains (#3, :s)")
@@ -84,7 +84,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val users = BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem)
     val keysForUsersSearch = getKeysForUsers(users)
     val resultForUsersSearch = matchKeysWithUsers(keysForUsersSearch, users)
-    Logger.info(s"DynamoDB: Searching '${query}' found ${resultForUsersSearch.length} matching user(s)")
+    Logger.info(s"DynamoDB: Searching '$query' found ${resultForUsersSearch.length} matching user(s)")
 
     (resultForKeysSearch ++ resultForUsersSearch).distinct.sortBy(_.kongKey.createdAt.getMillis).reverse
   }
@@ -102,8 +102,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
       new AttributeUpdate("companyName").put(bonoboUser.companyUrl),
       bonoboUser.labelIds match {
-        case Some(ids) => new AttributeUpdate("labelIds").put(ids.mkString(","))
-        case None => new AttributeUpdate("labelIds").delete()
+        case Nil => new AttributeUpdate("labelIds").delete()
+        case ids: List[String] => new AttributeUpdate("labelIds").put(ids.mkString(","))
       }
     )
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
@@ -284,8 +284,8 @@ object Dynamo {
     bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
     bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
     bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
-
-    bonoboKey.labelIds.fold(item) { ids => item.withString("labelIds", ids.mkString(",")) }
+    if (bonoboKey.labelIds.nonEmpty) item.withString("labelIds", bonoboKey.labelIds.mkString(","))
+    item
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
@@ -309,7 +309,10 @@ object Dynamo {
         content = Option(item.getString("content")),
         contentFormat = Option(item.getString("contentFormat")),
         articlesPerDay = Option(item.getString("articlesPerDay"))),
-      labelIds = Option(item.getString("labelIds")) map (_.split(",").toList)
+      labelIds = Option(item.getString("labelIds")) match {
+        case Some(ids) => ids.split(",").toList
+        case None => List.empty
+      }
     )
   }
 
