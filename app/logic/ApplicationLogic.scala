@@ -36,10 +36,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   def createUser(form: CreateUserFormData): Future[ConsumerCreationResult] = {
     Logger.info(s"ApplicationLogic: Creating user with name ${form.name}")
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
-      val labelIds = formData.labelIds match {
-        case Some(ids) => Some(ids.split(",").toList.filter(_.length > 0))
-        case None => None
-      }
+      val labelIds = formData.labelIds.map(ids => ids.split(",").toList.filter(_.nonEmpty))
       Logger.info(s"Labels to be assigned with the ${form.name}: $labelIds")
       val newBonoboUser = BonoboUser(consumer.id, formData, labelIds)
       dynamo.saveUser(newBonoboUser)
@@ -66,7 +63,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   }
 
   def updateUser(userId: String, form: EditUserFormData): Either[String, Unit] = {
-    Logger.info(s"ApplicationLogic: Updating user with id ${userId}")
+    Logger.info(s"ApplicationLogic: Updating user with id $userId")
     def updateUserOnDB(oldUser: BonoboUser) = {
       val labelIds = form.labelIds match {
         case Some(ids) => Some(ids.split(",").toList.filter(_.length > 0))
