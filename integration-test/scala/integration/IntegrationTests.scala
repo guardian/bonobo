@@ -26,6 +26,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
       "key" -> "123124-13434-32323-3439",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -59,6 +60,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
       "key" -> "the-dark",
+      "labelIds" -> "",
       "sendEmail" -> "true"
     )).get
 
@@ -76,6 +78,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
       "key" -> "",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -165,6 +168,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
       "key" -> "the-dark-knight",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -208,6 +212,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -247,6 +252,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "http://wayneenterprises.com.co.uk-2",
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -268,6 +274,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-update-rate-limits",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -304,6 +311,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
@@ -319,6 +327,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "url" -> "some url",
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
+      "labelIds" -> "",
       "sendEmail" -> "false"
     )).get
 
