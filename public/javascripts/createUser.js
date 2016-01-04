@@ -26,13 +26,11 @@ for(var i = 0; i < listLabels.length; i++)
             divChosenLabels.appendChild(this)
             this.dataset.used = 'true'
             hiddenLabelIds.value = hiddenLabelIds.value + "," + id
-            console.log(hiddenLabelIds.value)
         }
         else if(this.dataset.used == 'true') {
             divAllLabelsContainer.appendChild(this)
             this.dataset.used = 'false'
             hiddenLabelIds.value = hiddenLabelIds.value.replace(id, "")
-            console.log(hiddenLabelIds.value)
         }
     })
 }
