@@ -80,14 +80,11 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) =>
-        val idsString = consumer.labelIds match {
-          case Some(ids) => Some(ids.mkString(","))
-          case None => None
-        }
+        val idsString = consumer.labelIds.mkString(",")
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl, idsString))
         Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), consumer.labelIds, labelsMap, request.user.firstName, userKeys, editUserPageTitle))
       case None =>
-        NotFound(views.html.editUser(id, editUserForm, None, None, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
+        NotFound(views.html.editUser(id, editUserForm, None, List.empty, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
     }
   }
 
@@ -95,7 +92,7 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     val userKeys = dynamo.getKeysWithUserId(id)
     val user = dynamo.getUserWithId(id)
     val additionalInfo = user.map(_.additionalInfo)
-    val userLabels = user.flatMap(_.labelIds)
+    val userLabels = user.map(_.labelIds).getOrElse(List.empty)
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
       BadRequest(views.html.editUser(id, form, additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
@@ -210,7 +207,7 @@ object Application {
       "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
       "sendEmail" -> boolean,
-      "labelIds" -> optional(text)
+      "labelIds" -> text
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
@@ -220,7 +217,7 @@ object Application {
       "email" -> email,
       "companyName" -> nonEmptyText,
       "companyUrl" -> nonEmptyText,
-      "labelIds" -> optional(text)
+      "labelIds" -> text
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
