@@ -28,7 +28,7 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       dynamo.saveUser(newBonoboUser)
 
       val newKongKey = KongKey(consumer.id, consumer, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
-      dynamo.saveKey(newKongKey)
+      dynamo.saveKey(newKongKey, List.empty)
     }
 
     if (dynamo.isEmailInUse(form.email))

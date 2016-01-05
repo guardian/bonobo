@@ -1,4 +1,4 @@
-@(title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None, query: Option[String] = None)(content: Html)
+@(title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None, query: Option[String] = None)(content: Html)(implicit req: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -7,6 +7,11 @@
         <title>@title</title>
         <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+        @helper.javascriptRouter("jsRoutes")(
+            routes.javascript.Application.showKeys,
+            routes.javascript.Application.filter
+        )
     </head>
     <body role="document">
         <nav class="navbar navbar-default navbar-fixed-top">

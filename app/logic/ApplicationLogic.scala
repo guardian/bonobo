@@ -42,7 +42,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       dynamo.saveUser(newBonoboUser)
 
       // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same
-      saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier, formData.productName, formData.productUrl)
+      saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier, formData.productName, formData.productUrl, newBonoboUser.labelIds)
     }
 
     def createConsumerAndKey: Future[ConsumerCreationResult] = {
@@ -91,7 +91,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
         consumer =>
           {
-            saveKeyOnDB(userId, consumer, rateLimits, form.tier, form.productName, form.productUrl)
+            saveKeyOnDB(userId, consumer, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
             Future.successful(consumer.key)
           }
       }
@@ -170,8 +170,8 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     case None => f
   }
 
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String): Unit = {
+  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String, labelIds: List[String]): Unit = {
     val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
-    dynamo.saveKey(newKongKey)
+    dynamo.saveKey(newKongKey, labelIds)
   }
 }
