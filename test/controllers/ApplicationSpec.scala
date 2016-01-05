@@ -37,11 +37,9 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getUserWithEmail(email: String): Option[BonoboUser] = ???
 
-      def saveKey(kongKey: KongKey): Unit = ???
-
       def updateKey(kongKey: KongKey): Unit = ???
 
-      def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo] = {
+      def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]]): ResultsPage[BonoboInfo] = {
         ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", "product url", "rangekey"),
           BonoboUser("id", "name", "email", "company name", "company url",
             AdditionalUserInfo(DateTime.now(), ManualRegistration), List.empty))), false)
@@ -61,6 +59,10 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
        * The following methods are used for labeling an user
        */
       def getLabels(): List[Label] = ???
+
+      def saveKey(kongKey: KongKey, labelIds: List[String]): Unit = ???
+
+      def getLabelsFor(bonoboId: String): List[String] = ???
     }
     val application = new Application(dynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
     val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())
