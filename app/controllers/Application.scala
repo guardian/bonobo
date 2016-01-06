@@ -30,22 +30,17 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
 
   private val logic = new ApplicationLogic(dynamo, kong)
 
-  def showKeys(direction: String, range: Option[String]) = maybeAuth { implicit request =>
-    val resultsPage = dynamo.getKeys(direction, range)
+  def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+    val keys = if (labels.isEmpty) dynamo.getKeys(direction, range) else dynamo.getKeys(direction, range, filterLabels = Some(labels))
     val totalKeys = dynamo.getNumberOfKeys()
-    Ok(views.html.showKeys(resultsPage.items, lastDirection = "", resultsPage.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
+    val givenDirection = if (range.isDefined) direction else ""
+    Ok(views.html.showKeys(keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
   }
 
-  def filter(withLabels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
-    if (withLabels.isEmpty) {
-      val keys = dynamo.getKeys(direction, range)
-      val givenDirection = if (range.isDefined) direction else ""
-      Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
-    } else {
-      val keys = dynamo.getKeys(direction, range, filterLabels = Some(withLabels))
-      val givenDirection = if (range.isDefined) direction else ""
-      Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
-    }
+  def filter(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+    val keys = if (labels.isEmpty) dynamo.getKeys(direction, range) else dynamo.getKeys(direction, range, filterLabels = Some(labels))
+    val givenDirection = if (range.isDefined) direction else ""
+    Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
   }
 
   def search = maybeAuth { implicit request =>

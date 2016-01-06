@@ -8,7 +8,10 @@ function applyOnClickEvent() {
 }
 
 $(document).ready(function(){
-    applyOnClickEvent()
+    applyOnClickEvent();
+    var url = window.location.href;
+    if(url.indexOf("labels=") < 0) filtersContainer.style.display = "none";
+    else updateCheckboxes(url);
 });
 
 //Filter scripts
@@ -16,10 +19,6 @@ $(document).ready(function(){
 var filtersContainer = document.getElementById("filters-container");
 var btnFilter = document.getElementById("btnFilter");
 var btnReset = document.getElementById("btnReset");
-
-document.addEventListener("DOMContentLoaded", function() {
-    filtersContainer.style.display = "none";
-});
 
 btnFilter.addEventListener("click", function() {
     filtersContainer.style.display = "block";
@@ -38,15 +37,37 @@ $('.checkbox-inline input').change(function(){
     makeAjaxCall();
 });
 
+//General scripts
+
 function makeAjaxCall(direction, range) {
     var r = jsRoutes.controllers.Application.filter;
-    var checked = $('.checkbox-inline input:checked').map(function(){ return this.value })
+    var checked = $('.checkbox-inline input:checked').map(function(){ return this.value });
+    var url = r(checked, direction, range).url;
     $.ajax ({
-        url: r(checked, direction, range).url,
+        url: url,
         type: "GET",
         success: function(data) {
+            history.pushState(data, 'Keys', url.replace("/filter", ""));
             $("#show-keys-container").html(data);
-            applyOnClickEvent()
+            applyOnClickEvent();
+        }
+    });
+}
+
+window.onpopstate = function(event) {
+    $("#show-keys-container").html(event.state);
+    applyOnClickEvent();
+    updateCheckboxes(document.location.toString());
+};
+
+function updateCheckboxes(url) {
+    $('#filters-container input').prop('checked', false);
+    var path = url.substr(url.indexOf("?") + 1);
+    var params = path.split("&");
+    params.forEach(function(p){
+        if(p.indexOf("labels") >= 0) {
+            var label = p.substr(p.indexOf("=") + 1);
+            $('#filters-container :input[value='+label+']').prop('checked', true);
         }
     });
 }
