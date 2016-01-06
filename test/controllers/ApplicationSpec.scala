@@ -65,7 +65,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def getLabelsFor(bonoboId: String): List[String] = ???
     }
     val application = new Application(dynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
-    val result: Future[Result] = application.showKeys("next", None).apply(FakeRequest())
+    val result: Future[Result] = application.showKeys(List.empty, "next", None).apply(FakeRequest())
     contentAsString(result) should include("my-new-key")
   }
 

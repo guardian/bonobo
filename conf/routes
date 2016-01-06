@@ -3,10 +3,10 @@
 # ~~~~
 
 # Home page
-GET         /                           controllers.Application.showKeys(direction: String ?= "next", range: Option[String])
-GET         /key                        controllers.Application.showKeys(direction: String ?= "next", range: Option[String])
+GET         /                           controllers.Application.showKeys(labels: List[String], direction: String ?= "next", range: Option[String])
+GET         /key                        controllers.Application.showKeys(labels: List[String], direction: String ?= "next", range: Option[String])
 GET         /key/search                 controllers.Application.search
-GET         /filter                     controllers.Application.filter(withLabels: List[String], direction: String ?= "next", range: Option[String])
+GET         /key/filter                 controllers.Application.filter(labels: List[String], direction: String ?= "next", range: Option[String])
 
 GET         /key/create/:userId         controllers.Application.createKeyPage(userId: String)
 POST        /key/create/:userId         controllers.Application.createKey(userId: String)

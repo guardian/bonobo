@@ -17,7 +17,7 @@
         <nav class="navbar navbar-default navbar-fixed-top">
             <div class="container">
                 <div class="navbar-header">
-                    <a class="navbar-brand" href="@routes.Application.showKeys(range = None)">Bonobo</a>
+                    <a class="navbar-brand" href="@routes.Application.showKeys(labels = List.empty, range = None)">Bonobo</a>
                 </div>
                 <div id="navbar" class="navbar-collapse collapse">
                     <form action="@routes.Application.search" class="navbar-form navbar-left" role="search" method="GET">
@@ -29,7 +29,7 @@
                         </div>
                     </form>
                     <ul class="nav navbar-nav">
-                        <li><a href="@routes.Application.showKeys(range = None)">All keys</a></li>
+                        <li><a href="@routes.Application.showKeys(labels = List.empty, range = None)">All keys</a></li>
                         <li><a href="@routes.Application.createUserPage">Create user</a></li>
                     </ul>
                     @if(!firstName.equals("")){
