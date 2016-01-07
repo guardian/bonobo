@@ -1,39 +1,36 @@
 //Pagination scripts
-function applyOnClickEvent() {
-    $('#paginationControls').on('click', '.btnPagination', function(){
+
+$(document).ready(function(){
+    applyOnClickEventForPaginationButtons();
+    var url = window.location.href;
+    if(url.indexOf("labels=") < 0) $('#filters-container').hide();
+    else updateCheckboxes(url);
+});
+
+function applyOnClickEventForPaginationButtons() {
+    $('#paginationControls').find('.btnPagination').click(function(){
         var direction = $(this).data("direction");
         var range = $(this).data("range");
         makeAjaxCall(direction, range);
     });
 }
 
-$(document).ready(function(){
-    applyOnClickEvent();
-    var url = window.location.href;
-    if(url.indexOf("labels=") < 0) filtersContainer.style.display = "none";
-    else updateCheckboxes(url);
-});
-
 //Filter scripts
 
-var filtersContainer = document.getElementById("filters-container");
-var btnFilter = document.getElementById("btnFilter");
-var btnReset = document.getElementById("btnReset");
-
-btnFilter.addEventListener("click", function() {
-    filtersContainer.style.display = "block";
+$('#btnFilter').find('p').click(function(){
+    $('#filters-container').toggle();
 });
 
-btnReset.addEventListener("click", function() {
-    $('.checkbox-inline input').prop("checked", false);
+$('#btnReset').click(function(){
+    $('.checkbox-inline').find('input').prop('checked', false);
     makeAjaxCall();
 });
 
-document.getElementById("btnCloseFilters").addEventListener("click", function(){
-    filtersContainer.style.display = 'none';
+$('#btnCloseFilters').click(function(){
+    $('#filters-container').hide();
 });
 
-$('.checkbox-inline input').change(function(){
+$('.checkbox-inline').find('input').change(function(){
     makeAjaxCall();
 });
 
@@ -41,33 +38,33 @@ $('.checkbox-inline input').change(function(){
 
 function makeAjaxCall(direction, range) {
     var r = jsRoutes.controllers.Application.filter;
-    var checked = $('.checkbox-inline input:checked').map(function(){ return this.value });
+    var checked = $('.checkbox-inline').find('input:checked').map(function(){ return this.value });
     var url = r(checked, direction, range).url;
     $.ajax ({
         url: url,
         type: "GET",
         success: function(data) {
             history.pushState(data, 'Keys', url.replace("/filter", ""));
-            $("#show-keys-container").html(data);
-            applyOnClickEvent();
+            $('#show-keys-container').html(data);
+            applyOnClickEventForPaginationButtons();
+        }
+    });
+}
+
+function updateCheckboxes(url) {
+    $('#filters-container').find('input').prop('checked', false);
+    var path = url.substr(url.indexOf("?") + 1);
+    var params = path.split("&");
+    params.forEach(function(param){
+        if(param.indexOf("labels") >= 0) {
+            var label = param.substr(param.indexOf("=") + 1);
+            $('#filters-container').find(':input[value='+label+']').prop('checked', true);
         }
     });
 }
 
 window.onpopstate = function(event) {
     $("#show-keys-container").html(event.state);
-    applyOnClickEvent();
+    applyOnClickEventForPaginationButtons();
     updateCheckboxes(document.location.toString());
 };
-
-function updateCheckboxes(url) {
-    $('#filters-container input').prop('checked', false);
-    var path = url.substr(url.indexOf("?") + 1);
-    var params = path.split("&");
-    params.forEach(function(p){
-        if(p.indexOf("labels") >= 0) {
-            var label = p.substr(p.indexOf("=") + 1);
-            $('#filters-container :input[value='+label+']').prop('checked', true);
-        }
-    });
-}
