@@ -1,6 +1,5 @@
 package controllers
 
-import components.LabelsComponent
 import email.MailClient
 import models._
 import org.joda.time.DateTime

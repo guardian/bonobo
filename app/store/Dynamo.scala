@@ -102,7 +102,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyName").put(bonoboUser.companyUrl),
+      new AttributeUpdate("companyUrl").put(bonoboUser.companyUrl),
       bonoboUser.labelIds match {
         case Nil => new AttributeUpdate("labelIds").delete()
         case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
