@@ -1,0 +1,54 @@
+@(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean)
+
+<div class="col-md-12">
+    <table class="table table-responsive table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Company</th>
+                <th>Product</th>
+                <th>Tier</th>
+                <th>Status</th>
+                <th>Created at</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(key <- keys) {
+                <tr onclick="window.location='@routes.Application.editUserPage(key.kongKey.bonoboId)'" style="cursor: pointer;">
+                    <td>@key.kongKey.key</td>
+                    <td>@key.bonoboUser.name</td>
+                    <td>@key.bonoboUser.email</td>
+                    <td>@key.bonoboUser.companyName</td>
+                    <td>@key.kongKey.productName</td>
+                    <td>@key.kongKey.tier.friendlyName</td>
+                    <td>@key.kongKey.status</td>
+                    <td>@key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div id="paginationControls" class="row col-md-12">
+    @if(lastDirection != "" || hasNext){
+        @if(lastDirection == "next" && !hasNext) {
+            <div class="col-md-6">
+                <div class="btn btn-primary col-md-4 pull-right btnPagination" data-direction="previous" data-range="@keys.head.kongKey.rangeKey"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</div>
+            </div>
+        } else {
+            @if((lastDirection == "previous" && !hasNext) || lastDirection == "") {
+                <div class="col-md-6 col-md-offset-6">
+                    <div class="btn btn-primary col-md-4 pull-left btnPagination" data-direction="next" data-range="@keys.last.kongKey.rangeKey">Next <span class="glyphicon glyphicon-chevron-right"></span></div>
+                </div>
+            } else {
+                <div class="col-md-6">
+                    <div class="btn btn-primary col-md-4 pull-right btnPagination" data-direction="previous" data-range="@keys.head.kongKey.rangeKey"> <span class="glyphicon glyphicon-chevron-left"></span> Previous</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="btn btn-primary col-md-4 pull-left btnPagination" data-direction="next" data-range="@keys.last.kongKey.rangeKey">Next <span class="glyphicon glyphicon-chevron-right"></span></div>
+                </div>
+            }
+        }
+    }
+    </div>
+</div>

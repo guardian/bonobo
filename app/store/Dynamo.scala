@@ -27,11 +27,11 @@ trait DB {
    */
   def getUserWithEmail(email: String): Option[BonoboUser]
 
-  def saveKey(kongKey: KongKey): Unit
+  def saveKey(kongKey: KongKey, labelIds: List[String]): Unit
 
   def updateKey(kongKey: KongKey): Unit
 
-  def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo]
+  def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]] = None): ResultsPage[BonoboInfo]
 
   def isKeyPresent(key: String): Boolean
 
@@ -49,6 +49,8 @@ trait DB {
    * The following methods are used for labeling an user
    */
   def getLabels(): List[Label]
+
+  def getLabelsFor(bonoboId: String): List[String]
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: String) extends DB {
@@ -100,13 +102,24 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyName").put(bonoboUser.companyUrl),
+      new AttributeUpdate("companyUrl").put(bonoboUser.companyUrl),
       bonoboUser.labelIds match {
         case Nil => new AttributeUpdate("labelIds").delete()
         case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
       }
     )
+    val keys = getKeysWithUserId(bonoboUser.bonoboId)
+    keys.foreach(kongKey => updateKeyLabelIds(kongKey, bonoboUser.labelIds))
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
+  }
+
+  private def updateKeyLabelIds(kongKey: KongKey, labelIds: List[String]): Unit = {
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
+      labelIds match {
+        case Nil => new AttributeUpdate("labelIds").delete()
+        case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
+      }
+    )
   }
 
   def getUserWithId(id: String): Option[BonoboUser] = {
@@ -133,8 +146,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem).headOption
   }
 
-  def saveKey(kongKey: KongKey): Unit = {
-    val item = toKongItem(kongKey)
+  def saveKey(kongKey: KongKey, labelIds: List[String]): Unit = {
+    val item = toKongItem(kongKey, labelIds)
     KongTable.putItem(item)
     Logger.info(s"DynamoDB: Key ${kongKey.key} has been saved for the user with id ${kongKey.bonoboId}")
   }
@@ -151,10 +164,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     Logger.info(s"DynamoDB: Key ${kongKey.key} has been updated")
   }
 
-  def getKeys(direction: String, range: Option[String], limit: Int = 20): ResultsPage[BonoboInfo] = {
+  def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]] = None): ResultsPage[BonoboInfo] = {
     direction match {
-      case "previous" => getKeysBefore(range, limit)
-      case "next" => getKeysAfter(range, limit)
+      case "previous" => getKeysBefore(range, limit, filterLabels)
+      case "next" => getKeysAfter(range, limit, filterLabels)
       case _ => ResultsPage(List.empty, hasNext = false)
     }
   }
@@ -209,14 +222,28 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     }
   }
 
-  private def getKeysAfter(afterRange: Option[String], limit: Int): ResultsPage[BonoboInfo] = {
+  private def addLabelFiltersIfNecessary(querySpec: QuerySpec, filterLabels: Option[List[String]]): QuerySpec = {
+    val initialValueMap = new ValueMap().withString(":h", "hashkey")
+    if (filterLabels.isDefined) {
+      val labelIds = filterLabels.get
+      val placeholders = labelIds.zipWithIndex.map { case (id, i) => s"s$i" }
+      val clauses = placeholders.map(p => s"contains(#1, :$p)")
+      val filterExpression = clauses.reduce[String] { case (a, b) => s"$a OR $b" }
+      val valueMapElements = placeholders.zip(labelIds)
+      val valueMap = valueMapElements.foldLeft(initialValueMap) { (acc, elem) => acc.withString(s":${elem._1}", elem._2) }
+      querySpec.withFilterExpression(filterExpression).withValueMap(valueMap).withNameMap(new NameMap().`with`("#1", "labelIds"))
+    } else querySpec.withValueMap(initialValueMap)
+  }
+
+  private def getKeysAfter(afterRange: Option[String], limit: Int, filterLabels: Option[List[String]]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
         .withKeyConditionExpression("hashkey = :h")
-        .withValueMap(new ValueMap().withString(":h", "hashkey"))
         .withMaxResultSize(limit)
         .withScanIndexForward(false)
       range.fold(querySpec) { value => querySpec.withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "rangekey", value)) }
+
+      addLabelFiltersIfNecessary(querySpec, filterLabels)
     }
     val keysQuery = createQuerySpec(afterRange)
     val keys: List[KongKey] = KongTable.query(keysQuery).asScala.toList.map(fromKongItem)
@@ -236,13 +263,15 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     }
   }
 
-  private def getKeysBefore(beforeRange: Option[String], limit: Int): ResultsPage[BonoboInfo] = {
+  private def getKeysBefore(beforeRange: Option[String], limit: Int, filterLabels: Option[List[String]]): ResultsPage[BonoboInfo] = {
     def createQuerySpec(range: Option[String]): QuerySpec = {
       val querySpec = new QuerySpec()
         .withKeyConditionExpression("hashkey = :h")
         .withValueMap(new ValueMap().withString(":h", "hashkey"))
         .withMaxResultSize(limit)
       range.fold(querySpec) { value => querySpec.withExclusiveStartKey(new PrimaryKey("hashkey", "hashkey", "rangekey", value)) }
+
+      addLabelFiltersIfNecessary(querySpec, filterLabels)
     }
     val keysQuery = createQuerySpec(beforeRange)
     val keys = KongTable.query(keysQuery).asScala.toList.map(fromKongItem).reverse
@@ -263,6 +292,12 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
    */
   def getLabels(): List[Label] = {
     LableTable.scan(new ScanSpec()).asScala.toList.map(toLabel)
+  }
+
+  def getLabelsFor(bonoboId: String): List[String] = {
+    BonoboTable.query(new QuerySpec().withKeyConditionExpression("id = :i")
+      .withValueMap(new ValueMap().withString(":i", bonoboId))
+      .withMaxResultSize(1)).asScala.toList.map(fromBonoboItem).flatMap(_.labelIds)
   }
 }
 
@@ -312,7 +347,7 @@ object Dynamo {
     )
   }
 
-  def toKongItem(kongKey: KongKey): Item = {
+  def toKongItem(kongKey: KongKey, labelIds: List[String]): Item = {
     new Item()
       .withPrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey)
       .withString("bonoboId", kongKey.bonoboId)
@@ -325,6 +360,7 @@ object Dynamo {
       .withLong("createdAt", kongKey.createdAt.getMillis)
       .withString("productName", kongKey.productName)
       .withString("productUrl", kongKey.productUrl)
+      .withList("labelIds", labelIds.asJava)
   }
 
   def fromKongItem(item: Item): KongKey = {
