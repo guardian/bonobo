@@ -30,22 +30,28 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
 
   private val logic = new ApplicationLogic(dynamo, kong)
 
-  def showKeys(direction: String, range: Option[String]) = maybeAuth { implicit request =>
-    val resultsPage = dynamo.getKeys(direction, range)
+  def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+    val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val totalKeys = dynamo.getNumberOfKeys()
     val givenDirection = if (range.isDefined) direction else ""
-    Ok(views.html.showKeys(resultsPage.items, givenDirection, resultsPage.hasNext, totalKeys, request.user.firstName, pageTitle = "All Keys"))
+    Ok(views.html.showKeys(keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
+  }
+
+  def filter(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+    val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
+    val givenDirection = if (range.isDefined) direction else ""
+    Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
   }
 
   def search = maybeAuth { implicit request =>
     searchForm.bindFromRequest.fold(
       formWithErrors => {
-        BadRequest(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
+        BadRequest(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, labelsMap, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
       },
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
-        Ok(views.html.showKeys(keys, lastDirection = "", hasNext = false, keys.length, request.user.firstName, pageTitle = searchResultsMessage, query = Some(searchFormData.query)))
+        Ok(views.html.showKeys(keys, lastDirection = "", hasNext = false, keys.length, labelsMap, request.user.firstName, pageTitle = searchResultsMessage, query = Some(searchFormData.query)))
       }
     )
   }

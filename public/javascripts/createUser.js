@@ -1,36 +1,30 @@
-var divAllLabels = document.getElementById("divAllLabels")
-var divAllLabelsContainer = document.getElementById("divAllLabelsContainer")
-var divChosenLabels = document.getElementById("divChosenLabels")
-var btnAddLabels = document.getElementById("btnAddLabels")
-var listLabels = document.getElementsByClassName("label")
-var hiddenLabelIds = document.getElementById("labelIds")
-
-document.addEventListener("DOMContentLoaded", function() {
-    divAllLabels.style.display = 'none'
-    document.getElementById("labelIds_field").style.display = 'none'
+$(document).ready(function(){
+    $('#divAllLabels').hide();
+    $('#labelIds_field').hide();
 });
 
-btnAddLabels.addEventListener("click", function(){
-    divAllLabels.style.display = 'block'
+$('#btnAddLabels').click(function(){
+    $('#divAllLabels').show();
 });
 
-document.getElementById("btnCloseLabels").addEventListener("click", function(){
-    divAllLabels.style.display = 'none'
+$('#btnCloseLabels').click(function(){
+    $('#divAllLabels').hide();
 });
 
-for(var i = 0; i < listLabels.length; i++)
-{
-    listLabels.item(i).addEventListener("click", function(){
-        var id = this.dataset.id
-        if(this.dataset.used == 'false') {
-            divChosenLabels.appendChild(this)
-            this.dataset.used = 'true'
-            hiddenLabelIds.value = hiddenLabelIds.value + "," + id
-        }
-        else if(this.dataset.used == 'true') {
-            divAllLabelsContainer.appendChild(this)
-            this.dataset.used = 'false'
-            hiddenLabelIds.value = hiddenLabelIds.value.replace(id, "")
-        }
-    })
-}
+$('.label').click(function(){
+    var id = $(this).data("id");
+    if($(this).data('used') == false) {
+        $('#divChosenLabels').append(this);
+        $(this).data('used', true);
+        $('#labelIds').val(function(index, value){
+            return value + ',' + id;
+        });
+    }
+    else if($(this).data('used') == true) {
+        $('#divAllLabelsContainer').append(this);
+        $(this).data('used', false);
+        $('#labelIds').val(function(index, value){
+            return value.replace(id, "");
+        });
+    }
+});
