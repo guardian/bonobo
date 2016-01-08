@@ -31,14 +31,14 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
   private val logic = new ApplicationLogic(dynamo, kong)
 
   def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
-    val keys = if (labels.isEmpty) dynamo.getKeys(direction, range) else dynamo.getKeys(direction, range, filterLabels = Some(labels))
+    val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val totalKeys = dynamo.getNumberOfKeys()
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.showKeys(keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
   }
 
   def filter(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
-    val keys = if (labels.isEmpty) dynamo.getKeys(direction, range) else dynamo.getKeys(direction, range, filterLabels = Some(labels))
+    val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
   }

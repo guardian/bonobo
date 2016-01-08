@@ -109,15 +109,17 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       }
     )
     val keys = getKeysWithUserId(bonoboUser.bonoboId)
-    keys.foreach(kongKey =>
-      KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
-        bonoboUser.labelIds match {
-          case Nil => new AttributeUpdate("labelIds").delete()
-          case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
-        }
-      )
-    )
+    keys.foreach(kongKey => updateKeyLabelIds(kongKey, bonoboUser.labelIds))
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
+  }
+
+  private def updateKeyLabelIds(kongKey: KongKey, labelIds: List[String]): Unit = {
+    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
+      labelIds match {
+        case Nil => new AttributeUpdate("labelIds").delete()
+        case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
+      }
+    )
   }
 
   def getUserWithId(id: String): Option[BonoboUser] = {
