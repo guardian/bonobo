@@ -18,6 +18,11 @@
       "Description": "Environment name",
       "Type": "String",
       "Default": "CODE"
+    },
+    "Region": {
+      "Description": "AWS region",
+      "Type": "String",
+      "Default": "eu-west-1"
     }
   },
   "Resources": {
@@ -193,18 +198,21 @@
               "\n",
               [
                 "#!/usr/bin/env bash",
-                "aws --region eu-west-1 s3 cp s3://content-api-dist/authorized_keys /home/ubuntu/.ssh/authorized_keys",
+
+                { "Fn::Join": [ "", [ "aws configure set region ", {"Ref": "Region"} ] ] },
+
+                "aws s3 cp s3://content-api-dist/authorized_keys /home/ubuntu/.ssh/authorized_keys",
 
                 "adduser --disabled-password content-api",
                 "cd /home/content-api",
                 "mkdir logs",
                 "mkdir -p /etc/gu",
-                { "Fn::Join": [ "", [ "aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/",{ "Ref": "Stage" }, "/bonobo/bonobo-1.0-SNAPSHOT.tgz ." ] ] },
-                { "Fn::Join": [ "", [ "aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/",{ "Ref": "Stage" }, "/bonobo/bonobo.service /etc/systemd/system/bonobo.service" ] ] },
+                { "Fn::Join": [ "", [ "aws s3 cp s3://content-api-dist/content-api/",{ "Ref": "Stage" }, "/bonobo/bonobo-1.0-SNAPSHOT.tgz ." ] ] },
+                { "Fn::Join": [ "", [ "aws s3 cp s3://content-api-dist/content-api/",{ "Ref": "Stage" }, "/bonobo/bonobo.service /etc/systemd/system/bonobo.service" ] ] },
 
                 "tar -xvf bonobo-1.0-SNAPSHOT.tgz",
                 "mv bonobo-1.0-SNAPSHOT bonobo",
-                { "Fn::Join": [ "", [ "aws --region eu-west-1 s3 cp s3://content-api-config/bonobo/",{ "Ref": "Stage" }, "/bonobo.conf /etc/gu/bonobo.conf" ] ] },
+                { "Fn::Join": [ "", [ "aws s3 cp s3://content-api-config/bonobo/",{ "Ref": "Stage" }, "/bonobo.conf /etc/gu/bonobo.conf" ] ] },
                 "chown -R content-api:content-api /home/content-api /etc/gu",
                 "systemctl start bonobo.service"
               ]
