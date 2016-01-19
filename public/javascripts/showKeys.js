@@ -1,6 +1,7 @@
 //Pagination scripts
 
 $(document).ready(function(){
+    $("#imgLoader").hide();
     applyOnClickEventForPaginationButtons();
     var url = window.location.href;
     if(url.indexOf("labels=") < 0) $('#filters-container').hide();
@@ -11,6 +12,7 @@ function applyOnClickEventForPaginationButtons() {
     $('#paginationControls').find('.btnPagination').click(function(){
         var direction = $(this).data("direction");
         var range = $(this).data("range");
+        $("#imgLoader").show();
         makeAjaxCall(direction, range);
     });
 }
@@ -23,6 +25,7 @@ $('#btnFilter').find('p').click(function(){
 
 $('#btnReset').click(function(){
     $('.checkbox-inline').find('input').prop('checked', false);
+    $("#imgLoader").show();
     makeAjaxCall();
 });
 
@@ -31,6 +34,7 @@ $('#btnCloseFilters').click(function(){
 });
 
 $('.checkbox-inline').find('input').change(function(){
+    $("#imgLoader").show();
     makeAjaxCall();
 });
 
@@ -47,6 +51,7 @@ function makeAjaxCall(direction, range) {
             history.pushState(data, 'Keys', url.replace("/filter", ""));
             $('#show-keys-container').html(data);
             applyOnClickEventForPaginationButtons();
+            $("#imgLoader").hide();
         }
     });
 }
