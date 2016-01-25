@@ -30,9 +30,6 @@ class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with 
         Future.successful(Forbidden("Anti forgery token missing in session"))
       case Some(token) =>
         GoogleAuth.validatedUserIdentity(authConfig, token, ws).map { identity =>
-
-          if (!isGuardianStaff(identity)) throw new Exception("not a guardian staff")
-
           // We store the URL a user was trying to get to in the LOGIN_ORIGIN_KEY in AuthAction
           // Redirect a user back there now if it exists
           val redirect = session.get(LOGIN_ORIGIN_KEY) match {
@@ -51,8 +48,6 @@ class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with 
         }
     }
   }
-
-  private def isGuardianStaff(identity: UserIdentity): Boolean = identity.email.split("@").last == "guardian.co.uk"
 
 }
 
