@@ -1,6 +1,8 @@
 package controllers
 
+import auth.Authorisation
 import com.gu.googleauth.{ UserIdentity, GoogleAuth, GoogleAuthConfig }
+import play.api.Logger
 import play.api.mvc._
 import play.api.libs.ws.WSAPI
 import play.api.libs.json.Json
@@ -8,7 +10,7 @@ import play.api.libs.json.Json
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with AuthActions {
+class Auth(val authConfig: GoogleAuthConfig, authorisation: Authorisation, ws: WSAPI) extends Controller with AuthActions {
   import Auth._
 
   def login = Action.async { implicit request =>
@@ -29,7 +31,14 @@ class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with 
       case None =>
         Future.successful(Forbidden("Anti forgery token missing in session"))
       case Some(token) =>
-        GoogleAuth.validatedUserIdentity(authConfig, token, ws).map { identity =>
+        val authorisedIdentity = for {
+          ident <- GoogleAuth.validatedUserIdentity(authConfig, token, ws)
+          isAuthorised <- authorisation.isAuthorised(ident.email) if isAuthorised
+        } yield {
+          ident
+        }
+
+        authorisedIdentity map { identity =>
           // We store the URL a user was trying to get to in the LOGIN_ORIGIN_KEY in AuthAction
           // Redirect a user back there now if it exists
           val redirect = session.get(LOGIN_ORIGIN_KEY) match {
@@ -42,9 +51,9 @@ class Auth(val authConfig: GoogleAuthConfig, ws: WSAPI) extends Controller with 
           }
         } recover {
           case t =>
+            Logger.info(s"Login rejected. Remote host: [${request.remoteAddress}], query string: [${request.queryString}]")
             // you might want to record login failures here - we just redirect to the login page
-            Forbidden("Login failure")
-              .withSession(session - antiForgeryKey)
+            Forbidden("Login failure").withSession(session - antiForgeryKey)
         }
     }
   }
