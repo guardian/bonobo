@@ -1,11 +1,15 @@
 package components
 
+import java.io.FileInputStream
+
+import auth.{ GoogleGroupsAuthorisation, DummyAuthorisation, Authorisation }
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
-import com.gu.googleauth.GoogleAuthConfig
+import com.gu.googleauth.{ GoogleServiceAccount, GoogleAuthConfig }
 import controllers.csrf.CSRFFilter
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
@@ -15,7 +19,7 @@ import play.api.ApplicationLoader.Context
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 import play.api.routing.Router
-import play.api.{ BuiltInComponents, BuiltInComponentsFromContext }
+import play.api.{ Logger, Mode, BuiltInComponents, BuiltInComponentsFromContext }
 import play.filters.csrf.CSRF.ConfigTokenProvider
 import play.filters.csrf.CSRFConfig
 import store.Dynamo
@@ -36,6 +40,29 @@ trait GoogleAuthComponent { self: BuiltInComponents =>
       enforceValidity = true
     )
   }
+
+}
+
+trait AuthorisationComponent { self: BuiltInComponents =>
+
+  val authorisation: Authorisation = {
+    if (self.environment.mode == Mode.Prod) {
+      Logger.info("Will use Google groups for user authorisation")
+      val serviceAccount = {
+        val certFile = new FileInputStream("/etc/gu/bonobo-google-service-account.json")
+        val credential = GoogleCredential.fromStream(certFile)
+        val impersonatedUser = configuration.getString("google.impersonatedUser").getOrElse(sys.error("Missing key: google.impersonatedUser"))
+        new GoogleServiceAccount(credential.getServiceAccountId, credential.getServiceAccountPrivateKey, impersonatedUser)
+      }
+      new GoogleGroupsAuthorisation(serviceAccount)
+    } else {
+      // Disable Google group checking when running on local machine or running tests,
+      // because distributing the service account's private key is tricky.
+      Logger.info("User authorisation is disabled!")
+      DummyAuthorisation
+    }
+  }
+
 }
 
 trait DynamoComponent {
@@ -98,11 +125,12 @@ trait CSRFComponent { self: BuiltInComponents =>
   override lazy val httpFilters = Seq(CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())))
 }
 
-trait ControllersComponent { self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent =>
+trait ControllersComponent {
+  self: BuiltInComponents with NingWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent =>
   def enableAuth: Boolean
   def messagesApi: MessagesApi = new DefaultMessagesApi(environment, configuration, new DefaultLangs(configuration))
   def appController = new Application(dynamo, kong, awsEmail, labelsMap, messagesApi, googleAuthConfig, enableAuth)
-  def authController = new Auth(googleAuthConfig, wsApi)
+  def authController = new Auth(googleAuthConfig, authorisation, wsApi)
 
   val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
   val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
@@ -115,6 +143,7 @@ class AppComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with NingWSComponents
     with GoogleAuthComponent
+    with AuthorisationComponent
     with DynamoComponentImpl
     with KongComponentImpl
     with AwsEmailComponentImpl
