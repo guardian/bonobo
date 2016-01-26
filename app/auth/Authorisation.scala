@@ -34,7 +34,10 @@ class GoogleGroupsAuthorisation(serviceAccount: GoogleServiceAccount) extends Au
   }
 
   private def getGroupsForUser(email: String)(implicit ec: ExecutionContext): Future[Set[String]] = {
-    checker.retrieveGroupsFor(email)
+    checker.retrieveGroupsFor(email).map { groups =>
+      Logger.info(s"User $email is in the following groups: $groups")
+      groups
+    }
   }
 
   private def hasTwoFactorAuthEnabled(groups: Set[String]): Boolean = groups.contains(TwoFactorAuthGroup)

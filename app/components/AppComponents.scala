@@ -51,6 +51,7 @@ trait AuthorisationComponent { self: BuiltInComponents =>
       val serviceAccount = {
         val certFile = new FileInputStream("/etc/gu/bonobo-google-service-account.json")
         val credential = GoogleCredential.fromStream(certFile)
+        Logger.info(s"Loaded Google credentials. Service account ID: ${credential.getServiceAccountId}")
         val impersonatedUser = configuration.getString("google.impersonatedUser").getOrElse(sys.error("Missing key: google.impersonatedUser"))
         new GoogleServiceAccount(credential.getServiceAccountId, credential.getServiceAccountPrivateKey, impersonatedUser)
       }
