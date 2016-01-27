@@ -13,6 +13,7 @@
 
     <logger name="application" level="DEBUG" />
     <logger name="play" level="INFO" />
+    <logger name="com.google.api.client.http" level="WARN" />
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

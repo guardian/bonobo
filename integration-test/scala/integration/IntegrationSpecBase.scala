@@ -64,6 +64,7 @@ trait IntegrationSpecBase
       extends BuiltInComponentsFromContext(context)
       with NingWSComponents
       with GoogleAuthComponent
+      with AuthorisationComponent
       with FakeDynamoComponent
       with FakeKongComponent
       with FakeAwsEmailComponent
