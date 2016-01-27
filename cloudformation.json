@@ -201,6 +201,7 @@
                 "mv bonobo-1.0-SNAPSHOT bonobo",
                 "mv bonobo.service /etc/systemd/system",
                 { "Fn::Join": [ "", [ "aws s3 cp s3://content-api-config/bonobo/",{ "Ref": "Stage" }, "/bonobo.conf /etc/gu/bonobo.conf" ] ] },
+                "aws s3 cp s3://content-api-config/bonobo/bonobo-google-service-account.json /etc/gu/bonobo-google-service-account.json",
                 "chown -R content-api:content-api /home/content-api /etc/gu",
                 "systemctl start bonobo.service"
               ]
