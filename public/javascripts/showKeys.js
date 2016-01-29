@@ -6,6 +6,7 @@ $(document).ready(function(){
     var url = window.location.href;
     if(url.indexOf("labels=") < 0) $('#filters-container').hide();
     else updateCheckboxes(url);
+    history.pushState($("#show-keys-container").html(), 'Keys', url.replace("/filter", ""));
 });
 
 function applyOnClickEventForPaginationButtons() {
@@ -69,7 +70,11 @@ function updateCheckboxes(url) {
 }
 
 window.onpopstate = function(event) {
+    if (event.state == null) {
+        return;
+    }
     $("#show-keys-container").html(event.state);
     applyOnClickEventForPaginationButtons();
     updateCheckboxes(document.location.toString());
 };
+
