@@ -6,7 +6,6 @@ $(document).ready(function(){
     var url = window.location.href;
     if(url.indexOf("labels=") < 0) $('#filters-container').hide();
     else updateCheckboxes(url);
-    history.pushState($("#show-keys-container").html(), 'Keys', url.replace("/filter", ""));
 });
 
 function applyOnClickEventForPaginationButtons() {
