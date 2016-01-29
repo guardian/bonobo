@@ -69,7 +69,11 @@ function updateCheckboxes(url) {
 }
 
 window.onpopstate = function(event) {
+    if (event.state == null) {
+        return;
+    }
     $("#show-keys-container").html(event.state);
     applyOnClickEventForPaginationButtons();
     updateCheckboxes(document.location.toString());
 };
+
