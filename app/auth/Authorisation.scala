@@ -27,9 +27,12 @@ class GoogleGroupsAuthorisation(serviceAccount: GoogleServiceAccount) extends Au
   def isAuthorised(email: String)(implicit ec: ExecutionContext): Future[Boolean] = {
     getGroupsForUser(email).map { groups =>
       val hasTwoFactorAuth = hasTwoFactorAuthEnabled(groups)
+      val isAdmin = isMemberOfAdminGroup(groups)
       if (!hasTwoFactorAuth)
         Logger.info(s"Rejecting user [$email] because they do not have 2FA enabled")
-      hasTwoFactorAuth
+      if (!isAdmin)
+        Logger.info(s"Rejecting user [$email] because they are not a member of the Open Platform admin group")
+      hasTwoFactorAuth && isAdmin
     }
   }
 
@@ -41,11 +44,13 @@ class GoogleGroupsAuthorisation(serviceAccount: GoogleServiceAccount) extends Au
   }
 
   private def hasTwoFactorAuthEnabled(groups: Set[String]): Boolean = groups.contains(TwoFactorAuthGroup)
+  private def isMemberOfAdminGroup(groups: Set[String]): Boolean = groups.contains(OpenPlatformAdminGroup)
 
 }
 
 object GoogleGroupsAuthorisation {
   val TwoFactorAuthGroup = "2fa_enforce@guardian.co.uk"
+  val OpenPlatformAdminGroup = "openplatform.admin@guardian.co.uk"
 }
 
 /**
