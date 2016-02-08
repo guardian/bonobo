@@ -341,39 +341,6 @@
         "ProvisionedThroughput":{
           "ReadCapacityUnits": 20,
           "WriteCapacityUnits": 10
-        },
-        "GlobalSecondaryIndexes": [
-          {
-            "IndexName": "keyValue-index",
-            "KeySchema": [ { "AttributeName": "keyValue", "KeyType": "HASH" } ],
-            "Projection": { "ProjectionType": "KEYS_ONLY" },
-            "ProvisionedThroughput": {
-              "ReadCapacityUnits": 20,
-              "WriteCapacityUnits": 10
-            }
-          }
-        ]
-      }
-    },
-    "LabelsTable": {
-      "Type":"AWS::DynamoDB::Table",
-      "Properties":{
-        "TableName": { "Fn::Join": [ "-", [ "bonobo", { "Ref": "Stage" }, "labels" ] ] },
-        "AttributeDefinitions":[
-          {
-            "AttributeName":"hashkey",
-            "AttributeType":"S"
-          }
-        ],
-        "KeySchema": [
-          {
-            "AttributeName":"hashkey",
-            "KeyType": "HASH"
-          }
-        ],
-        "ProvisionedThroughput":{
-          "ReadCapacityUnits": 1,
-          "WriteCapacityUnits": 1
         }
       }
     }
