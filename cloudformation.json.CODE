@@ -18,6 +18,11 @@
       "Description": "Environment name",
       "Type": "String",
       "Default": "CODE"
+    },
+    "SSLCertificate": {
+      "Description": "The ARN of the SSL certificate to use for the ELB",
+      "Type": "String"
+    }
   },
   "Resources": {
     "RootRole": {
@@ -100,6 +105,13 @@
             "LoadBalancerPort": "80",
             "InstancePort": "9000",
             "Protocol": "HTTP"
+          },
+          {
+            "LoadBalancerPort": "443",
+            "InstancePort": "9000",
+            "Protocol": "HTTPS",
+            "SSLCertificateId": { "Ref": "SSLCertificate" }
+          }
         ],
         "HealthCheck": {
           "Target": "HTTP:9000/healthcheck",
@@ -253,6 +265,12 @@
             "IpProtocol": "tcp",
             "FromPort": "80",
             "ToPort": "80",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
             "CidrIp": "0.0.0.0/0"
           }
         ]
