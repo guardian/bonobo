@@ -46,7 +46,7 @@ export DOCKER_MACHINE_NAME="dev"
 ```
 This will create two containers - one for Cassandra and one for Kong - and start them. Then it will add an API in Kong with the key-auth plugin enabled.
 
-4. Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster (in this example: `http://192.168.99.100:8001`). In the same file you can configure `aws.dynamo.usersTableName` and `aws.dynamo.keysTableName` to point to the DynamoDB tables you are going to use.
+4. Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster (in this example: `http://192.168.99.100:8001`). In the same file you should configure `aws.dynamo.usersTableName`, `aws.dynamo.keysTableName` and `aws.dynamo.labelsTableName` to point to the DynamoDB tables you are going to use.
 
 5. Then start the Play app:
 
