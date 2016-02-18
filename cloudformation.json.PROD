@@ -188,7 +188,7 @@
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
         "ImageId": { "Ref": "AMI" },
-        "InstanceType": "t2.medium",
+        "InstanceType": "t2.nano",
         "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups": [
           {
