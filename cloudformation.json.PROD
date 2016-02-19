@@ -22,6 +22,11 @@
     "SSLCertificate": {
       "Description": "The ARN of the SSL certificate to use for the ELB",
       "Type": "String"
+    },
+    "AMI": {
+      "Description": "AMI ID",
+      "Type": "String",
+      "Default": "ami-6b50e218"
     }
   },
   "Resources": {
@@ -182,8 +187,8 @@
     "LaunchConfig": {
       "Type": "AWS::AutoScaling::LaunchConfiguration",
       "Properties": {
-        "ImageId": "ami-fd67518a",
-        "InstanceType": "t2.medium",
+        "ImageId": { "Ref": "AMI" },
+        "InstanceType": "t2.micro",
         "IamInstanceProfile": { "Ref": "InstanceProfile" },
         "SecurityGroups": [
           {
