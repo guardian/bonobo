@@ -140,7 +140,13 @@
             "Key": "App",
             "Value": "bonobo"
           }
-        ]
+        ],
+        "AccessLoggingPolicy": {
+          "EmitInterval": 60,
+          "Enabled": "true",
+          "S3BucketName": "content-api-logs",
+          "S3BucketPrefix": { "Fn::Join": [ "", [ "bonobo/",{ "Ref": "Stage" } ] ] }
+        }
       }
     },
     "AutoscalingGroup": {
