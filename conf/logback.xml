@@ -15,6 +15,21 @@
     <logger name="play" level="INFO" />
     <logger name="com.google.api.client.http" level="WARN" />
 
+    <appender name="auditFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/audit.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/audit.log.%d{yyyy-MM-dd}.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%date - %msg%n%xException{300}</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="audit" level="INFO" additivity="false">
+        <appender-ref ref="auditFile"/>
+    </logger>
+
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%date [%thread] %-5level %logger{20} - %msg%n%xException{30}</pattern>

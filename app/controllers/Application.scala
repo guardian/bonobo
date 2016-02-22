@@ -4,15 +4,15 @@ import email.MailClient
 import logic.ApplicationLogic
 import models._
 import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
+import org.slf4j.LoggerFactory
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
-import play.api.mvc.Security.AuthenticatedBuilder
+import play.api.mvc.Security.{ AuthenticatedRequest, AuthenticatedBuilder }
 import play.api.mvc._
 import store._
 import kong._
 import kong.Kong._
-import play.filters.csrf.CSRF
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -24,11 +24,35 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
   import Application._
   import Forms._
 
+  type AuthReq[A] = AuthenticatedRequest[A, UserIdentity]
+
   object FakeAuthAction extends AuthenticatedBuilder[UserIdentity](userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)))
 
-  private def maybeAuth: AuthenticatedBuilder[UserIdentity] = if (enableAuth) AuthAction else FakeAuthAction
+  private def maybeAuth: ActionBuilder[AuthReq] = if (enableAuth) (AuthAction andThen AuditAction) else FakeAuthAction
 
   private val logic = new ApplicationLogic(dynamo, kong)
+
+  object AuditAction extends ActionFunction[AuthReq, AuthReq] {
+
+    private val auditLogger = LoggerFactory.getLogger("audit")
+
+    def invokeBlock[A](request: AuthReq[A], block: AuthReq[A] => Future[Result]): Future[Result] = {
+
+      def getPostBody(request: AuthReq[A]): String = {
+        request.body match {
+          case body: AnyContent if body.asFormUrlEncoded.isDefined => s"${body.asFormUrlEncoded.get}"
+          case _ => "cannot process body of POST request"
+        }
+      }
+
+      auditLogger.info(
+        if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
+        else s"${request.user.email}, ${request}"
+      )
+
+      block(request)
+    }
+  }
 
   def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
     val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
