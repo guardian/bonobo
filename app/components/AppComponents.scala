@@ -123,7 +123,10 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
 }
 
 trait CSRFComponent { self: BuiltInComponents =>
-  override lazy val httpFilters = Seq(CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())))
+  override lazy val httpFilters = Seq(
+    CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())),
+    HttpsRedirectFilter.fromConfiguration(configuration)
+  )
 }
 
 trait ControllersComponent {
