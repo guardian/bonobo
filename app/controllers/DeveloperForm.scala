@@ -52,12 +52,12 @@ object DeveloperForm {
 
   val createKeyForm: Form[DeveloperCreateKeyFormData] = Form(
     mapping(
-      "name" -> nonEmptyText,
-      "email" -> email,
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
-      "companyName" -> nonEmptyText,
-      "companyUrl" -> nonEmptyText,
+      "name" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "email" -> email.verifying("Maximum length is 200", _.length <= 200),
+      "productName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "companyName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "companyUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
       "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(DeveloperCreateKeyFormData.apply)(DeveloperCreateKeyFormData.unapply)
   )
