@@ -228,49 +228,57 @@ object Application {
 
   val createUserForm: Form[CreateUserFormData] = Form(
     mapping(
-      "name" -> nonEmptyText,
-      "email" -> email,
-      "companyName" -> nonEmptyText,
-      "companyUrl" -> nonEmptyText,
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
-      "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
+      "name" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "email" -> email.verifying("Maximum length is 200", _.length <= 200),
+      "companyName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "companyUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "tier" -> nonEmptyText(minLength = 2, maxLength = 200)
+        .verifying(invalidTierMessage, tier => Tier.isValid(tier))
+        .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
+      "key" -> optional(text(minLength = 2, maxLength = 200)
+        .verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
       "sendEmail" -> boolean,
-      "labelIds" -> text
+      "labelIds" -> text(minLength = 2, maxLength = 200)
     )(CreateUserFormData.apply)(CreateUserFormData.unapply)
   )
 
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
-      "name" -> nonEmptyText,
-      "email" -> email,
-      "companyName" -> nonEmptyText,
-      "companyUrl" -> nonEmptyText,
-      "labelIds" -> text
+      "name" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "email" -> email.verifying("Maximum length is 200", _.length <= 200),
+      "companyName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "companyUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "labelIds" -> text(minLength = 2, maxLength = 200)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
-      "key" -> optional(text.verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
+      "key" -> optional(text(minLength = 2, maxLength = 200)
+        .verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
+      "tier" -> nonEmptyText(minLength = 2, maxLength = 200)
+        .verifying(invalidTierMessage, tier => Tier.isValid(tier))
+        .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
+      "productName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
       "sendEmail" -> boolean
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
-      "key" -> nonEmptyText,
-      "productName" -> nonEmptyText,
-      "productUrl" -> nonEmptyText,
+      "key" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productName" -> nonEmptyText(minLength = 2, maxLength = 200),
+      "productUrl" -> nonEmptyText(minLength = 2, maxLength = 200),
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
-      "tier" -> nonEmptyText.verifying(invalidTierMessage, tier => Tier.isValid(tier)).transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
+      "tier" -> nonEmptyText(minLength = 2, maxLength = 200)
+        .verifying(invalidTierMessage, tier => Tier.isValid(tier))
+        .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "defaultRequests" -> boolean,
-      "status" -> nonEmptyText
+      "status" -> nonEmptyText(minLength = 2, maxLength = 200)
     )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
   )
 
