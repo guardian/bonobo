@@ -22,6 +22,7 @@ import play.api.routing.Router
 import play.api.{ Logger, Mode, BuiltInComponents, BuiltInComponentsFromContext }
 import play.filters.csrf.CSRF.ConfigTokenProvider
 import play.filters.csrf.CSRFConfig
+import play.filters.headers.{ SecurityHeadersConfig, SecurityHeadersFilter }
 import store.Dynamo
 import util.AWSConstants._
 import router.Routes
@@ -122,10 +123,13 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   }
 }
 
-trait CSRFComponent { self: BuiltInComponents =>
+trait FiltersComponent { self: BuiltInComponents =>
+  val contentSecurityPolicy = "script-src 'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com https://ajax.googleapis.com"
   override lazy val httpFilters = Seq(
     CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())),
-    HttpsRedirectFilter.fromConfiguration(configuration)
+    HttpsRedirectFilter.fromConfiguration(configuration),
+    SecurityHeadersFilter(SecurityHeadersConfig(contentSecurityPolicy = Some(contentSecurityPolicy))),
+    CacheFilter.setFilters()
   )
 }
 
@@ -153,6 +157,6 @@ class AppComponents(context: Context)
     with AwsEmailComponentImpl
     with LabelsComponentImpl
     with ControllersComponent
-    with CSRFComponent {
+    with FiltersComponent {
   def enableAuth = true
 }
