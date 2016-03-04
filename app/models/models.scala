@@ -114,6 +114,11 @@ object Tier extends Enum[Tier] with PlayJsonEnum[Tier] {
     def friendlyName: String = "Rights managed"
     def conciergeName: String = "rights-managed"
   }
+  case object External extends Tier {
+    def rateLimit: RateLimits = RateLimits(720, 10000)
+    def friendlyName: String = "External"
+    def conciergeName: String = "external"
+  }
   case object Internal extends Tier {
     def rateLimit: RateLimits = RateLimits(720, 10000)
     def friendlyName: String = "Internal"
