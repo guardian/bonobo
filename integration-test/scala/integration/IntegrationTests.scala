@@ -286,7 +286,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://anotherproduct.co.uk",
       "requestsPerDay" -> "444",
       "requestsPerMinute" -> "44",
-      "tier" -> "Internal",
+      "tier" -> "External",
       "status" -> "active"
     )).get
 
