@@ -107,11 +107,6 @@
         "CrossZone": true,
         "Listeners": [
           {
-            "LoadBalancerPort": "80",
-            "InstancePort": "9000",
-            "Protocol": "HTTP"
-          },
-          {
             "LoadBalancerPort": "443",
             "InstancePort": "9000",
             "Protocol": "HTTPS",
