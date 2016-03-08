@@ -10,7 +10,6 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleServiceAccount, GoogleAuthConfig }
-import controllers.csrf.CSRFFilter
 import email.{ MailClient, AwsEmailClient }
 import kong.{ Kong, KongClient }
 import models.LabelProperties
@@ -20,8 +19,7 @@ import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 import play.api.routing.Router
 import play.api.{ Logger, Mode, BuiltInComponents, BuiltInComponentsFromContext }
-import play.filters.csrf.CSRF.ConfigTokenProvider
-import play.filters.csrf.CSRFConfig
+import play.filters.csrf.CSRFComponents
 import play.filters.headers.{ SecurityHeadersConfig, SecurityHeadersFilter }
 import store.Dynamo
 import util.AWSConstants._
@@ -123,10 +121,10 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   }
 }
 
-trait FiltersComponent { self: BuiltInComponents =>
+trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
   val contentSecurityPolicy = "script-src 'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com https://ajax.googleapis.com"
   override lazy val httpFilters = Seq(
-    CSRFFilter(CSRFConfig(), new ConfigTokenProvider(CSRFConfig())),
+    csrfFilter,
     HttpsRedirectFilter.fromConfiguration(configuration),
     SecurityHeadersFilter(SecurityHeadersConfig(contentSecurityPolicy = Some(contentSecurityPolicy))),
     CacheFilter.setFilters()
