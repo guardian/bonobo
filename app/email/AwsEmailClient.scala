@@ -68,7 +68,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
       |Content type: ${user.additionalInfo.content.getOrElse('-')}
       |Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
       |Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
-      |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL()}""".stripMargin
+      |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL().replace("http://", "https://")}""".stripMargin
     sendEmail("content.delivery@theguardian.com", "Commercial Key Request", message)
   }
 
