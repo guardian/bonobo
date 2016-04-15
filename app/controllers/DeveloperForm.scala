@@ -30,9 +30,9 @@ class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesAp
     def handleValidForm(formData: DeveloperCreateKeyFormData): Future[Result] = {
       logic.createUser(formData) flatMap { consumerKey =>
         awsEmail.sendEmailNewKey(formData.email, consumerKey) map {
-          result => Redirect(routes.DeveloperForm.showKey(consumerKey))
+          result => Redirect(routes.DeveloperForm.complete)
         } recover {
-          case _ => Redirect(routes.DeveloperForm.showKey(consumerKey)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+          case _ => Redirect(routes.DeveloperForm.complete).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
         }
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
@@ -42,8 +42,8 @@ class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesAp
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def showKey(consumerKey: String) = Action {
-    Ok(views.html.developerShowKey(consumerKey))
+  def complete = Action {
+    Ok(views.html.developerRegisterComplete())
   }
 }
 
