@@ -23,7 +23,7 @@ GET         /healthcheck                controllers.Application.healthcheck
 #Developers open registration form
 GET         /register/developer         controllers.DeveloperForm.createKeyPage
 POST        /register/developer         controllers.DeveloperForm.createKey
-GET         /register/key               controllers.DeveloperForm.showKey(key: String)
+GET         /register/complete          controllers.DeveloperForm.complete
 
 #Commercial request key form
 GET         /register/commercial        controllers.CommercialForm.requestKeyPage
