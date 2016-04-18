@@ -44,7 +44,7 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
                 }
               }
           } recover {
-            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send the email. Please contact content.delivery@theguardian.com for further instructions.")
+            case _ => Redirect(routes.CommercialForm.requestMessage()).flashing("error" -> "We were unable to send your registration request to our Content Delivery team. Please contact content.delivery@theguardian.com for further instructions.")
           }
         }
       }

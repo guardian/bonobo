@@ -32,7 +32,7 @@ class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesAp
         awsEmail.sendEmailNewKey(formData.email, consumerKey) map {
           result => Redirect(routes.DeveloperForm.complete)
         } recover {
-          case _ => Redirect(routes.DeveloperForm.complete).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+          case _ => Redirect(routes.DeveloperForm.complete).flashing("error" -> s"We were unable to send the email with the new key to ${formData.email}.  Please contact content.delivery@theguardian.com for further instructions.")
         }
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.developerCreateKey(createKeyForm.fill(formData), error = Some(errorMessage)))
