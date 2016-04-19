@@ -28,7 +28,7 @@ import scala.concurrent.Future
  * and destroyed after the last test in the file has run.
  */
 class FakeEmailClient extends MailClient {
-  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for commercial request to the moderators"))
+  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: Option[String])(implicit request: RequestHeader): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for commercial request to the moderators"))
 
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for commercial request to user"))
 

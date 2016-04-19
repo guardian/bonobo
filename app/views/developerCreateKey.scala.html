@@ -10,13 +10,13 @@
             <div class="row">
                 <div class="col-md-6">
                     @b3.text(keyForm("name"), '_label -> "Name", 'tabIndex -> "1")
-                    @b3.text(keyForm("productName"), '_label -> "Product Name", 'tabIndex -> "3")
-                    @b3.text(keyForm("companyName"), '_label -> "Company Name", 'tabIndex -> "5")
+                    @b3.text(keyForm("productName"), '_label -> "Product name or reason for key", 'tabIndex -> "3")
+                    @b3.text(keyForm("companyName"), '_label -> "Company name (optional)", 'tabIndex -> "5")
                 </div>
                 <div class="col-md-6">
                     @b3.email(keyForm("email"), '_label -> "Email address", 'tabIndex -> "2")
-                    @b3.text(keyForm("productUrl"), '_label -> "Product URL", 'tabIndex -> "4")
-                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL", 'tabIndex -> "6")
+                    @b3.text(keyForm("productUrl"), '_label -> "Product URL (optional)", 'tabIndex -> "4")
+                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL (optional)", 'tabIndex -> "6")
                 </div>
             </div>
             @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))

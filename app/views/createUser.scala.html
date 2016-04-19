@@ -9,10 +9,10 @@
                 @CSRFSupport.formField
                 @b3.text( userForm("name"), '_label -> "Name", 'placeholder -> "Name" )
                 @b3.email( userForm("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
-                @b3.text( userForm("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
-                @b3.text( userForm("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
+                @b3.text( userForm("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
+                @b3.text( userForm("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
                 @b3.text( userForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-                @b3.text( userForm("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
+                @b3.text( userForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
                 @b3.select( userForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
                 @b3.text( userForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
                 @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }

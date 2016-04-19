@@ -170,7 +170,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     case None => f
   }
 
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String, labelIds: List[String]): Unit = {
+  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
     val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
     dynamo.saveKey(newKongKey, labelIds)
   }
