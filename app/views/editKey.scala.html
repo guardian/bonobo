@@ -1,6 +1,6 @@
 @import controllers.csrf.CSRFSupport
 @(userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main("Edit key", firstName, pageTitle, success, error) {
     <div class="row">
@@ -9,7 +9,7 @@
             @CSRFSupport.formField
             @b3.text( form("key"), '_label -> "Key", 'readonly -> true )
             @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-            @b3.text( form("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
+            @b3.text( form("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
             @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
             @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
             @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
