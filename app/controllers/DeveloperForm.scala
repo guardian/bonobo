@@ -55,9 +55,9 @@ object DeveloperForm {
       "name" -> nonEmptyText(maxLength = 200),
       "email" -> email.verifying("Maximum length is 200", _.length <= 200),
       "productName" -> nonEmptyText(maxLength = 200),
-      "productUrl" -> nonEmptyText(maxLength = 200),
-      "companyName" -> nonEmptyText(maxLength = 200),
-      "companyUrl" -> nonEmptyText(maxLength = 200),
+      "productUrl" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
+      "companyName" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
+      "companyUrl" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
       "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
     )(DeveloperCreateKeyFormData.apply)(DeveloperCreateKeyFormData.unapply)
   )

@@ -230,10 +230,10 @@ object Application {
     mapping(
       "name" -> nonEmptyText(maxLength = 200),
       "email" -> email.verifying("Maximum length is 200", _.length <= 200),
-      "companyName" -> nonEmptyText(maxLength = 200),
-      "companyUrl" -> nonEmptyText(maxLength = 200),
+      "companyName" -> optional(text(maxLength = 200)),
+      "companyUrl" -> optional(text(maxLength = 200)),
       "productName" -> nonEmptyText(maxLength = 200),
-      "productUrl" -> nonEmptyText(maxLength = 200),
+      "productUrl" -> optional(text(maxLength = 200)),
       "tier" -> nonEmptyText(maxLength = 200)
         .verifying(invalidTierMessage, tier => Tier.isValid(tier))
         .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
@@ -248,8 +248,8 @@ object Application {
     mapping(
       "name" -> nonEmptyText(maxLength = 200),
       "email" -> email.verifying("Maximum length is 200", _.length <= 200),
-      "companyName" -> nonEmptyText(maxLength = 200),
-      "companyUrl" -> nonEmptyText(maxLength = 200),
+      "companyName" -> optional(text(maxLength = 200)),
+      "companyUrl" -> optional(text(maxLength = 200)),
       "labelIds" -> text(maxLength = 200)
     )(EditUserFormData.apply)(EditUserFormData.unapply)
   )
@@ -262,7 +262,7 @@ object Application {
         .verifying(invalidTierMessage, tier => Tier.isValid(tier))
         .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "productName" -> nonEmptyText(maxLength = 200),
-      "productUrl" -> nonEmptyText(maxLength = 200),
+      "productUrl" -> optional(text(maxLength = 200)),
       "sendEmail" -> boolean
     )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
   )
@@ -271,7 +271,7 @@ object Application {
     mapping(
       "key" -> nonEmptyText(maxLength = 200),
       "productName" -> nonEmptyText(maxLength = 200),
-      "productUrl" -> nonEmptyText(maxLength = 200),
+      "productUrl" -> optional(text(maxLength = 200)),
       "requestsPerDay" -> number,
       "requestsPerMinute" -> number,
       "tier" -> nonEmptyText(maxLength = 200)

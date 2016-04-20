@@ -11,8 +11,8 @@ case class BonoboUser(
   bonoboId: String,
   email: String,
   name: String,
-  companyName: String,
-  companyUrl: String,
+  companyName: Option[String],
+  companyUrl: Option[String],
   additionalInfo: AdditionalUserInfo,
   labelIds: List[String])
 
@@ -35,7 +35,7 @@ object BonoboUser {
   /* Method used when using the commercial form for creating a user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
     val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
-    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, formData.companyName, formData.companyUrl, additionalInfo, List.empty)
+    new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, Some(formData.companyName), Some(formData.companyUrl), additionalInfo, List.empty)
   }
 }
 
@@ -66,7 +66,7 @@ case class KongKey(
   status: String,
   createdAt: DateTime,
   productName: String,
-  productUrl: String,
+  productUrl: Option[String],
   rangeKey: String)
 
 object KongKey {
@@ -79,7 +79,7 @@ object KongKey {
     new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
-  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: String): KongKey = {
+  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
     new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 

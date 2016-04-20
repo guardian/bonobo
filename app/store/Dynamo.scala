@@ -101,8 +101,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     BonoboTable.updateItem(new PrimaryKey("id", bonoboUser.bonoboId),
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
-      new AttributeUpdate("companyName").put(bonoboUser.companyName),
-      new AttributeUpdate("companyUrl").put(bonoboUser.companyUrl),
+      bonoboUser.companyUrl match {
+        case Some(url) => new AttributeUpdate("companyUrl").put(url)
+        case None => new AttributeUpdate("companyUrl").delete()
+      },
+      bonoboUser.companyName match {
+        case Some(url) => new AttributeUpdate("companyName").put(url)
+        case None => new AttributeUpdate("companyName").delete()
+      },
       bonoboUser.labelIds match {
         case Nil => new AttributeUpdate("labelIds").delete()
         case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
@@ -155,11 +161,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
   def updateKey(kongKey: KongKey): Unit = {
     KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
       new AttributeUpdate("productName").put(kongKey.productName),
-      new AttributeUpdate("productUrl").put(kongKey.productUrl),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
-      new AttributeUpdate("tier").put(kongKey.tier.toString)
+      new AttributeUpdate("tier").put(kongKey.tier.toString),
+      kongKey.productUrl match {
+        case Some(url) => new AttributeUpdate("productUrl").put(url)
+        case None => new AttributeUpdate("productUrl").delete()
+      }
     )
     Logger.info(s"DynamoDB: Key ${kongKey.key} has been updated")
   }
@@ -308,18 +317,21 @@ object Dynamo {
       .withPrimaryKey("id", bonoboKey.bonoboId)
       .withString("name", bonoboKey.name)
       .withString("email", bonoboKey.email)
-      .withString("companyName", bonoboKey.companyName)
-      .withString("companyUrl", bonoboKey.companyUrl)
       .withLong("createdAt", bonoboKey.additionalInfo.createdAt.getMillis)
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
       .withList("labelIds", bonoboKey.labelIds.asJava)
 
-    bonoboKey.additionalInfo.businessArea.fold(item) { businessArea => item.withString("businessArea", businessArea) }
-    bonoboKey.additionalInfo.monthlyUsers.fold(item) { monthlyUsers => item.withString("monthlyUsers", monthlyUsers) }
-    bonoboKey.additionalInfo.commercialModel.fold(item) { commercialModel => item.withString("commercialModel", commercialModel) }
-    bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
-    bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
-    bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
+    bonoboKey.companyName.foreach( companyName => item.withString("companyName", companyName) )
+    bonoboKey.companyUrl.foreach( companyUrl => item.withString("companyUrl", companyUrl) )
+
+    bonoboKey.additionalInfo.businessArea.foreach( businessArea => item.withString("businessArea", businessArea) )
+    bonoboKey.additionalInfo.monthlyUsers.foreach( monthlyUsers => item.withString("monthlyUsers", monthlyUsers) )
+    bonoboKey.additionalInfo.commercialModel.foreach( commercialModel => item.withString("commercialModel", commercialModel) )
+    bonoboKey.additionalInfo.content.foreach( content => item.withString("content", content) )
+    bonoboKey.additionalInfo.contentFormat.foreach( contentFormat => item.withString("contentFormat", contentFormat) )
+    bonoboKey.additionalInfo.articlesPerDay.foreach( articlesPerDay => item.withString("articlesPerDay", articlesPerDay) )
+
+    item
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
@@ -333,8 +345,8 @@ object Dynamo {
       bonoboId = item.getString("id"),
       name = item.getString("name"),
       email = item.getString("email"),
-      companyName = item.getString("companyName"),
-      companyUrl = item.getString("companyUrl"),
+      companyName = Option(item.getString("companyName")),
+      companyUrl = Option(item.getString("companyUrl")),
       additionalInfo = AdditionalUserInfo(createdAt = new DateTime(item.getString("createdAt").toLong),
         registrationType = toRegistrationType(item.getString("registrationType")),
         businessArea = Option(item.getString("businessArea")),
@@ -346,9 +358,8 @@ object Dynamo {
       labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList) getOrElse List.empty
     )
   }
-
   def toKongItem(kongKey: KongKey, labelIds: List[String]): Item = {
-    new Item()
+    val item = new Item()
       .withPrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey)
       .withString("bonoboId", kongKey.bonoboId)
       .withString("kongId", kongKey.kongId)
@@ -359,8 +370,10 @@ object Dynamo {
       .withString("tier", kongKey.tier.toString)
       .withLong("createdAt", kongKey.createdAt.getMillis)
       .withString("productName", kongKey.productName)
-      .withString("productUrl", kongKey.productUrl)
       .withList("labelIds", labelIds.asJava)
+
+    kongKey.productUrl.foreach( productUrl => item.withString("productUrl", productUrl) )
+    item
   }
 
   def fromKongItem(item: Item): KongKey = {
@@ -380,7 +393,7 @@ object Dynamo {
       tier = toTier(item.getString("tier")),
       createdAt = new DateTime(item.getString("createdAt").toLong),
       productName = item.getString("productName"),
-      productUrl = item.getString("productUrl"),
+      productUrl = Option(item.getString("productUrl")),
       rangeKey = item.getString("rangekey")
     )
   }
