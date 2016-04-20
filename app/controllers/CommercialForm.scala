@@ -33,7 +33,7 @@ class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesA
       logic.sendRequest(formData) match {
         case Left(error) => Future.successful(BadRequest(views.html.commercialRequestKey(requestKeyForm.fill(formData), error = Some(error))))
         case Right(user) => {
-          awsEmail.sendEmailCommercialRequestToModerators(user, formData.productName, Some(formData.productUrl)) flatMap {
+          awsEmail.sendEmailCommercialRequestToModerators(user, formData.productName, formData.productUrl) flatMap {
             resultEmailModerators =>
               {
                 awsEmail.sendEmailCommercialRequestToUser(formData.email) map {

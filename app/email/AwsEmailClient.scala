@@ -10,7 +10,7 @@ import play.api.mvc.RequestHeader
 import scala.concurrent.{ Future, Promise }
 
 trait MailClient {
-  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: Option[String])(implicit request: RequestHeader): Future[SendEmailResult]
+  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult]
 
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult]
 
@@ -55,14 +55,14 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     }
   }
 
-  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: Option[String])(implicit request: RequestHeader): Future[SendEmailResult] = {
+  def sendEmailCommercialRequestToModerators(user: BonoboUser, productName: String, productUrl: String)(implicit request: RequestHeader): Future[SendEmailResult] = {
     val message = s"""Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}
       |Name: ${user.name}
       |Email: ${user.email}
       |Company name: ${user.companyName.getOrElse('-')}
       |Company URL: ${user.companyUrl.getOrElse('-')}
       |Product name: $productName
-      |Product URL: ${productUrl.getOrElse('-')}
+      |Product URL: $productUrl
       |Business area: ${user.additionalInfo.businessArea.getOrElse('-')}
       |Commercial model: ${user.additionalInfo.commercialModel.getOrElse('-')}
       |Content type: ${user.additionalInfo.content.getOrElse('-')}
