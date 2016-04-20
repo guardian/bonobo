@@ -22,7 +22,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
       "key" -> "123124-13434-32323-3439",
@@ -55,7 +55,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk",
       "tier" -> "RightsManaged",
@@ -74,7 +74,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "tier" -> "RightsManaged",
       "key" -> "",
@@ -99,13 +99,44 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
+  it should "work with empty optional fields" in {
+    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "jkjkjkjkjkjk@email.com",
+      "name" -> "Joanna Bloggs",
+      "companyName" -> "",
+      "companyUrl" -> "",
+      "productName" -> "hahahaha",
+      "tier" -> "RightsManaged",
+      "productUrl" -> "",
+      "key" -> "",
+      "labelIds" -> "",
+      "sendEmail" -> "false"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the "edit user" page
+
+    val dynamoBonoboUser = dynamo.getUserWithEmail("jkjkjkjkjkjk@email.com")
+    val consumerId = dynamoBonoboUser.value.bonoboId
+
+    // check the consumerId in dynamo matches the one on Kong
+    Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+
+    // check Kong's key value matches Bonobo-Keys.keyValue
+    val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    keyValue shouldBe dynamoKongKey.value.key
+
+    // check Bonobo-Users.id matches Bonobo-Keys.kongId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+  }
+
   it should "add a new user with associated labels and a key" in {
     val userToSave = BonoboUser(
       bonoboId = "id-user-with-labels",
       name = "Labels Guy",
       email = "labels@createuser.com",
-      companyName = "The Labels Company",
-      companyUrl = "http://thelabelscompany.co.uk",
+      companyName = Some("The Labels Company"),
+      companyUrl = Some("http://thelabelscompany.co.uk"),
       additionalInfo = AdditionalUserInfo(DateTime.now(), ManualRegistration),
       labelIds = List("id-label-1", "id-label-3"))
     val keyToSave = KongKey(
@@ -118,16 +149,16 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       status = "Active",
       createdAt = DateTime.now(),
       productName = "Label Product",
-      productUrl = "www.labels.com",
+      productUrl = Some("www.labels.com"),
       rangeKey = "123"
     )
     val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
-      "companyName" -> userToSave.companyName,
-      "companyUrl" -> userToSave.companyUrl,
+      "companyName" -> userToSave.companyName.value,
+      "companyUrl" -> userToSave.companyUrl.value,
       "productName" -> keyToSave.productName,
-      "productUrl" -> keyToSave.productUrl,
+      "productUrl" -> keyToSave.productUrl.value,
       "tier" -> keyToSave.tier.friendlyName,
       "key" -> keyToSave.key,
       "labelIds" -> userToSave.labelIds.mkString(","),
@@ -247,7 +278,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "url" -> "http://wayneenterprises.com.co.uk-2",
       "tier" -> "RightsManaged",
@@ -269,7 +300,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
@@ -306,7 +337,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
@@ -322,7 +353,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
@@ -344,7 +375,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "email" -> "test@openform.com",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "http://blabla",
+      "productName" -> "blabla",
       "productUrl" -> "http://blabla",
       "acceptTerms" -> "true"
     )).get
@@ -366,6 +397,34 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
   }
 
+  it should "work with empty company, companyUrl and productUrl fields" in {
+    val result = route(FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
+      "name" -> "Joanna Bloggs",
+      "email" -> "testing@openform.com",
+      "companyName" -> "",
+      "companyUrl" -> "",
+      "productName" -> "blabla",
+      "productUrl" -> "",
+      "acceptTerms" -> "true"
+    )).get
+
+    status(result) shouldBe 303 // on success it redirects to the show key page
+
+    val dynamoBonoboUser = dynamo.getUserWithEmail("testing@openform.com")
+    val consumerId = dynamoBonoboUser.value.bonoboId
+
+    // check the consumerId in dynamo matches the one on Kong
+    Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+
+    // check Kong's key value matches Bonobo-Keys.keyValue
+    val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    keyValue shouldBe dynamoKongKey.value.key
+
+    // check Bonobo-Users.id matches Bonobo-Keys.kongId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+  }
+
   behavior of "submit a commercial request using the form"
 
   it should "add a Bonobo user to Dynamo" in {
@@ -373,8 +432,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       bonoboId = "id",
       name = "Joe Bloggs",
       email = "test@commercialform.com",
-      companyName = "The Test Company",
-      companyUrl = "http://thetestcompany.co.uk",
+      companyName = Some("The Test Company"),
+      companyUrl = Some("http://thetestcompany.co.uk"),
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
@@ -388,8 +447,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
-      "companyName" -> userToSave.companyName,
-      "companyUrl" -> userToSave.companyUrl,
+      "companyName" -> userToSave.companyName.value,
+      "companyUrl" -> userToSave.companyUrl.value,
       "productName" -> "Product",
       "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,
@@ -413,8 +472,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       bonoboId = "id",
       name = "Joe Bloggs",
       email = "test-email@commercialform.com",
-      companyName = "The Test Company",
-      companyUrl = "http://thetestcompany.co.uk",
+      companyName = Some("The Test Company"),
+      companyUrl = Some("http://thetestcompany.co.uk"),
       additionalInfo = AdditionalUserInfo(
         businessArea = Some("News"),
         monthlyUsers = Some("100"),
@@ -428,8 +487,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
-      "companyName" -> userToSave.companyName,
-      "companyUrl" -> userToSave.companyUrl,
+      "companyName" -> userToSave.companyName.value,
+      "companyUrl" -> userToSave.companyUrl.value,
       "productName" -> "Product",
       "productUrl" -> "http://product.co.uk",
       "businessArea" -> userToSave.additionalInfo.businessArea.value,

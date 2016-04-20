@@ -59,8 +59,8 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, from
     val message = s"""Sent at: ${user.additionalInfo.createdAt.toString("dd-MM-yyyy hh:mma")}
       |Name: ${user.name}
       |Email: ${user.email}
-      |Company name: ${user.companyName}
-      |Company URL: ${user.companyUrl}
+      |Company name: ${user.companyName.getOrElse('-')}
+      |Company URL: ${user.companyUrl.getOrElse('-')}
       |Product name: $productName
       |Product URL: $productUrl
       |Business area: ${user.additionalInfo.businessArea.getOrElse('-')}

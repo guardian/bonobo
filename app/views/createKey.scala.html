@@ -1,6 +1,6 @@
 @import controllers.csrf.CSRFSupport
 @(userId: String, keyForm: Form[controllers.Forms.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main("Add a key for existing user", firstName, pageTitle, success, error) {
   <div>
@@ -11,7 +11,7 @@
         @CSRFSupport.formField
         @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key")
         @b3.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-        @b3.text( keyForm("productUrl"), '_label -> "Product URL", 'placeholder -> "Product URL" )
+        @b3.text( keyForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
         @b3.select( keyForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
         @b3.checkbox( keyForm("sendEmail"), '_label -> "Send email" )
         @b3.free('_id -> "idFormGroup") {

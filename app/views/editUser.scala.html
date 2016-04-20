@@ -1,6 +1,6 @@
 @import controllers.csrf.CSRFSupport
 @(id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: List[String], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, flash: Flash, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-4", "col-md-8") }
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main("Edit User", firstName, pageTitle, success, error, flash = Option(flash)) {
   <div class="row">
@@ -9,8 +9,8 @@
       @CSRFSupport.formField
       @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name")
       @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
-      @b3.text( form("companyName"), '_label -> "Company name", 'placeholder -> "Company name" )
-      @b3.text( form("companyUrl"), '_label -> "Company URL", 'placeholder -> "Company URL" )
+      @b3.text( form("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
+      @b3.text( form("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
       @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
       @b3.text( form("labelIds") )
       @b3.free(){
@@ -39,34 +39,34 @@
 
   <div class="row">
     <h4 class="text-primary">Additional Information</h4>
-    <div class="col-md-12 column form-horizontal">
+    <div class="col-md-6 col-md-offset-2 column form-horizontal">
       <div>
-        <label class="control-label col-md-4">Created at:</label>
-        <p class="form-control-static col-sm-8">@additionalInfo.get.createdAt.toString("dd-MM-yyyy hh:mma")</p>
+        <label class="control-label col-md-5">Created at:</label>
+        <p class="form-control-static col-sm-7">@additionalInfo.get.createdAt.toString("dd-MM-yyyy hh:mma")</p>
       </div>
       <div>
-        <label class="control-label col-md-4">Registration type:</label>
-        <p class="form-control-static col-sm-8">@additionalInfo.get.registrationType.friendlyName</p>
+        <label class="control-label col-md-5">Registration type:</label>
+        <p class="form-control-static col-sm-7">@additionalInfo.get.registrationType.friendlyName</p>
       </div>
       @if(additionalInfo.get.registrationType == CommercialRegistration){
           <div>
-            <label class="control-label col-md-4">Business area:</label>
+            <label class="control-label col-md-5">Business area:</label>
             <p class="form-control-static col-sm-7">@additionalInfo.get.businessArea.getOrElse("-")</p>
           </div>
           <div>
-            <label class="control-label col-md-4">Commercial model:</label>
+            <label class="control-label col-md-5">Commercial model:</label>
             <p class="form-control-static col-sm-7">@additionalInfo.get.commercialModel.getOrElse("-")</p>
           </div>
           <div>
-            <label class="control-label col-md-4">Content type:</label>
+            <label class="control-label col-md-5">Content type:</label>
             <p class="form-control-static col-sm-7">@additionalInfo.get.content.getOrElse("-")</p>
           </div>
           <div>
-            <label class="control-label col-md-4">Monthly users:</label>
+            <label class="control-label col-md-5">Monthly users:</label>
             <p class="form-control-static col-sm-7">@additionalInfo.get.monthlyUsers.getOrElse("-")</p>
           </div>
           <div>
-            <label class="control-label col-md-4">Articles per day:</label>
+            <label class="control-label col-md-5">Articles per day:</label>
             <p class="form-control-static col-sm-7">@additionalInfo.get.articlesPerDay.getOrElse("-")</p>
           </div>
       }
