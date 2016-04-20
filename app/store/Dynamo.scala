@@ -321,14 +321,17 @@ object Dynamo {
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
       .withList("labelIds", bonoboKey.labelIds.asJava)
 
-    bonoboKey.companyName.fold(item) { companyName => item.withString("companyName", companyName) }
-    bonoboKey.companyUrl.fold(item) { companyUrl => item.withString("companyUrl", companyUrl) }
-    bonoboKey.additionalInfo.businessArea.fold(item) { businessArea => item.withString("businessArea", businessArea) }
-    bonoboKey.additionalInfo.monthlyUsers.fold(item) { monthlyUsers => item.withString("monthlyUsers", monthlyUsers) }
-    bonoboKey.additionalInfo.commercialModel.fold(item) { commercialModel => item.withString("commercialModel", commercialModel) }
-    bonoboKey.additionalInfo.content.fold(item) { content => item.withString("content", content) }
-    bonoboKey.additionalInfo.contentFormat.fold(item) { contentFormat => item.withString("contentFormat", contentFormat) }
-    bonoboKey.additionalInfo.articlesPerDay.fold(item) { articlesPerDay => item.withString("articlesPerDay", articlesPerDay) }
+    bonoboKey.companyName.foreach( companyName => item.withString("companyName", companyName) )
+    bonoboKey.companyUrl.foreach( companyUrl => item.withString("companyUrl", companyUrl) )
+
+    bonoboKey.additionalInfo.businessArea.foreach( businessArea => item.withString("businessArea", businessArea) )
+    bonoboKey.additionalInfo.monthlyUsers.foreach( monthlyUsers => item.withString("monthlyUsers", monthlyUsers) )
+    bonoboKey.additionalInfo.commercialModel.foreach( commercialModel => item.withString("commercialModel", commercialModel) )
+    bonoboKey.additionalInfo.content.foreach( content => item.withString("content", content) )
+    bonoboKey.additionalInfo.contentFormat.foreach( contentFormat => item.withString("contentFormat", contentFormat) )
+    bonoboKey.additionalInfo.articlesPerDay.foreach( articlesPerDay => item.withString("articlesPerDay", articlesPerDay) )
+
+    item
   }
 
   def fromBonoboItem(item: Item): BonoboUser = {
@@ -368,7 +371,9 @@ object Dynamo {
       .withLong("createdAt", kongKey.createdAt.getMillis)
       .withString("productName", kongKey.productName)
       .withList("labelIds", labelIds.asJava)
-    kongKey.productUrl.fold(item) { productUrl => item.withString("productUrl", productUrl) }
+
+    kongKey.productUrl.foreach( productUrl => item.withString("productUrl", productUrl) )
+    item
   }
 
   def fromKongItem(item: Item): KongKey = {
