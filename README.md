@@ -50,13 +50,13 @@ Install Docker Toolkit, following the instructions on the [Docker website](http:
 
 5. Then start the Play app:
 
-```
-$ sbt run
-```
-
-It should now be running at http://localhost:9000/
-
-You will need a Guardian Google account in order to login.
+  ```
+  $ sbt run
+  ```
+  
+  It should now be running at http://localhost:9000/
+  
+  You will need a Guardian Google account in order to login.
 
 ## To run the integration tests
 
