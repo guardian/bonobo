@@ -56,7 +56,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
     println(s"Created Cassandra container")
 
-    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.5.1".!
+    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0".!
     println(s"Created Kong container")
 
     "docker start cassandra".!
