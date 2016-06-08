@@ -30,7 +30,7 @@ if docker ps | grep kong -q; then
     echo Kong container already exists
 else
     echo Creating kong container ...
-    docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.5.3
+    docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0
 fi
 
 start_service cassandra 9042
