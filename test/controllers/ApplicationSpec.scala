@@ -54,6 +54,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
       def getNumberOfKeys(): Long = 1
 
+      def getEmails(tier: String, status: String): List[String] = ???
+
       /**
        * The following methods are used for labeling an user
        */
@@ -62,6 +64,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def saveKey(kongKey: KongKey, labelIds: List[String]): Unit = ???
 
       def getLabelsFor(bonoboId: String): List[String] = ???
+
     }
     val application = new Application(dynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
     val result: Future[Result] = application.showKeys(List.empty, "next", None).apply(FakeRequest())
