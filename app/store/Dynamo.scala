@@ -307,16 +307,9 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       .withValueMap(new ValueMap().withString(":s", status.capitalize).withString(":t", tier.capitalize))
 
     val userIds = KongTable.scan(query).asScala.toList.map(_.getString("bonoboId"))
+    val allUsers = BonoboTable.scan(new ScanSpec).asScala.toList.map(fromBonoboItem)
 
-    def getEmailForUser(id: String): Option[String] = {
-      val userQuery = new QuerySpec()
-        .withKeyConditionExpression("id = :i")
-        .withValueMap(new ValueMap().withString(":i", id))
-        .withMaxResultSize(1)
-      BonoboTable.query(userQuery).asScala.toList.map(_.getString("email")).headOption
-    }
-
-    userIds.flatMap(getEmailForUser)
+    userIds.flatMap(id => allUsers.find(_.bonoboId == id)).map(_.email).distinct
   }
 
   /**
