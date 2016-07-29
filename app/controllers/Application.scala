@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.{ I18nSupport, MessagesApi }
+import play.api.libs.json.Json
 import play.api.mvc.Security.{ AuthenticatedRequest, AuthenticatedBuilder }
 import play.api.mvc._
 import store._
@@ -209,6 +210,10 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     }
 
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
+  }
+
+  def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
+    Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }
 
   def healthcheck = Action { Ok("OK") }
