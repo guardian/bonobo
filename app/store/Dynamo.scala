@@ -51,6 +51,8 @@ trait DB {
   def getLabels(): List[Label]
 
   def getLabelsFor(bonoboId: String): List[String]
+
+  def getEmails(tier: String, status: String): List[String]
 }
 
 class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: String) extends DB {
@@ -296,6 +298,20 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     }
   }
 
+  def getEmails(tier: String, status: String): List[String] = {
+    val query = new ScanSpec()
+      .withFilterExpression("#sts = :s AND tier = :t")
+      .withNameMap(new NameMap()
+        .`with`("#sts", "status")
+      )
+      .withValueMap(new ValueMap().withString(":s", status.capitalize).withString(":t", tier.capitalize))
+
+    val userIds = KongTable.scan(query).asScala.toList.map(_.getString("bonoboId"))
+    val allUsers = BonoboTable.scan(new ScanSpec).asScala.toList.map(fromBonoboItem)
+
+    userIds.flatMap(id => allUsers.find(_.bonoboId == id)).map(_.email).distinct
+  }
+
   /**
    * The following methods are used for labeling an user
    */
@@ -308,6 +324,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       .withValueMap(new ValueMap().withString(":i", bonoboId))
       .withMaxResultSize(1)).asScala.toList.map(fromBonoboItem).flatMap(_.labelIds)
   }
+
 }
 
 object Dynamo {
@@ -321,15 +338,15 @@ object Dynamo {
       .withString("registrationType", bonoboKey.additionalInfo.registrationType.friendlyName)
       .withList("labelIds", bonoboKey.labelIds.asJava)
 
-    bonoboKey.companyName.foreach( companyName => item.withString("companyName", companyName) )
-    bonoboKey.companyUrl.foreach( companyUrl => item.withString("companyUrl", companyUrl) )
+    bonoboKey.companyName.foreach(companyName => item.withString("companyName", companyName))
+    bonoboKey.companyUrl.foreach(companyUrl => item.withString("companyUrl", companyUrl))
 
-    bonoboKey.additionalInfo.businessArea.foreach( businessArea => item.withString("businessArea", businessArea) )
-    bonoboKey.additionalInfo.monthlyUsers.foreach( monthlyUsers => item.withString("monthlyUsers", monthlyUsers) )
-    bonoboKey.additionalInfo.commercialModel.foreach( commercialModel => item.withString("commercialModel", commercialModel) )
-    bonoboKey.additionalInfo.content.foreach( content => item.withString("content", content) )
-    bonoboKey.additionalInfo.contentFormat.foreach( contentFormat => item.withString("contentFormat", contentFormat) )
-    bonoboKey.additionalInfo.articlesPerDay.foreach( articlesPerDay => item.withString("articlesPerDay", articlesPerDay) )
+    bonoboKey.additionalInfo.businessArea.foreach(businessArea => item.withString("businessArea", businessArea))
+    bonoboKey.additionalInfo.monthlyUsers.foreach(monthlyUsers => item.withString("monthlyUsers", monthlyUsers))
+    bonoboKey.additionalInfo.commercialModel.foreach(commercialModel => item.withString("commercialModel", commercialModel))
+    bonoboKey.additionalInfo.content.foreach(content => item.withString("content", content))
+    bonoboKey.additionalInfo.contentFormat.foreach(contentFormat => item.withString("contentFormat", contentFormat))
+    bonoboKey.additionalInfo.articlesPerDay.foreach(articlesPerDay => item.withString("articlesPerDay", articlesPerDay))
 
     item
   }
@@ -372,7 +389,7 @@ object Dynamo {
       .withString("productName", kongKey.productName)
       .withList("labelIds", labelIds.asJava)
 
-    kongKey.productUrl.foreach( productUrl => item.withString("productUrl", productUrl) )
+    kongKey.productUrl.foreach(productUrl => item.withString("productUrl", productUrl))
     item
   }
 

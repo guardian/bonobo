@@ -18,6 +18,8 @@ POST        /user/create                controllers.Application.createUser
 GET         /user/:id/edit              controllers.Application.editUserPage(id: String)
 POST        /user/:id/edit              controllers.Application.editUser(id: String)
 
+GET         /email/:tier/:status        controllers.Application.getEmails(tier: String, status: String)
+
 GET         /healthcheck                controllers.Application.healthcheck
 
 #Developers open registration form
