@@ -101,7 +101,7 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
       new KongClient(wsClient, apiAddress, apiName)
     }
 
-    KongWrapper(newKong, existingKong)
+    KongWrapper(existingKong, newKong)
   }
 }
 
