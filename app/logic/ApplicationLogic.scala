@@ -1,7 +1,7 @@
 package logic
 
-import controllers.Forms.{ EditUserFormData, EditKeyFormData, CreateKeyFormData, CreateUserFormData }
-import kong.Kong
+import controllers.Forms.{ CreateKeyFormData, CreateUserFormData, EditKeyFormData, EditUserFormData }
+import kong.KongWrapper
 import kong.Kong.{ ConflictFailure, Happy }
 import models._
 import store.DB
@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  *  When we deactivate a key, we keep the consumer but delete the key from Kong.
  *  Thus, rate limit changes made while a key is inactive will take effect as expected.
  */
-class ApplicationLogic(dynamo: DB, kong: Kong) {
+class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
   /**
    * Creates a consumer and key on Kong and a Bonobo user,
@@ -47,7 +47,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     def createConsumerAndKey: Future[ConsumerCreationResult] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
+      kong.existingKong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form, rateLimits)
           consumer
@@ -88,7 +88,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     Logger.info(s"ApplicationLogic: Creating key for user with id $userId")
     def createConsumerAndKey: Future[String] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
+      kong.existingKong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
         consumer =>
           {
             saveKeyOnDB(userId, consumer, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
@@ -114,15 +114,15 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       val updatedKey = {
         if (form.defaultRequests) {
           val defaultRateLimits = form.tier.rateLimit
-          KongKey(bonoboId, kongId, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
-        } else KongKey(bonoboId, kongId, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
+          KongKey(bonoboId, kongId, None, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongId, None, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKey(updatedKey)
     }
 
     def updateUsernameIfNecessary(): Future[Happy.type] = {
       if (oldKey.tier != form.tier) {
-        kong.updateConsumerUsername(kongId, form.tier)
+        kong.existingKong.updateConsumerUsername(kongId, form.tier)
       } else {
         Future.successful(Happy)
       }
@@ -130,7 +130,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
       if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
+        kong.existingKong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
       } else {
         Future.successful(Happy)
       }
@@ -138,7 +138,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     def deactivateKeyIfNecessary(): Future[Happy.type] = {
       if (oldKey.status == KongKey.Active && form.status == KongKey.Inactive) {
-        kong.deleteKey(kongId)
+        kong.existingKong.deleteKey(kongId)
       } else {
         Future.successful(Happy)
       }
@@ -146,7 +146,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
 
     def activateKeyIfNecessary(): Future[String] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
-        kong.createKey(kongId, Some(oldKey.key))
+        kong.existingKong.createKey(kongId, Some(oldKey.key))
       } else {
         Future.successful(oldKey.key)
       }
@@ -171,7 +171,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   }
 
   private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
-    val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
+    val newKongKey = KongKey(userId, consumer, None, rateLimits, tier, productName, productUrl)
     dynamo.saveKey(newKongKey, labelIds)
   }
 }

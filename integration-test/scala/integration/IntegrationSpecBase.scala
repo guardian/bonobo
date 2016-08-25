@@ -5,11 +5,11 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
-import models.{LabelProperties, BonoboUser}
+import models.{BonoboUser, LabelProperties}
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.mvc.RequestHeader
 import store.Dynamo
-import kong.KongClient
+import kong.{KongClient, KongWrapper}
 import components._
 import integration.fixtures._
 import org.scalatest.Suite
@@ -17,6 +17,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ning.NingWSComponents
 import play.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -50,7 +51,11 @@ trait IntegrationSpecBase
     val dynamo = self.dynamo
   }
   trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
-    val kong = new KongClient(wsClient, kongUrl, kongApiName)
+    val kong = {
+      val existingKong = new KongClient(wsClient, kongUrl, kongApiName)
+      val newKong = new KongClient(wsClient, "", "")
+      KongWrapper(existingKong, newKong)
+    }
   }
   trait FakeAwsEmailComponent extends AwsEmailComponent {
     val awsEmail = new FakeEmailClient()

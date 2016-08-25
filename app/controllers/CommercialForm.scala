@@ -1,24 +1,21 @@
 package controllers
 
 import email.MailClient
-import kong.Kong
 import logic.CommercialFormLogic
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.mvc._
-import play.filters.csrf.CSRF.Token
-import play.filters.csrf.{ CSRFConfig, CSRF }
 import store.DB
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class CommercialForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class CommercialForm(dynamo: DB, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import CommercialForm._
   import Forms.CommercialRequestKeyFormData
 
-  private val logic = new CommercialFormLogic(dynamo, kong)
+  private val logic = new CommercialFormLogic(dynamo)
 
   def requestKeyPage = Action { implicit request =>
     Ok(views.html.commercialRequestKey(requestKeyForm))

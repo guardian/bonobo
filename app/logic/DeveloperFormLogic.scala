@@ -1,7 +1,7 @@
 package logic
 
 import controllers.Forms.DeveloperCreateKeyFormData
-import kong.Kong
+import kong.KongWrapper
 import kong.Kong.ConflictFailure
 import models._
 import play.api.Logger
@@ -10,7 +10,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperFormLogic(dynamo: DB, kong: Kong) {
+class DeveloperFormLogic(dynamo: DB, kong: KongWrapper) {
 
   /**
    * Creates a consumer and key on Kong and a Bonobo user,
@@ -27,14 +27,14 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer.id, consumer, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
+      val newKongKey = KongKey(consumer.id, consumer, None, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
       dynamo.saveKey(newKongKey, List.empty)
     }
 
     if (dynamo.isEmailInUse(form.email))
       Future.failed(ConflictFailure("Email already taken."))
     else {
-      kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
+      kong.existingKong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form)
           consumer.key
