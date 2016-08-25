@@ -90,8 +90,8 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
 
   val kong = {
     val existingKong = {
-      val apiAddress = confString("kong.apiAddress")
-      val apiName = confString("kong.apiName")
+      val apiAddress = confString("kong.existing.apiAddress")
+      val apiName = confString("kong.existing.apiName")
       new KongClient(wsClient, apiAddress, apiName)
     }
 
