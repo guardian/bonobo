@@ -7,6 +7,8 @@ import sys.process._
 
 trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
+  val kongApiName: String
+
   val containersHost = {
     /*
     If we are running boot2docker on an OSX developer machine, $DOCKER_HOST will be set and will give us the VirtualBox VM's address.
@@ -20,14 +22,13 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     }
   }
   val kongUrl = s"http://$containersHost:8001"
-  val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
 
   @tailrec
   private def waitForKongToStart(): Unit = {
     s"curl -s -q $kongUrl".! match {
       case 0 => ()
       case _ =>
-        println(s"Waiting for Kong to start listening ...")
+        println(s"Waiting for Kong-0.7.0 to start listening ...")
         Thread.sleep(1000L)
         waitForKongToStart()
     }
@@ -45,7 +46,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   private def configureKong(): Unit = {
-    println("Registering the API with Kong")
+    println("Registering the API with Kong-0.7.0")
     s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d request_host=foo.com -d upstream_url=http://example.com".!
 
     println("Enabling the key-auth plugin")
@@ -56,15 +57,15 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
     println(s"Created Cassandra container")
 
-    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0".!
-    println(s"Created Kong container")
+    "docker create -p 8000:8000 -p 8001:8001 --name kong-0.7.0 --link cassandra:cassandra mashape/kong:0.7.0".!
+    println(s"Created Kong-0.7.0 container")
 
     "docker start cassandra".!
     println(s"Started Cassandra container")
     waitForCassandraToStart()
 
-    "docker start kong".!
-    println(s"Started Kong container")
+    "docker start kong-0.7.0".!
+    println(s"Started Kong-0.7.0 container")
     waitForKongToStart()
 
     configureKong()
@@ -76,11 +77,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     try super.afterAll()
     finally {
       Try {
-        "docker kill kong".!!
-        println("Killed Kong container")
+        "docker kill kong-0.7.0".!!
+        println("Killed Kong-0.7.0 container")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Kong container. Exception: $e}")
+        case e => println(s"Failed to kill Kong-0.7.0 container. Exception: $e}")
       }
 
       Try {
@@ -92,10 +93,10 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       }
 
       Try {
-        "docker rm kong".!!
-        println("Removed Kong container")
+        "docker rm kong-0.7.0".!!
+        println("Removed Kong-0.7.0 container")
       } recover {
-        case e => println(s"Failed to remove Kong container. Exception: $e}")
+        case e => println(s"Failed to remove Kong-0.7.0 container. Exception: $e}")
       }
 
       Try {
