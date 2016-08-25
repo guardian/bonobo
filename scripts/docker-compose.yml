@@ -1,0 +1,14 @@
+version: '2'
+services:
+  
+  kong:
+    image: mashape/kong:0.7.0
+    restart: always
+    depends_on:
+      - cassandra
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+
+  cassandra:
+    image: mashape/cassandra
