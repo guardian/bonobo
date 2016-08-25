@@ -22,22 +22,22 @@ class DeveloperFormLogic(dynamo: DB, kong: KongWrapper) {
    */
 
   def createUser(form: DeveloperCreateKeyFormData): Future[String] = {
-    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: DeveloperCreateKeyFormData): Unit = {
+    def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, migrationConsumer: ConsumerCreationResult, formData: DeveloperCreateKeyFormData): Unit = {
       Logger.info(s"OpenFormLogic: Creating user with name ${form.name}")
       val newBonoboUser = BonoboUser(consumer.id, formData)
       dynamo.saveUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer.id, consumer, None, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
+      val newKongKey = KongKey(consumer.id, consumer, Some(migrationConsumer.id), Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
       dynamo.saveKey(newKongKey, List.empty)
     }
 
     if (dynamo.isEmailInUse(form.email))
       Future.failed(ConflictFailure("Email already taken."))
     else {
-      kong.existingKong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
+      kong.createConsumerAndKey(Tier.Developer, Tier.Developer.rateLimit, key = None) map {
         consumer =>
-          saveUserAndKeyOnDB(consumer, form)
-          consumer.key
+          saveUserAndKeyOnDB(consumer.consumerCR, consumer.migrationConsumerCR, form)
+          consumer.consumerCR.key
       }
     }
   }
