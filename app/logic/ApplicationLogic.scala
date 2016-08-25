@@ -114,8 +114,8 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
       val updatedKey = {
         if (form.defaultRequests) {
           val defaultRateLimits = form.tier.rateLimit
-          KongKey(bonoboId, kongId, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
-        } else KongKey(bonoboId, kongId, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
+          KongKey(bonoboId, kongId, None, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongId, None, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKey(updatedKey)
     }
@@ -171,7 +171,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
   }
 
   private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
-    val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
+    val newKongKey = KongKey(userId, consumer, None, rateLimits, tier, productName, productUrl)
     dynamo.saveKey(newKongKey, labelIds)
   }
 }
