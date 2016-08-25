@@ -4,7 +4,6 @@ import java.util.UUID
 import controllers.Forms._
 import enumeratum.{ PlayJsonEnum, Enum, EnumEntry }
 import org.joda.time.DateTime
-import play.api.libs.json.{ Writes, Reads, Json }
 
 /* model used for saving the users on Bonobo */
 case class BonoboUser(
@@ -59,6 +58,7 @@ object AdditionalUserInfo {
 case class KongKey(
   bonoboId: String,
   kongId: String,
+  migrationKongId: Option[String], // kong ID for the consumer created against the Kong stack we are migrating to.
   key: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,
@@ -75,12 +75,12 @@ object KongKey {
 
   private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
 
-  def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
-    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
+  def apply(bonoboId: String, kongId: String, migrationKongId: Option[String], form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
+    new KongKey(bonoboId, kongId, migrationKongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
-  def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
+  def apply(bonoboId: String, consumer: ConsumerCreationResult, migrationKongId: Option[String], rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
+    new KongKey(bonoboId, consumer.id, migrationKongId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
 }

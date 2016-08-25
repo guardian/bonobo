@@ -17,7 +17,7 @@ import scala.concurrent.Future
 class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
   val mockDynamo = mock[DB]
-  val mockKong = mock[Kong]
+  val mockKong = mock[KongWrapper]
   val mockEmail = mock[MailClient]
   val messagesApi = new DefaultMessagesApi(Environment.simple(), Configuration.reference, new DefaultLangs(Configuration.reference))
 
@@ -39,7 +39,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def updateKey(kongKey: KongKey): Unit = ???
 
       def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]]): ResultsPage[BonoboInfo] = {
-        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", Some("product url"), "rangekey"),
+        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongId", None, "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", Some("product url"), "rangekey"),
           BonoboUser("id", "name", "email", Some("company name"), Some("company url"),
             AdditionalUserInfo(DateTime.now(), ManualRegistration), List.empty))), false)
       }
