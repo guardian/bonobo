@@ -142,6 +142,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val keyToSave = KongKey(
       bonoboId = "id-user-with-labels",
       kongId = "te-be-created",
+      migrationKongId = None,
       key = "labels-key",
       requestsPerDay = 10,
       requestsPerMinute = 1,
