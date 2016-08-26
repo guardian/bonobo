@@ -109,6 +109,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     Logger.info(s"ApplicationLogic: Updating key with id ${oldKey.kongId}")
     val bonoboId = oldKey.bonoboId
     val kongId = oldKey.kongId
+    val maybeMigrationKongId = oldKey.migrationKongId
 
     def updateKongKeyOnDB(form: EditKeyFormData): Unit = {
       val updatedKey = {
@@ -122,7 +123,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
     def updateUsernameIfNecessary(): Future[Happy.type] = {
       if (oldKey.tier != form.tier) {
-        kong.updateConsumerUsername(kongId, form.tier)
+        kong.updateConsumerUsername(kongId, maybeMigrationKongId, form.tier)
       } else {
         Future.successful(Happy)
       }
@@ -130,7 +131,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
       if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
+        kong.updateConsumer(kongId, maybeMigrationKongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
       } else {
         Future.successful(Happy)
       }
@@ -138,7 +139,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
     def deactivateKeyIfNecessary(): Future[Happy.type] = {
       if (oldKey.status == KongKey.Active && form.status == KongKey.Inactive) {
-        kong.deleteKey(kongId)
+        kong.deleteKey(kongId, maybeMigrationKongId)
       } else {
         Future.successful(Happy)
       }
@@ -149,7 +150,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
      */
     def activateKeyIfNecessary(): Future[String] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
-        kong.createKey(kongId, Some(oldKey.key))
+        kong.createKey(kongId, maybeMigrationKongId, Some(oldKey.key))
         Future.successful("") // return value doesn't currently matter as it's not being used anywhere other than to be used within a for comprehension where it's thrown away.
       } else {
         Future.successful(oldKey.key)

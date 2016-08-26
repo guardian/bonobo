@@ -19,33 +19,51 @@ case class KongWrapper(existingKong: Kong, newKong: Kong) {
     }
   }
 
-  def createKey(consumerId: String, customKey: Option[String] = None): Future[KongKeyWrapper] = {
-    for {
-      key <- existingKong.createKey(consumerId, customKey)
-      migrationKey <- newKong.createKey(consumerId, customKey)
-    } yield {
-      KongKeyWrapper(key, migrationKey)
+  def createKey(consumerId: String, maybeMigrationKongId: Option[String], customKey: Option[String] = None): Future[KongKeyWrapper] = {
+    maybeMigrationKongId match {
+      case Some(migrationKongId) =>
+        for {
+          key <- existingKong.createKey(consumerId, customKey)
+          migrationKey <- newKong.createKey(migrationKongId, customKey)
+        } yield KongKeyWrapper(key, migrationKey)
+
+      case None => existingKong.createKey(consumerId, customKey).map(KongKeyWrapper(_, ""))
     }
   }
 
-  def updateConsumerUsername(consumerId: String, tier: Tier): Future[Happy.type] = {
-    for {
-      _ <- existingKong.updateConsumerUsername(consumerId, tier)
-      _ <- newKong.updateConsumerUsername(consumerId, tier)
-    } yield Happy
+  def updateConsumerUsername(consumerId: String, maybeMigrationKongId: Option[String], tier: Tier): Future[Happy.type] = {
+    maybeMigrationKongId match {
+      case Some(migrationKongId) =>
+        for {
+          _ <- existingKong.updateConsumerUsername(consumerId, tier)
+          _ <- newKong.updateConsumerUsername(migrationKongId, tier)
+        } yield Happy
+
+      case None => existingKong.updateConsumerUsername(consumerId, tier)
+    }
   }
 
-  def updateConsumer(consumerId: String, newRateLimit: RateLimits): Future[Happy.type] = {
-    for {
-      _ <- existingKong.updateConsumer(consumerId, newRateLimit)
-      _ <- newKong.updateConsumer(consumerId, newRateLimit)
-    } yield Happy
+  def updateConsumer(consumerId: String, maybeMigrationKongId: Option[String], newRateLimit: RateLimits): Future[Happy.type] = {
+    maybeMigrationKongId match {
+      case Some(migrationKongId) =>
+        for {
+          _ <- existingKong.updateConsumer(consumerId, newRateLimit)
+          _ <- newKong.updateConsumer(migrationKongId, newRateLimit)
+        } yield Happy
+
+      case None => existingKong.updateConsumer(consumerId, newRateLimit)
+    }
   }
 
-  def deleteKey(consumerId: String): Future[Happy.type] = {
-    for {
-      _ <- existingKong.deleteKey(consumerId)
-      _ <- newKong.deleteKey(consumerId)
-    } yield Happy
+  def deleteKey(consumerId: String, maybeMigrationKongId: Option[String]): Future[Happy.type] = {
+    maybeMigrationKongId match {
+      case Some(migrationKongId) =>
+        for {
+          _ <- existingKong.deleteKey(consumerId)
+          _ <- newKong.deleteKey(migrationKongId)
+        } yield Happy
+
+      case None => existingKong.deleteKey(consumerId)
+    }
   }
 }
