@@ -144,10 +144,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
         Future.successful(Happy)
       }
     }
-
-    /**
-     * Do not use this function anywhere other than the invocation below. until after the migration.
-     */
+    
     def activateKeyIfNecessary(): Future[Unit] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
         kong.createKey(kongId, maybeMigrationKongId, Some(oldKey.key))
