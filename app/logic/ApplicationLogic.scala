@@ -91,13 +91,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
         consumer =>
           {
-            /**
-             * During the migration, if we add a key to an existing user we need all keys to have the same userId and and the same kongConsumerId.
-             * To do this, we look at all of the keys for that user, and if they have a pre-existing kongConsumerId we use that, otherwise we use the one
-             * returned to us by Kong when we create the consumer against the Kong migration stack.
-             */
-            val migrationConsumerId: Option[String] = dynamo.getKeysWithUserId(userId).find(_.kongConsumerId.nonEmpty).flatMap(_.kongConsumerId).orElse(Some(consumer.migrationConsumerCR.id))
-            saveKeyOnDB(userId, consumer.consumerCR, migrationConsumerId, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
+            saveKeyOnDB(userId, consumer.consumerCR, Some(consumer.migrationConsumerCR.id), rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
             Future.successful(consumer.consumerCR.key)
           }
       }
@@ -121,8 +115,8 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
       val updatedKey = {
         if (form.defaultRequests) {
           val defaultRateLimits = form.tier.rateLimit
-          KongKey(bonoboId, kongId, None, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
-        } else KongKey(bonoboId, kongId, None, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
+          KongKey(bonoboId, kongId, maybeMigrationKongId, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongId, maybeMigrationKongId, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKey(updatedKey)
     }
@@ -154,12 +148,11 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     /**
      * Do not use this function anywhere other than the invocation below. until after the migration.
      */
-    def activateKeyIfNecessary(): Future[String] = {
+    def activateKeyIfNecessary(): Future[Unit] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
         kong.createKey(kongId, maybeMigrationKongId, Some(oldKey.key))
-        Future.successful("") // return value doesn't currently matter as it's not being used anywhere other than to be used within a for comprehension where it's thrown away.
       } else {
-        Future.successful(oldKey.key)
+        Future.successful[Unit]()
       }
     }
 

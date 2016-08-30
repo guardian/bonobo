@@ -56,18 +56,18 @@ object AdditionalUserInfo {
 
 /* model used for saving the keys on Kong */
 case class KongKey(
-                    bonoboId: String,
-                    kongId: String,
-                    kongConsumerId: Option[String], // kong ID for the consumer created against the Kong stack we are migrating to.
-                    key: String,
-                    requestsPerDay: Int,
-                    requestsPerMinute: Int,
-                    tier: Tier,
-                    status: String,
-                    createdAt: DateTime,
-                    productName: String,
-                    productUrl: Option[String],
-                    rangeKey: String)
+  bonoboId: String,
+  kongId: String,
+  kongConsumerId: Option[String], // kong ID for the consumer created against the Kong stack we are migrating to.
+  key: String,
+  requestsPerDay: Int,
+  requestsPerMinute: Int,
+  tier: Tier,
+  status: String,
+  createdAt: DateTime,
+  productName: String,
+  productUrl: Option[String],
+  rangeKey: String)
 
 object KongKey {
   val Active = "Active"

@@ -52,6 +52,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+
   }
 
   it should "show error message when the email hasn't been sent" in {
@@ -109,6 +116,12 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "work with empty optional fields" in {
@@ -144,9 +157,16 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keyValue shouldBe dynamoKongKey.value.key
     keyValue shouldBe migrationDynamoKongKey.value.key
+    (dynamoKongKey.value.key == migrationDynamoKongKey.value.key) shouldBe true
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "add a new user with associated labels and a key" in {
@@ -198,7 +218,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       bonoboId = consumerId,
       additionalInfo = userToSave.additionalInfo.copy(createdAt = dynamoBonoboUser.value.additionalInfo.createdAt))
 
-    dynamoKongKey.value.copy(kongConsumerId = migrationConsumerId) shouldBe keyToSave.copy(
+    dynamoKongKey.value shouldBe keyToSave.copy(
       bonoboId = consumerId,
       kongId = dynamoKongKey.value.kongId,
       kongConsumerId = migrationConsumerId,
@@ -242,6 +262,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val firstKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongId
     val secondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongId
+    val firstMigrationKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongConsumerId.value
     val migrationSecondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
@@ -250,10 +271,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     bonoboId shouldBe firstKongId
     bonoboId should not be secondKongId
+    migrationKongId.value shouldBe firstMigrationKongId
+    migrationKongId.value should not be migrationSecondKongId
 
     // the bonoboId for the new key should be same as the bonoboId for the first one
     bonoboId shouldBe dynamo.getKeyWithValue("the-dark-day").value.bonoboId
-    migrationKongId shouldBe dynamo.getKeyWithValue("the-dark-day").value.kongConsumerId
   }
 
   behavior of "making a key inactive"
@@ -297,6 +319,9 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     // check the key doesn't exist on Kong anymore
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
     Await.result(checkKeyExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe false
+
+    // Check that kongConsumerId is still set correctly on the Dynamo record at this point.
+    dynamo.getKeyWithValue("testing-inactive").value.kongConsumerId.value shouldBe migrationConsumerId
 
     // check the key is marked as inactive on Bonobo-Keys
     dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
@@ -432,6 +457,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keyValue shouldBe dynamoKongKey.value.key
     migrationKeyValue shouldBe migrationDynamoKongKey.value.key
+    (migrationKeyValue == migrationDynamoKongKey.value.key) shouldBe true
 
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
@@ -468,6 +494,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keyValue shouldBe dynamoKongKey.value.key
     migrationKeyValue shouldBe migrationDynamoKongKey.value.key
+    (migrationKeyValue == migrationDynamoKongKey.value.key) shouldBe true
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId

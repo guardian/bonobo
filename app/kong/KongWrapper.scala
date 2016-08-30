@@ -20,7 +20,7 @@ case class KongWrapper(existingKong: Kong, newKong: Kong) {
     }
   }
 
-  def createKey(consumerId: String, maybeMigrationKongId: Option[String], customKey: Option[String] = None): Future[KongKeyWrapper] = {
+  def createKey(consumerId: String, maybeMigrationKongId: Option[String], customKey: Option[String] = None): Future[Unit] = {
     val apiKey = customKey.getOrElse(java.util.UUID.randomUUID.toString)
     maybeMigrationKongId match {
       case Some(migrationKongId) =>
