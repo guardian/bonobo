@@ -390,7 +390,7 @@ object Dynamo {
       .withList("labelIds", labelIds.asJava)
 
     kongKey.productUrl.foreach(productUrl => item.withString("productUrl", productUrl))
-    kongKey.migrationKongId.foreach(migrationKongId => item.withString("migrationKongId", migrationKongId))
+    kongKey.kongConsumerId.foreach(migrationKongId => item.withString("kongConsumerId", migrationKongId))
     item
   }
 
@@ -404,7 +404,7 @@ object Dynamo {
     KongKey(
       bonoboId = item.getString("bonoboId"),
       kongId = item.getString("kongId"),
-      migrationKongId = Option(item.getString("migrationKongId")),
+      kongConsumerId = Option(item.getString("kongConsumerId")),
       key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),

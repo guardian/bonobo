@@ -51,13 +51,13 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: String): Future[ConsumerCreationResult] // TODO - make key an option again after migration
+  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: String): Future[ConsumerCreationResult]
 
   def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
   def updateConsumerUsername(id: String, tier: Tier): Future[Happy.type]
 
-  def createKey(consumerId: String, customKey: String): Future[String] // TODO - make key an option again after migration
+  def createKey(consumerId: String, customKey: String): Future[String]
 
   def deleteKey(consumerId: String): Future[Happy.type]
 }
@@ -110,7 +110,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   def createKey(consumerId: String, customKey: String): Future[String] = {
-    val key: String = customKey // TODO make custom key an option again after migration
+    val key: String = customKey
     ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").post(Map(
       "key" -> Seq(key))).flatMap {
       response =>

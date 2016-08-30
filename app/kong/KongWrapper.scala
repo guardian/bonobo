@@ -5,13 +5,12 @@ import models.{ ConsumerCreationResult, RateLimits, Tier }
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class KongKeyWrapper(key: String, migrationKey: String)
+case class KongKeyWrapper(key: String, migrationKey: Option[String])
 case class ConsumerCreationResultWrapper(consumerCR: ConsumerCreationResult, migrationConsumerCR: ConsumerCreationResult)
 
 case class KongWrapper(existingKong: Kong, newKong: Kong) {
 
   def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResultWrapper] = {
-    /* TODO - Key creation now resides here as it needs to be the same across Kong stacks. Once we migrate this can be moved back into createKey */
     val apiKey = key.getOrElse(java.util.UUID.randomUUID.toString)
     for {
       cr1 <- existingKong.createConsumerAndKey(tier, rateLimit, apiKey)
@@ -22,16 +21,15 @@ case class KongWrapper(existingKong: Kong, newKong: Kong) {
   }
 
   def createKey(consumerId: String, maybeMigrationKongId: Option[String], customKey: Option[String] = None): Future[KongKeyWrapper] = {
-    /* TODO - Key creation now resides here as it needs to be the same across Kong stacks. Once we migrate this can be moved back into createKey */
     val apiKey = customKey.getOrElse(java.util.UUID.randomUUID.toString)
     maybeMigrationKongId match {
       case Some(migrationKongId) =>
         for {
           key <- existingKong.createKey(consumerId, apiKey)
           migrationKey <- newKong.createKey(migrationKongId, apiKey)
-        } yield KongKeyWrapper(key, migrationKey)
+        } yield KongKeyWrapper(key, Some(migrationKey))
 
-      case None => existingKong.createKey(consumerId, apiKey).map(KongKeyWrapper(_, ""))
+      case None => existingKong.createKey(consumerId, apiKey).map(KongKeyWrapper(_, None))
     }
   }
 

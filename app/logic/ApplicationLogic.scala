@@ -92,11 +92,11 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
         consumer =>
           {
             /**
-             * During the migration, if we add a key to an existing user we need all keys to have the same userId and and the same migrationKongId.
-             * To do this, we look at all of the keys for that user, and if they have a pre-existing migrationKongId we use that, otherwise we use the one
+             * During the migration, if we add a key to an existing user we need all keys to have the same userId and and the same kongConsumerId.
+             * To do this, we look at all of the keys for that user, and if they have a pre-existing kongConsumerId we use that, otherwise we use the one
              * returned to us by Kong when we create the consumer against the Kong migration stack.
              */
-            val migrationConsumerId: Option[String] = dynamo.getKeysWithUserId(userId).find(_.migrationKongId.nonEmpty).flatMap(_.migrationKongId).orElse(Some(consumer.migrationConsumerCR.id))
+            val migrationConsumerId: Option[String] = dynamo.getKeysWithUserId(userId).find(_.kongConsumerId.nonEmpty).flatMap(_.kongConsumerId).orElse(Some(consumer.migrationConsumerCR.id))
             saveKeyOnDB(userId, consumer.consumerCR, migrationConsumerId, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
             Future.successful(consumer.consumerCR.key)
           }
@@ -115,7 +115,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     Logger.info(s"ApplicationLogic: Updating key with id ${oldKey.kongId}")
     val bonoboId = oldKey.bonoboId
     val kongId = oldKey.kongId
-    val maybeMigrationKongId = oldKey.migrationKongId
+    val maybeMigrationKongId = oldKey.kongConsumerId
 
     def updateKongKeyOnDB(form: EditKeyFormData): Unit = {
       val updatedKey = {
