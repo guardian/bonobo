@@ -22,13 +22,12 @@ Make sure you have [virtualbox](https://www.virtualbox.org/) installed.
   NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
   dev    *        virtualbox   Running   tcp://192.168.99.100:2376
   ```
-
-1a. If nothing is listed here, you will need to create it.
-
+  
+  If nothing is listed here, you will need to create it.
+  
   ```
   $ docker-machine create --driver virtualbox dev
   ```
-
 
 2. Make sure `$DOCKER_HOST` is set:
 
