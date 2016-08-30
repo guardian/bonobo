@@ -42,7 +42,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
       dynamo.saveUser(newBonoboUser)
 
       // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same
-      saveKeyOnDB(userId = consumer.id, consumer, migrationConsumer, rateLimits, formData.tier, formData.productName, formData.productUrl, newBonoboUser.labelIds)
+      saveKeyOnDB(userId = consumer.id, consumer, Some(migrationConsumer.id), rateLimits, formData.tier, formData.productName, formData.productUrl, newBonoboUser.labelIds)
     }
 
     def createConsumerAndKey: Future[ConsumerCreationResult] = {
@@ -91,7 +91,13 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
       kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
         consumer =>
           {
-            saveKeyOnDB(userId, consumer.consumerCR, consumer.migrationConsumerCR, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
+            /**
+             * During the migration, if we add a key to an existing user we need all keys to have the same userId and and the same migrationKongId.
+             * To do this, we look at all of the keys for that user, and if they have a pre-existing migrationKongId we use that, otherwise we use the one
+             * returned to us by Kong when we create the consumer against the Kong migration stack.
+             */
+            val migrationConsumerId: Option[String] = dynamo.getKeysWithUserId(userId).find(_.migrationKongId.nonEmpty).flatMap(_.migrationKongId).orElse(Some(consumer.migrationConsumerCR.id))
+            saveKeyOnDB(userId, consumer.consumerCR, migrationConsumerId, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
             Future.successful(consumer.consumerCR.key)
           }
       }
@@ -175,8 +181,8 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     case None => f
   }
 
-  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, migrationConsumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
-    val newKongKey = KongKey(userId, consumer, Some(migrationConsumer.id), rateLimits, tier, productName, productUrl)
+  private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, migrationConsumerId: Option[String], rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
+    val newKongKey = KongKey(userId, consumer, migrationConsumerId, rateLimits, tier, productName, productUrl)
     dynamo.saveKey(newKongKey, labelIds)
   }
 }

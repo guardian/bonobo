@@ -9,7 +9,7 @@ trait MigrationKongFixture extends BeforeAndAfterAll { this: Suite =>
 
   val kongApiName: String
 
-  val containersHost = {
+  val dockerContainersHost = {
     /*
     If we are running boot2docker on an OSX developer machine, $DOCKER_HOST will be set and will give us the VirtualBox VM's address.
     If we are on TeamCity, docker port forwarding should work properly so we can connect to Kong on localhost.
@@ -21,7 +21,7 @@ trait MigrationKongFixture extends BeforeAndAfterAll { this: Suite =>
       case other => fail(s"DOCKER_HOST had an unexpected format: $other")
     }
   }
-  val migrationKongUrl = s"http://$containersHost:8002"
+  val migrationKongUrl = s"http://$dockerContainersHost:8002"
 
   @tailrec
   private def waitForKongToStart(): Unit = {
@@ -36,7 +36,7 @@ trait MigrationKongFixture extends BeforeAndAfterAll { this: Suite =>
 
   @tailrec
   private def waitForPostgresToStart(): Unit = {
-    s"nc -z $containersHost 5432".! match {
+    s"nc -z $dockerContainersHost 5434".! match {
       case 0 => ()
       case _ =>
         println(s"Waiting for Postgres to start listening ...")
@@ -54,10 +54,10 @@ trait MigrationKongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 5432:5432 -e \"POSTGRES_USER=kong\" -e \"POSTGRES_DB=kong\" --name postgres mashape/postgres:9.4".!
+    "docker create -p 5434:5432 -e POSTGRES_USER=kong -e POSTGRES_DB=kong --name postgres postgres:9.4".!
     println(s"Created Postgres container")
 
-    "docker create -p 8000:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.0 --link postgres:postgres -e \"KONG_DATABASE=postgres\" mashape/kong:0.9.0".!
+    "docker create -p 8003:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.0 --link postgres:postgres -e KONG_DATABASE=postgres -e KONG_PG_HOST=postgres mashape/kong:0.9.0".!
     println(s"Created Kong-0.9.0 container")
 
     "docker start postgres".!

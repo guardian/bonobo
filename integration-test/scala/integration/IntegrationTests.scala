@@ -42,7 +42,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
-    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
 
     keyValue shouldBe dynamoKongKey.value.key
     migrationKeyValue shouldBe dynamoKongKey.value.key
@@ -133,7 +133,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
-    Await.result(checkConsumerExistsOnKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
@@ -421,7 +421,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
-    Await.result(checkConsumerExistsOnKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)

@@ -11,23 +11,27 @@ case class ConsumerCreationResultWrapper(consumerCR: ConsumerCreationResult, mig
 case class KongWrapper(existingKong: Kong, newKong: Kong) {
 
   def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResultWrapper] = {
+    /* TODO - Key creation now resides here as it needs to be the same across Kong stacks. Once we migrate this can be moved back into createKey */
+    val apiKey = key.getOrElse(java.util.UUID.randomUUID.toString)
     for {
-      cr1 <- existingKong.createConsumerAndKey(tier, rateLimit, key)
-      cr2 <- newKong.createConsumerAndKey(tier, rateLimit, key)
+      cr1 <- existingKong.createConsumerAndKey(tier, rateLimit, apiKey)
+      cr2 <- newKong.createConsumerAndKey(tier, rateLimit, apiKey)
     } yield {
       ConsumerCreationResultWrapper(cr1, cr2)
     }
   }
 
   def createKey(consumerId: String, maybeMigrationKongId: Option[String], customKey: Option[String] = None): Future[KongKeyWrapper] = {
+    /* TODO - Key creation now resides here as it needs to be the same across Kong stacks. Once we migrate this can be moved back into createKey */
+    val apiKey = customKey.getOrElse(java.util.UUID.randomUUID.toString)
     maybeMigrationKongId match {
       case Some(migrationKongId) =>
         for {
-          key <- existingKong.createKey(consumerId, customKey)
-          migrationKey <- newKong.createKey(migrationKongId, customKey)
+          key <- existingKong.createKey(consumerId, apiKey)
+          migrationKey <- newKong.createKey(migrationKongId, apiKey)
         } yield KongKeyWrapper(key, migrationKey)
 
-      case None => existingKong.createKey(consumerId, customKey).map(KongKeyWrapper(_, ""))
+      case None => existingKong.createKey(consumerId, apiKey).map(KongKeyWrapper(_, ""))
     }
   }
 

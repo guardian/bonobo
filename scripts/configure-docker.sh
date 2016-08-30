@@ -49,17 +49,17 @@ if docker ps | grep postgres -q; then
     echo Postgres container already exists
 else
     echo Creating Postgres container ...
-    docker create -p 5432:5432 -e "POSTGRES_USER=kong" -e "POSTGRES_DB=kong" --name postgres mashape/postgres:9.4
+    docker create -p 5434:5432 -e "POSTGRES_USER=kong" -e "POSTGRES_DB=kong" --name postgres postgres:9.4
 fi
 
 if docker ps | grep kong-0.9.0 -q; then
     echo Kong 0.9.0 container already exists
 else
     echo Creating kong 0.9.0 container ...
-    docker create -p 8000:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.0 --link postgres:postgres -e "KONG_DATABASE=postgres" mashape/kong:0.9.0
+    docker create -p 8003:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.0 --link postgres:postgres -e "KONG_DATABASE=postgres" -e "KONG_PG_HOST=postgres" mashape/kong:0.9.0
 fi
 
-start_service postgres 5432
+start_service postgres 5434
 start_service kong-0.9.0 8002
 
 echo Adding API ...
