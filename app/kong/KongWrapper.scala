@@ -5,7 +5,6 @@ import models.{ ConsumerCreationResult, RateLimits, Tier }
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class KongKeyWrapper(key: String, migrationKey: Option[String])
 case class ConsumerCreationResultWrapper(consumerCR: ConsumerCreationResult, migrationConsumerCR: ConsumerCreationResult)
 
 case class KongWrapper(existingKong: Kong, newKong: Kong) {
@@ -27,9 +26,9 @@ case class KongWrapper(existingKong: Kong, newKong: Kong) {
         for {
           key <- existingKong.createKey(consumerId, apiKey)
           migrationKey <- newKong.createKey(migrationKongId, apiKey)
-        } yield KongKeyWrapper(key, Some(migrationKey))
+        } yield ()
 
-      case None => existingKong.createKey(consumerId, apiKey).map(KongKeyWrapper(_, None))
+      case None => existingKong.createKey(consumerId, apiKey).map(_ => ())
     }
   }
 

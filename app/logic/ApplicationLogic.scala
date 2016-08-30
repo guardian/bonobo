@@ -144,12 +144,12 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
         Future.successful(Happy)
       }
     }
-    
+
     def activateKeyIfNecessary(): Future[Unit] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
         kong.createKey(kongId, maybeMigrationKongId, Some(oldKey.key))
       } else {
-        Future.successful[Unit]()
+        Future.successful[Unit](())
       }
     }
 
