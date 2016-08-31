@@ -6,6 +6,10 @@
       "Type": "AWS::EC2::SecurityGroup::Id",
       "Description": "Security group for Bonobo instances to access Kong internal LB"
     },
+    "BonoboSecurityGroupForNewKong": {
+      "Type": "AWS::EC2::SecurityGroup::Id",
+      "Description": "Security group for Bonobo instances to access Kong internal LB (new Kong stack)"
+    },
     "VPC": {
       "Description": "Virtual Private Cloud to run EC2 instances within",
       "Type": "AWS::EC2::VPC::Id"
@@ -197,6 +201,9 @@
           },
           {
             "Ref": "BonoboSecurityGroupForKong"
+          },
+          {
+            "Ref": "BonoboSecurityGroupForNewKong"
           }
         ],
         "AssociatePublicIpAddress": true,

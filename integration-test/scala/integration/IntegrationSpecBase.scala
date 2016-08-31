@@ -20,6 +20,7 @@ import play.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Random
 
 /**
  * Base trait for integration tests.
@@ -43,7 +44,11 @@ trait IntegrationSpecBase
     with DynamoDbClientFixture
     with DynamoDbLocalServerFixture
     with KongFixture
+    with MigrationKongFixture
     with OneAppPerSuite { self: Suite =>
+
+  /* TODO - move back into KongFixture post migration */
+  override val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
@@ -53,7 +58,7 @@ trait IntegrationSpecBase
   trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
     val kong = {
       val existingKong = new KongClient(wsClient, kongUrl, kongApiName)
-      val newKong = new KongClient(wsClient, "", "")
+      val newKong = new KongClient(wsClient, migrationKongUrl, kongApiName)
       KongWrapper(existingKong, newKong)
     }
   }
@@ -120,10 +125,59 @@ trait IntegrationSpecBase
     wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
       .withQueryString("consumer_id" -> consumerId).get().map {
       response =>
-        (response.json \\ "day").headOption match {
-          case Some(JsNumber(config)) if config.toInt == day => true
+        val maybeDay = (response.json \\ "day").headOption
+        val maybeMinutes = (response.json \\ "minute").headOption
+
+        (maybeDay, maybeMinutes) match {
+          case (Some(JsNumber(day)), Some(JsNumber(minute)))  if day.toInt == day && minute.toInt == minutes => true
           case _ => false
         }
     }
   }
+
+    /* TODO - The functions below can be deleted once to Kong migration is complete. */
+
+    def checkConsumerExistsOnMigrationKong(consumerId: String): Future[Boolean] = {
+      wsClient.url(s"$migrationKongUrl/consumers/$consumerId").get().map {
+        response =>
+          (response.json \\ "id").headOption match {
+            case Some(JsString(id)) if id == consumerId => true
+            case _ => false
+          }
+      }
+    }
+
+    def checkKeyExistsOnMigrationKong(consumerId: String): Future[Boolean] = {
+      wsClient.url(s"$migrationKongUrl/consumers/$consumerId/key-auth").get().map {
+        response =>
+          (response.json \\ "key").headOption match {
+            case Some(JsString(key)) => true
+            case _ => false
+          }
+      }
+    }
+
+    def getKeyForConsumerIdOnMigrationKong(consumerId: String): Future[String] = {
+      wsClient.url(s"$migrationKongUrl/consumers/$consumerId/key-auth").get().map {
+        response =>
+          (response.json \\ "key").headOption match {
+            case Some(JsString(key)) => key
+            case _ => fail()
+          }
+      }
+    }
+
+    def checkRateLimitsMatchOnMigrationKong(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
+      wsClient.url(s"$migrationKongUrl/apis/$kongApiName/plugins")
+        .withQueryString("consumer_id" -> consumerId).get().map {
+        response =>
+          val maybeDay = (response.json \\ "day").headOption
+          val maybeMinutes = (response.json \\ "minute").headOption
+
+          (maybeDay, maybeMinutes) match {
+            case (Some(JsNumber(day)), Some(JsNumber(minute)))  if day.toInt == day && minute.toInt == minutes => true
+            case _ => false
+          }
+      }
+    }
 }

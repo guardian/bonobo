@@ -51,13 +51,13 @@ object Kong {
 trait Kong {
   import Kong._
 
-  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult]
+  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: String): Future[ConsumerCreationResult]
 
   def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
   def updateConsumerUsername(id: String, tier: Tier): Future[Happy.type]
 
-  def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
+  def createKey(consumerId: String, customKey: String): Future[String]
 
   def deleteKey(consumerId: String): Future[Happy.type]
 }
@@ -69,7 +69,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   val RateLimitingPluginName = "rate-limiting"
   val KeyAuthPluginName = "key-auth"
 
-  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
+  def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: String): Future[ConsumerCreationResult] = {
     for {
       consumer <- createConsumer(tier)
       _ <- setRateLimit(consumer.id, rateLimit)
@@ -109,8 +109,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
-  def createKey(consumerId: String, customKey: Option[String] = None): Future[String] = {
-    val key: String = customKey getOrElse java.util.UUID.randomUUID.toString
+  def createKey(consumerId: String, customKey: String): Future[String] = {
+    val key: String = customKey
     ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName").post(Map(
       "key" -> Seq(key))).flatMap {
       response =>

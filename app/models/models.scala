@@ -58,7 +58,7 @@ object AdditionalUserInfo {
 case class KongKey(
   bonoboId: String,
   kongId: String,
-  migrationKongId: Option[String], // kong ID for the consumer created against the Kong stack we are migrating to.
+  kongConsumerId: Option[String], // kong ID for the consumer created against the Kong stack we are migrating to.
   key: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,

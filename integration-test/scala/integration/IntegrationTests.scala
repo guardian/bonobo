@@ -34,19 +34,31 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoKongKey = dynamo.getKeyWithValue("123124-13434-32323-3439")
     val consumerId = dynamoKongKey.value.kongId
+    val migrationConsumerId = dynamoKongKey.value.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
+
     keyValue shouldBe dynamoKongKey.value.key
+    migrationKeyValue shouldBe dynamoKongKey.value.key
 
     // check Bonobo-Keys.bonoboId is the same as Bonobo-Keys.kongId; this is only true for the first key of every user we create
     dynamoKongKey.value.bonoboId shouldBe dynamoKongKey.value.kongId
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+
   }
 
   it should "show error message when the email hasn't been sent" in {
@@ -86,17 +98,30 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoBonoboUser = dynamo.getUserWithEmail("fsdlfkjsd@email.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
+    val migrationConsumerId = dynamo.getKeysWithUserId(dynamoBonoboUser.value.bonoboId).head.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
+
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    val migrationDynamoKongKey = dynamo.getKeyWithValue(migrationKeyValue)
+
     keyValue shouldBe dynamoKongKey.value.key
+    keyValue shouldBe migrationDynamoKongKey.value.key
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "work with empty optional fields" in {
@@ -117,17 +142,31 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoBonoboUser = dynamo.getUserWithEmail("jkjkjkjkjkjk@email.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
+    val migrationConsumerId = dynamo.getKeysWithUserId(dynamoBonoboUser.value.bonoboId).head.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
+
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    val migrationDynamoKongKey = dynamo.getKeyWithValue(migrationKeyValue)
+
     keyValue shouldBe dynamoKongKey.value.key
+    keyValue shouldBe migrationDynamoKongKey.value.key
+    (dynamoKongKey.value.key == migrationDynamoKongKey.value.key) shouldBe true
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "add a new user with associated labels and a key" in {
@@ -142,7 +181,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val keyToSave = KongKey(
       bonoboId = "id-user-with-labels",
       kongId = "te-be-created",
-      migrationKongId = None,
+      kongConsumerId = None,
       key = "labels-key",
       requestsPerDay = 10,
       requestsPerMinute = 1,
@@ -170,6 +209,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoBonoboUser = dynamo.getUserWithEmail(userToSave.email)
     val consumerId = dynamoBonoboUser.value.bonoboId
+    val migrationConsumerId = dynamo.getKeysWithUserId(dynamoBonoboUser.value.bonoboId).head.kongConsumerId
     val dynamoKongKey = dynamo.getKeyWithValue(keyToSave.key)
 
     dynamoBonoboUser.value.labelIds shouldBe userToSave.labelIds
@@ -181,6 +221,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamoKongKey.value shouldBe keyToSave.copy(
       bonoboId = consumerId,
       kongId = dynamoKongKey.value.kongId,
+      kongConsumerId = migrationConsumerId,
       requestsPerDay = dynamoKongKey.value.requestsPerDay,
       requestsPerMinute = dynamoKongKey.value.requestsPerMinute,
       createdAt = dynamoKongKey.value.createdAt,
@@ -207,6 +248,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val bonoboId = dynamo.getKeyWithValue("the-dark-knight").value.bonoboId
+    val migrationKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongConsumerId
 
     val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -220,12 +262,17 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val firstKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongId
     val secondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongId
+    val firstMigrationKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongConsumerId.value
+    val migrationSecondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(secondKongId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationSecondKongId), atMost = 10.seconds) shouldBe true
 
     bonoboId shouldBe firstKongId
     bonoboId should not be secondKongId
+    migrationKongId.value shouldBe firstMigrationKongId
+    migrationKongId.value should not be migrationSecondKongId
 
     // the bonoboId for the new key should be same as the bonoboId for the first one
     bonoboId shouldBe dynamo.getKeyWithValue("the-dark-day").value.bonoboId
@@ -251,9 +298,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
     val consumerId = dynamo.getKeyWithValue("testing-inactive").value.kongId
+    val migrationConsumerId = dynamo.getKeyWithValue("testing-inactive").value.kongConsumerId.value
 
     // check the key exists on Kong
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkKeyExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
@@ -269,6 +318,10 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check the key doesn't exist on Kong anymore
     Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
+    Await.result(checkKeyExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe false
+
+    // Check that kongConsumerId is still set correctly on the Dynamo record at this point.
+    dynamo.getKeyWithValue("testing-inactive").value.kongConsumerId.value shouldBe migrationConsumerId
 
     // check the key is marked as inactive on Bonobo-Keys
     dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
@@ -327,7 +380,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getKeyWithValue("testing-update-rate-limits").value.requestsPerDay shouldBe 444
 
     val consumerId = dynamo.getKeyWithValue("testing-update-rate-limits").value.kongId
+    val migrationConsumerId = dynamo.getKeyWithValue("testing-update-rate-limits").value.kongConsumerId.value
+
     Await.result(checkRateLimitsMatch(consumerId, 44, 444), atMost = 10.seconds) shouldBe true
+    Await.result(checkRateLimitsMatchOnMigrationKong(migrationConsumerId, 44, 444), atMost = 10.seconds) shouldBe true
+
   }
 
   behavior of "creating a duplicate key"
@@ -385,14 +442,23 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoBonoboUser = dynamo.getUserWithEmail("test@openform.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
+    val migrationConsumerId = dynamo.getKeysWithUserId(consumerId).head.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
+
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    val migrationDynamoKongKey = dynamo.getKeyWithValue(migrationKeyValue)
+
     keyValue shouldBe dynamoKongKey.value.key
+    migrationKeyValue shouldBe migrationDynamoKongKey.value.key
+    (migrationKeyValue == migrationDynamoKongKey.value.key) shouldBe true
+
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
@@ -413,14 +479,22 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val dynamoBonoboUser = dynamo.getUserWithEmail("testing@openform.com")
     val consumerId = dynamoBonoboUser.value.bonoboId
+    val migrationConsumerId = dynamo.getKeysWithUserId(consumerId).head.kongConsumerId.value
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnMigrationKong(migrationConsumerId), atMost = 10.seconds) shouldBe true
 
     // check Kong's key value matches Bonobo-Keys.keyValue
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
+    val migrationKeyValue = Await.result(getKeyForConsumerIdOnMigrationKong(migrationConsumerId), atMost = 10.seconds)
+
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
+    val migrationDynamoKongKey = dynamo.getKeyWithValue(migrationKeyValue)
+
     keyValue shouldBe dynamoKongKey.value.key
+    migrationKeyValue shouldBe migrationDynamoKongKey.value.key
+    (migrationKeyValue == migrationDynamoKongKey.value.key) shouldBe true
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
