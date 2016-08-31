@@ -30,7 +30,6 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
    * and saves the user and key in Dynamo.
    * The key will be randomly generated if no custom key is specified.
    *
-   *
    * @return a Future of the newly created Kong consumer's ID
    */
   def createUser(form: CreateUserFormData): Future[ConsumerCreationResult] = {
@@ -130,8 +129,14 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     }
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
-        kong.updateConsumer(kongId, maybeMigrationKongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
+      val oldRateLimits = RateLimits(oldKey.requestsPerMinute, oldKey.requestsPerDay)
+      val newRateLimits = {
+        if (form.defaultRequests) form.tier.rateLimit
+        else RateLimits(form.requestsPerMinute, form.requestsPerDay)
+      }
+
+      if (oldRateLimits != newRateLimits) {
+        kong.updateConsumer(kongId, maybeMigrationKongId, newRateLimits)
       } else {
         Future.successful(Happy)
       }
