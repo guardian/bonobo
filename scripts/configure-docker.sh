@@ -18,28 +18,27 @@ function start_service {
     done
 }
 
-if docker ps | grep cassandra -q; then
-    echo Cassandra container already exists
+if docker ps | grep postgres -q; then
+    echo Postgres container already exists
 else
-    echo Creating cassandra container ...
-    docker create -p 9042:9042 --name cassandra mashape/cassandra
+    echo Creating Postgres container ...
+    docker create -p 5432:5432 -e "POSTGRES_USER=kong" -e "POSTGRES_DB=kong" --name postgres mashape/postgres:9.4
 fi
 
-
-if docker ps | grep kong -q; then
-    echo Kong container already exists
+if docker ps | grep kong-0.9.2 -q; then
+    echo Kong 0.9.2 container already exists
 else
-    echo Creating kong container ...
-    docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0
+    echo Creating kong 0.9.2 container ...
+    docker create -p 8000:8000 -p 8001:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.2 --link postgres:postgres -e "KONG_DATABASE=postgres" mashape/kong:0.9.2
 fi
 
-start_service cassandra 9042
-
-start_service kong 8001
+start_service postgres 5432
+start_service kong-0.9.2 8001
 
 echo Adding API ...
 curl -sS -X POST http://${container_host}:8001/apis -d name=internal -d request_host=foo.com -d upstream_url=http://example.com
 
 echo Activating key-auth plugin ...
 curl -sS -X POST http://${container_host}:8001/apis/internal/plugins/ -d name=key-auth
+
 
