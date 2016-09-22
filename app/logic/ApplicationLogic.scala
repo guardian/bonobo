@@ -129,8 +129,14 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     }
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
-        kong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
+      val oldRateLimits = RateLimits(oldKey.requestsPerMinute, oldKey.requestsPerDay)
+      val newRateLimits = {
+        if (form.defaultRequests) form.tier.rateLimit
+        else RateLimits(form.requestsPerMinute, form.requestsPerDay)
+      }
+
+      if (oldRateLimits != newRateLimits) {
+        kong.updateConsumer(kongId, newRateLimits)
       } else {
         Future.successful(Happy)
       }
