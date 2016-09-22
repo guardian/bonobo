@@ -116,8 +116,11 @@ trait IntegrationSpecBase
     wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
       .withQueryString("consumer_id" -> consumerId).get().map {
       response =>
-        (response.json \\ "day").headOption match {
-          case Some(JsNumber(config)) if config.toInt == day => true
+        val maybeDay = (response.json \\ "day").headOption
+        val maybeMinutes = (response.json \\ "minute").headOption
+
+        (maybeDay, maybeMinutes) match {
+          case (Some(JsNumber(day)), Some(JsNumber(minute)))  if day.toInt == day && minute.toInt == minutes => true
           case _ => false
         }
     }

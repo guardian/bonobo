@@ -47,6 +47,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "show error message when the email hasn't been sent" in {
@@ -128,6 +133,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     // check Bonobo-Users.id matches Bonobo-Keys.kongId
     dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "add a new user with associated labels and a key" in {
