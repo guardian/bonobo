@@ -34,13 +34,13 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   @tailrec
-  private def waitForCassandraToStart(): Unit = {
-    s"nc -z $containersHost 9042".! match {
+  private def waitForPostgresToStart(): Unit = {
+    s"nc -z $containersHost 5432".! match {
       case 0 => ()
       case _ =>
-        println(s"Waiting for Cassandra to start listening ...")
+        println(s"Waiting for Postgres to start listening ...")
         Thread.sleep(1000L)
-        waitForCassandraToStart()
+        waitForPostgresToStart()
     }
   }
 
@@ -53,18 +53,18 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
-    println(s"Created Cassandra container")
+    "docker create -p 5432:5432 -e \"POSTGRES_USER=kong\" -e \"POSTGRES_DB=kong\" --name postgres mashape/postgres:9.4".!
+    println(s"Created Postgres container")
 
-    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0".!
-    println(s"Created Kong container")
+    "docker create -p 8000:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.2 --link postgres:postgres -e \"KONG_DATABASE=postgres\" mashape/kong:0.9.2".!
+    println(s"Created Kong-0.9.2 container")
 
-    "docker start cassandra".!
-    println(s"Started Cassandra container")
-    waitForCassandraToStart()
+    "docker start postgres".!
+    println(s"Started Postgres container")
+    waitForPostgresToStart()
 
-    "docker start kong".!
-    println(s"Started Kong container")
+    "docker start kong-0.9.2".!
+    println(s"Started Kong-0.9.2 container")
     waitForKongToStart()
 
     configureKong()
@@ -72,37 +72,38 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     super.beforeAll()
   }
 
+
   override def afterAll(): Unit = {
     try super.afterAll()
     finally {
       Try {
-        "docker kill kong".!!
-        println("Killed Kong container")
+        "docker kill kong-0.9.2".!!
+        println("Killed Kong-0.9.2 container")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Kong container. Exception: $e}")
+        case e => println(s"Failed to kill Kong-0.9.2 container. Exception: $e}")
       }
 
       Try {
-        "docker kill cassandra".!!
-        println("Killed Cassandra container")
+        "docker kill postgres".!!
+        println("Killed Postgres container")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Cassandra container. Exception: $e}")
+        case e => println(s"Failed to kill Postgres container. Exception: $e}")
       }
 
       Try {
-        "docker rm kong".!!
-        println("Removed Kong container")
+        "docker rm kong-0.9.2".!!
+        println("Removed Kong-0.9.2 container")
       } recover {
-        case e => println(s"Failed to remove Kong container. Exception: $e}")
+        case e => println(s"Failed to remove Kong-0.9.2 container. Exception: $e}")
       }
 
       Try {
-        "docker rm cassandra".!!
-        println("Removed Cassandra container")
+        "docker rm postgres".!!
+        println("Removed Postgres container")
       } recover {
-        case e => println(s"Failed to remove Cassandra container. Exception: $e}")
+        case e => println(s"Failed to remove Postgres container. Exception: $e}")
       }
     }
   }
