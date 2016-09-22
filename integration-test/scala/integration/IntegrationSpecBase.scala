@@ -9,7 +9,7 @@ import models.{BonoboUser, LabelProperties}
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.mvc.RequestHeader
 import store.Dynamo
-import kong.{KongClient, KongWrapper}
+import kong.KongClient
 import components._
 import integration.fixtures._
 import org.scalatest.Suite
@@ -51,11 +51,7 @@ trait IntegrationSpecBase
     val dynamo = self.dynamo
   }
   trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
-    val kong = {
-      val existingKong = new KongClient(wsClient, kongUrl, kongApiName)
-      val newKong = new KongClient(wsClient, "", "")
-      KongWrapper(existingKong, newKong)
-    }
+    val kong = new KongClient(wsClient, kongUrl, kongApiName)
   }
   trait FakeAwsEmailComponent extends AwsEmailComponent {
     val awsEmail = new FakeEmailClient()

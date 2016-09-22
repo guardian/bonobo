@@ -17,7 +17,7 @@ import scala.concurrent.Future
 class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
 
   val mockDynamo = mock[DB]
-  val mockKong = mock[KongWrapper]
+  val mockKong = mock[Kong]
   val mockEmail = mock[MailClient]
   val messagesApi = new DefaultMessagesApi(Environment.simple(), Configuration.reference, new DefaultLangs(Configuration.reference))
 
