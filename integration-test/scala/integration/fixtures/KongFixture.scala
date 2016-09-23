@@ -35,7 +35,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   @tailrec
   private def waitForPostgresToStart(): Unit = {
-    s"nc -z $containersHost 5432".! match {
+    s"nc -z $containersHost 5434".! match {
       case 0 => ()
       case _ =>
         println(s"Waiting for Postgres to start listening ...")
@@ -53,18 +53,18 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 5432:5432 -e \"POSTGRES_USER=kong\" -e \"POSTGRES_DB=kong\" --name postgres mashape/postgres:9.4".!
+    "docker create -p 5434:5432 -e POSTGRES_USER=kong -e POSTGRES_DB=kong --name postgres postgres:9.4".!
     println(s"Created Postgres container")
 
-    "docker create -p 8000:8000 -p 8002:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong-0.9.2 --link postgres:postgres -e \"KONG_DATABASE=postgres\" mashape/kong:0.9.2".!
-    println(s"Created Kong-0.9.2 container")
+    "docker create -p 8000:8000 -p 8001:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong --link postgres:postgres -e KONG_DATABASE=postgres -e KONG_PG_HOST=postgres mashape/kong:0.9.0".!
+    println(s"Created Kong container")
 
     "docker start postgres".!
     println(s"Started Postgres container")
     waitForPostgresToStart()
 
-    "docker start kong-0.9.2".!
-    println(s"Started Kong-0.9.2 container")
+    "docker start kong".!
+    println(s"Started Kong container")
     waitForKongToStart()
 
     configureKong()
@@ -77,11 +77,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     try super.afterAll()
     finally {
       Try {
-        "docker kill kong-0.9.2".!!
-        println("Killed Kong-0.9.2 container")
+        "docker kill kong".!!
+        println("Killed Kong container")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Kong-0.9.2 container. Exception: $e}")
+        case e => println(s"Failed to kill Kong container. Exception: $e}")
       }
 
       Try {
@@ -93,10 +93,10 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       }
 
       Try {
-        "docker rm kong-0.9.2".!!
-        println("Removed Kong-0.9.2 container")
+        "docker rm kong".!!
+        println("Removed Kong container")
       } recover {
-        case e => println(s"Failed to remove Kong-0.9.2 container. Exception: $e}")
+        case e => println(s"Failed to remove Kong container. Exception: $e}")
       }
 
       Try {
