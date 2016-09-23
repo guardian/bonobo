@@ -89,8 +89,8 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
   def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
 
   val kong = {
-    val apiAddress = confString("kong.existing.apiAddress")
-    val apiName = confString("kong.existing.apiName")
+    val apiAddress = confString("kong.new.apiAddress")
+    val apiName = confString("kong.new.apiName")
     new KongClient(wsClient, apiAddress, apiName)
   }
 }
