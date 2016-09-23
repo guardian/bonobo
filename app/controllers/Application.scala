@@ -94,11 +94,11 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
       logic.createUser(formData) flatMap { consumer =>
         if (formData.sendEmail) {
           awsEmail.sendEmailNewKey(formData.email, consumer.key) map {
-            result => Redirect(routes.Application.editUserPage(consumer.id))
+            result => Redirect(routes.Application.editUserPage(consumer.kongConsumerId))
           } recover {
-            case _ => Redirect(routes.Application.editUserPage(consumer.id)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
+            case _ => Redirect(routes.Application.editUserPage(consumer.kongConsumerId)).flashing("error" -> s"We were unable to send the email with the new key. Please contact ${formData.email}.")
           }
-        } else Future.successful(Redirect(routes.Application.editUserPage(consumer.id)))
+        } else Future.successful(Redirect(routes.Application.editUserPage(consumer.kongConsumerId)))
       } recover {
         case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
         case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
