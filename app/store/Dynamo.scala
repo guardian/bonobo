@@ -390,7 +390,6 @@ object Dynamo {
       .withList("labelIds", labelIds.asJava)
 
     kongKey.productUrl.foreach(productUrl => item.withString("productUrl", productUrl))
-    kongKey.kongId.foreach(kongId => item.withString("kongId", kongId)) // to be deleted
     item
   }
 
@@ -403,7 +402,6 @@ object Dynamo {
     }
     KongKey(
       bonoboId = item.getString("bonoboId"),
-      kongId = Option(item.getString("kongId")), // to be deleted
       kongConsumerId = item.getString("kongConsumerId"),
       key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
