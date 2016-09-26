@@ -11,7 +11,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
 import email.{ AwsEmailClient, MailClient }
-import kong.{ KongClient, KongWrapper }
+import kong.{ Kong, KongClient }
 import models.LabelProperties
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
@@ -81,7 +81,7 @@ trait DynamoComponentImpl extends DynamoComponent { self: BuiltInComponents =>
 }
 
 trait KongComponent {
-  def kong: KongWrapper
+  def kong: Kong
 }
 
 trait KongComponentImpl extends KongComponent { self: BuiltInComponents with NingWSComponents =>
@@ -89,19 +89,9 @@ trait KongComponentImpl extends KongComponent { self: BuiltInComponents with Nin
   def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
 
   val kong = {
-    val existingKong = {
-      val apiAddress = confString("kong.existing.apiAddress")
-      val apiName = confString("kong.existing.apiName")
-      new KongClient(wsClient, apiAddress, apiName)
-    }
-
-    val newKong = {
-      val apiAddress = confString("kong.new.apiAddress")
-      val apiName = confString("kong.new.apiName")
-      new KongClient(wsClient, apiAddress, apiName)
-    }
-
-    KongWrapper(existingKong, newKong)
+    val apiAddress = confString("kong.new.apiAddress")
+    val apiName = confString("kong.new.apiName")
+    new KongClient(wsClient, apiAddress, apiName)
   }
 }
 
