@@ -34,13 +34,13 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   @tailrec
-  private def waitForCassandraToStart(): Unit = {
-    s"nc -z $containersHost 9042".! match {
+  private def waitForPostgresToStart(): Unit = {
+    s"nc -z $containersHost 5434".! match {
       case 0 => ()
       case _ =>
-        println(s"Waiting for Cassandra to start listening ...")
+        println(s"Waiting for Postgres to start listening ...")
         Thread.sleep(1000L)
-        waitForCassandraToStart()
+        waitForPostgresToStart()
     }
   }
 
@@ -53,15 +53,15 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 9042:9042 --name cassandra mashape/cassandra".!
-    println(s"Created Cassandra container")
+    "docker create -p 5434:5432 -e POSTGRES_USER=kong -e POSTGRES_DB=kong --name postgres postgres:9.4".!
+    println(s"Created Postgres container")
 
-    "docker create -p 8000:8000 -p 8001:8001 --name kong --link cassandra:cassandra mashape/kong:0.7.0".!
+    "docker create -p 8000:8000 -p 8001:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong --link postgres:postgres -e KONG_DATABASE=postgres -e KONG_PG_HOST=postgres mashape/kong:0.9.0".!
     println(s"Created Kong container")
 
-    "docker start cassandra".!
-    println(s"Started Cassandra container")
-    waitForCassandraToStart()
+    "docker start postgres".!
+    println(s"Started Postgres container")
+    waitForPostgresToStart()
 
     "docker start kong".!
     println(s"Started Kong container")
@@ -71,6 +71,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
     super.beforeAll()
   }
+
 
   override def afterAll(): Unit = {
     try super.afterAll()
@@ -84,11 +85,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       }
 
       Try {
-        "docker kill cassandra".!!
-        println("Killed Cassandra container")
+        "docker kill postgres".!!
+        println("Killed Postgres container")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Cassandra container. Exception: $e}")
+        case e => println(s"Failed to kill Postgres container. Exception: $e}")
       }
 
       Try {
@@ -99,10 +100,10 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
       }
 
       Try {
-        "docker rm cassandra".!!
-        println("Removed Cassandra container")
+        "docker rm postgres".!!
+        println("Removed Postgres container")
       } recover {
-        case e => println(s"Failed to remove Cassandra container. Exception: $e}")
+        case e => println(s"Failed to remove Postgres container. Exception: $e}")
       }
     }
   }

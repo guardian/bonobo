@@ -1,7 +1,7 @@
 package controllers
 
 import email.MailClient
-import kong.KongWrapper
+import kong.Kong
 import kong.Kong.{ ConflictFailure, GenericFailure }
 import logic.DeveloperFormLogic
 import play.api.data.Form
@@ -13,7 +13,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(dynamo: DB, kong: KongWrapper, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class DeveloperForm(dynamo: DB, kong: Kong, awsEmail: MailClient, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
 

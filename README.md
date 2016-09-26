@@ -12,6 +12,8 @@ Bonobo needs an instance of Kong to connect to, so you will need Kong and Cassan
 
 Install Docker Toolkit, following the instructions on the [Docker website](http://docs.docker.com/).
 
+Make sure you have [virtualbox](https://www.virtualbox.org/) installed.
+
 1. Make sure your Docker VM is running:
 
   ```
@@ -19,6 +21,12 @@ Install Docker Toolkit, following the instructions on the [Docker website](http:
   NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
   dev    *        virtualbox   Running   tcp://192.168.99.100:2376
   ```
+
+ If nothing is listed here, you will need to create it.
+ 
+ ```
+  $ docker-machine create --driver virtualbox dev
+ ```
 
 2. Make sure `$DOCKER_HOST` is set:
 

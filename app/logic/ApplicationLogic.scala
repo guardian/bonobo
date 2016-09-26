@@ -1,7 +1,7 @@
 package logic
 
 import controllers.Forms.{ CreateKeyFormData, CreateUserFormData, EditKeyFormData, EditUserFormData }
-import kong.KongWrapper
+import kong.Kong
 import kong.Kong.{ ConflictFailure, Happy }
 import models._
 import store.DB
@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  *  When we deactivate a key, we keep the consumer but delete the key from Kong.
  *  Thus, rate limit changes made while a key is inactive will take effect as expected.
  */
-class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
+class ApplicationLogic(dynamo: DB, kong: Kong) {
 
   /**
    * Creates a consumer and key on Kong and a Bonobo user,
@@ -38,16 +38,16 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: CreateUserFormData, rateLimits: RateLimits): Unit = {
       val labelIds = formData.labelIds.split(",").toList.filter(_.nonEmpty)
       Logger.info(s"Labels to be assigned with the ${form.name}: $labelIds")
-      val newBonoboUser = BonoboUser(consumer.id, formData, labelIds)
+      val newBonoboUser = BonoboUser(consumer.kongConsumerId, formData, labelIds)
       dynamo.saveUser(newBonoboUser)
 
-      // when a new user is created, bonoboId and kongId (taken from the consumer object) will be the same
-      saveKeyOnDB(userId = consumer.id, consumer, rateLimits, formData.tier, formData.productName, formData.productUrl, newBonoboUser.labelIds)
+      // when a new user is created, bonoboId and kongConsumerId (taken from the consumer object) will be the same
+      saveKeyOnDB(userId = consumer.kongConsumerId, consumer, rateLimits, formData.tier, formData.productName, formData.productUrl, newBonoboUser.labelIds)
     }
 
     def createConsumerAndKey: Future[ConsumerCreationResult] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.existingKong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
+      kong.createConsumerAndKey(form.tier, rateLimits, form.key) map {
         consumer =>
           saveUserAndKeyOnDB(consumer, form, rateLimits)
           consumer
@@ -88,7 +88,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
     Logger.info(s"ApplicationLogic: Creating key for user with id $userId")
     def createConsumerAndKey: Future[String] = {
       val rateLimits: RateLimits = form.tier.rateLimit
-      kong.existingKong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
+      kong.createConsumerAndKey(form.tier, rateLimits, form.key) flatMap {
         consumer =>
           {
             saveKeyOnDB(userId, consumer, rateLimits, form.tier, form.productName, form.productUrl, dynamo.getLabelsFor(userId))
@@ -106,31 +106,37 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
    *  - updating properties of the key (e.g. the tier, rate limits) in Dynamo.
    */
   def updateKey(oldKey: KongKey, form: EditKeyFormData): Future[Unit] = {
-    Logger.info(s"ApplicationLogic: Updating key with id ${oldKey.kongId}")
+    Logger.info(s"ApplicationLogic: Updating key with id ${oldKey.kongConsumerId}")
     val bonoboId = oldKey.bonoboId
-    val kongId = oldKey.kongId
+    val kongConsumerId = oldKey.kongConsumerId
 
     def updateKongKeyOnDB(form: EditKeyFormData): Unit = {
       val updatedKey = {
         if (form.defaultRequests) {
           val defaultRateLimits = form.tier.rateLimit
-          KongKey(bonoboId, kongId, None, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
-        } else KongKey(bonoboId, kongId, None, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
+          KongKey(bonoboId, kongConsumerId, form, oldKey.createdAt, defaultRateLimits, oldKey.rangeKey)
+        } else KongKey(bonoboId, kongConsumerId, form, oldKey.createdAt, RateLimits(form.requestsPerMinute, form.requestsPerDay), oldKey.rangeKey)
       }
       dynamo.updateKey(updatedKey)
     }
 
     def updateUsernameIfNecessary(): Future[Happy.type] = {
       if (oldKey.tier != form.tier) {
-        kong.existingKong.updateConsumerUsername(kongId, form.tier)
+        kong.updateConsumerUsername(kongConsumerId, form.tier)
       } else {
         Future.successful(Happy)
       }
     }
 
     def updateRateLimitsIfNecessary(): Future[Happy.type] = {
-      if (oldKey.requestsPerDay != form.requestsPerDay || oldKey.requestsPerMinute != form.requestsPerMinute) {
-        kong.existingKong.updateConsumer(kongId, new RateLimits(form.requestsPerMinute, form.requestsPerDay))
+      val oldRateLimits = RateLimits(oldKey.requestsPerMinute, oldKey.requestsPerDay)
+      val newRateLimits = {
+        if (form.defaultRequests) form.tier.rateLimit
+        else RateLimits(form.requestsPerMinute, form.requestsPerDay)
+      }
+
+      if (oldRateLimits != newRateLimits) {
+        kong.updateConsumer(kongConsumerId, newRateLimits)
       } else {
         Future.successful(Happy)
       }
@@ -138,7 +144,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
     def deactivateKeyIfNecessary(): Future[Happy.type] = {
       if (oldKey.status == KongKey.Active && form.status == KongKey.Inactive) {
-        kong.existingKong.deleteKey(kongId)
+        kong.deleteKey(kongConsumerId)
       } else {
         Future.successful(Happy)
       }
@@ -146,7 +152,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
 
     def activateKeyIfNecessary(): Future[String] = {
       if (oldKey.status == KongKey.Inactive && form.status == KongKey.Active) {
-        kong.existingKong.createKey(kongId, Some(oldKey.key))
+        kong.createKey(kongConsumerId, Some(oldKey.key))
       } else {
         Future.successful(oldKey.key)
       }
@@ -171,7 +177,7 @@ class ApplicationLogic(dynamo: DB, kong: KongWrapper) {
   }
 
   private def saveKeyOnDB(userId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String], labelIds: List[String]): Unit = {
-    val newKongKey = KongKey(userId, consumer, None, rateLimits, tier, productName, productUrl)
+    val newKongKey = KongKey(userId, consumer, rateLimits, tier, productName, productUrl)
     dynamo.saveKey(newKongKey, labelIds)
   }
 }
