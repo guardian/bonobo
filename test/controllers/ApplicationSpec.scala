@@ -39,8 +39,7 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def updateKey(kongKey: KongKey): Unit = ???
 
       def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]]): ResultsPage[BonoboInfo] = {
-        val kongId = None // to be deleted
-        ResultsPage(List(BonoboInfo(KongKey("bonoboId", kongId, "kongConsumerId", "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", Some("product url"), "rangekey"),
+        ResultsPage(List(BonoboInfo(KongKey("bonoboId", "kongConsumerId", "my-new-key", 10, 1, Tier.Developer, "Active", new DateTime(), "product name", Some("product url"), "rangekey"),
           BonoboUser("id", "name", "email", Some("company name"), Some("company url"),
             AdditionalUserInfo(DateTime.now(), ManualRegistration), List.empty))), false)
       }
