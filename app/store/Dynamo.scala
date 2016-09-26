@@ -379,7 +379,6 @@ object Dynamo {
     val item = new Item()
       .withPrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey)
       .withString("bonoboId", kongKey.bonoboId)
-      .withString("kongId", kongKey.kongId) // to be deleted
       .withString("kongConsumerId", kongKey.kongConsumerId)
       .withString("keyValue", kongKey.key)
       .withInt("requests_per_day", kongKey.requestsPerDay)
@@ -391,6 +390,7 @@ object Dynamo {
       .withList("labelIds", labelIds.asJava)
 
     kongKey.productUrl.foreach(productUrl => item.withString("productUrl", productUrl))
+    kongKey.kongId.foreach(kongId => item.withString("kongId", kongId)) // to be deleted
     item
   }
 
@@ -403,7 +403,7 @@ object Dynamo {
     }
     KongKey(
       bonoboId = item.getString("bonoboId"),
-      kongId = item.getString("kongId"), // to be deleted
+      kongId = Option(item.getString("kongId")), // to be deleted
       kongConsumerId = item.getString("kongConsumerId"),
       key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
