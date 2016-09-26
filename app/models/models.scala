@@ -57,7 +57,7 @@ object AdditionalUserInfo {
 /* model used for saving the keys on Kong */
 case class KongKey(
   bonoboId: String,
-  kongId: String, // to be deleted.
+  kongId: Option[String], // to be deleted.
   kongConsumerId: String,
   key: String,
   requestsPerDay: Int,
@@ -76,12 +76,12 @@ object KongKey {
   private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
 
   def apply(bonoboId: String, kongConsumerId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
-    val kongId = "to be deleted"
+    val kongId = None // to be deleted
     new KongKey(bonoboId, kongId, kongConsumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
   def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
-    val kongId = "to be deleted"
+    val kongId = None // to be deleted
     new KongKey(bonoboId, kongId, consumer.kongConsumerId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 

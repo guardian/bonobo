@@ -151,7 +151,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       labelIds = List("id-label-1", "id-label-3"))
     val keyToSave = KongKey(
       bonoboId = "id-user-with-labels",
-      kongId = "to be deleted",
+      kongId = None, // "to be deleted"
       kongConsumerId = "id-user-with-labels",
       key = "labels-key",
       requestsPerDay = 10,
@@ -190,7 +190,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     dynamoKongKey.value shouldBe keyToSave.copy(
       bonoboId = consumerId,
-      kongId = "to be deleted",
+      kongId = None, // to be deleted
       kongConsumerId = consumerId,
       requestsPerDay = dynamoKongKey.value.requestsPerDay,
       requestsPerMinute = dynamoKongKey.value.requestsPerMinute,
