@@ -33,7 +33,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val dynamoKongKey = dynamo.getKeyWithValue("123124-13434-32323-3439")
-    val consumerId = dynamoKongKey.value.kongId
+    val consumerId = dynamoKongKey.value.kongConsumerId
 
     // check the consumerId in dynamo matches the one on Kong
     Await.result(checkConsumerExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
@@ -42,11 +42,16 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val keyValue = Await.result(getKeyForConsumerId(consumerId), atMost = 10.seconds)
     keyValue shouldBe dynamoKongKey.value.key
 
-    // check Bonobo-Keys.bonoboId is the same as Bonobo-Keys.kongId; this is only true for the first key of every user we create
-    dynamoKongKey.value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Keys.bonoboId is the same as Bonobo-Keys.kongConsumerId; this is only true for the first key of every user we create
+    dynamoKongKey.value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
 
-    // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Users.id matches Bonobo-Keys.kongConsumerId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "show error message when the email hasn't been sent" in {
@@ -95,8 +100,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
-    // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Users.id matches Bonobo-Keys.KongConsumerId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
   }
 
   it should "work with empty optional fields" in {
@@ -126,8 +131,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
-    // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Users.id matches Bonobo-Keys.kongConsumerId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
+
+    // check rate limits are as expected
+    val dynamoRequestsPerDay = dynamoKongKey.value.requestsPerDay
+    val dynamoRequestsPerMinute = dynamoKongKey.value.requestsPerMinute
+    Await.result(checkRateLimitsMatch(consumerId, dynamoRequestsPerMinute, dynamoRequestsPerDay), atMost = 10.seconds) shouldBe true
   }
 
   it should "add a new user with associated labels and a key" in {
@@ -141,7 +151,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       labelIds = List("id-label-1", "id-label-3"))
     val keyToSave = KongKey(
       bonoboId = "id-user-with-labels",
-      kongId = "te-be-created",
+      kongConsumerId = "id-user-with-labels",
       key = "labels-key",
       requestsPerDay = 10,
       requestsPerMinute = 1,
@@ -179,7 +189,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     dynamoKongKey.value shouldBe keyToSave.copy(
       bonoboId = consumerId,
-      kongId = dynamoKongKey.value.kongId,
+      kongConsumerId = consumerId,
       requestsPerDay = dynamoKongKey.value.requestsPerDay,
       requestsPerMinute = dynamoKongKey.value.requestsPerMinute,
       createdAt = dynamoKongKey.value.createdAt,
@@ -217,14 +227,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val firstKongId = dynamo.getKeyWithValue("the-dark-knight").value.kongId
-    val secondKongId = dynamo.getKeyWithValue("the-dark-day").value.kongId
+    val firstKongConsumerId = dynamo.getKeyWithValue("the-dark-knight").value.kongConsumerId
+    val secondKongConsumerId = dynamo.getKeyWithValue("the-dark-day").value.kongConsumerId
 
     // check the consumerId in dynamo matches the one on Kong
-    Await.result(checkConsumerExistsOnKong(secondKongId), atMost = 10.seconds) shouldBe true
+    Await.result(checkConsumerExistsOnKong(secondKongConsumerId), atMost = 10.seconds) shouldBe true
 
-    bonoboId shouldBe firstKongId
-    bonoboId should not be secondKongId
+    bonoboId shouldBe firstKongConsumerId
+    bonoboId should not be secondKongConsumerId
 
     // the bonoboId for the new key should be same as the bonoboId for the first one
     bonoboId shouldBe dynamo.getKeyWithValue("the-dark-day").value.bonoboId
@@ -249,10 +259,10 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
-    val consumerId = dynamo.getKeyWithValue("testing-inactive").value.kongId
+    val kongConsumerId = dynamo.getKeyWithValue("testing-inactive").value.kongConsumerId
 
     // check the key exists on Kong
-    Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe true
+    Await.result(checkKeyExistsOnKong(kongConsumerId), atMost = 10.seconds) shouldBe true
 
     val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
@@ -267,7 +277,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(makeKeyInactiveResult) shouldBe 303 // on success it redirects to the "edit key" page
 
     // check the key doesn't exist on Kong anymore
-    Await.result(checkKeyExistsOnKong(consumerId), atMost = 10.seconds) shouldBe false
+    Await.result(checkKeyExistsOnKong(kongConsumerId), atMost = 10.seconds) shouldBe false
 
     // check the key is marked as inactive on Bonobo-Keys
     dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
@@ -325,7 +335,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     dynamo.getKeyWithValue("testing-update-rate-limits").value.requestsPerDay shouldBe 444
 
-    val consumerId = dynamo.getKeyWithValue("testing-update-rate-limits").value.kongId
+    val consumerId = dynamo.getKeyWithValue("testing-update-rate-limits").value.kongConsumerId
     Await.result(checkRateLimitsMatch(consumerId, 44, 444), atMost = 10.seconds) shouldBe true
   }
 
@@ -393,8 +403,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
-    // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Users.id matches Bonobo-Keys.kongConsumerId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
   }
 
   it should "work with empty company, companyUrl and productUrl fields" in {
@@ -421,8 +431,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val dynamoKongKey = dynamo.getKeyWithValue(keyValue)
     keyValue shouldBe dynamoKongKey.value.key
 
-    // check Bonobo-Users.id matches Bonobo-Keys.kongId
-    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongId
+    // check Bonobo-Users.id matches Bonobo-Keys.kongConsumerId
+    dynamo.getUserWithId(consumerId).value.bonoboId shouldBe dynamoKongKey.value.kongConsumerId
   }
 
   behavior of "submit a commercial request using the form"

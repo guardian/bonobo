@@ -5,7 +5,7 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
-import models.{LabelProperties, BonoboUser}
+import models.{BonoboUser, LabelProperties}
 import play.api.libs.json.{JsNumber, JsString}
 import play.api.mvc.RequestHeader
 import store.Dynamo
@@ -17,6 +17,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ning.NingWSComponents
 import play.api._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -115,8 +116,11 @@ trait IntegrationSpecBase
     wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
       .withQueryString("consumer_id" -> consumerId).get().map {
       response =>
-        (response.json \\ "day").headOption match {
-          case Some(JsNumber(config)) if config.toInt == day => true
+        val maybeDay = (response.json \\ "day").headOption
+        val maybeMinutes = (response.json \\ "minute").headOption
+
+        (maybeDay, maybeMinutes) match {
+          case (Some(JsNumber(day)), Some(JsNumber(minute)))  if day.toInt == day && minute.toInt == minutes => true
           case _ => false
         }
     }

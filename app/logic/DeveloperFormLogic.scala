@@ -24,10 +24,10 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
   def createUser(form: DeveloperCreateKeyFormData): Future[String] = {
     def saveUserAndKeyOnDB(consumer: ConsumerCreationResult, formData: DeveloperCreateKeyFormData): Unit = {
       Logger.info(s"OpenFormLogic: Creating user with name ${form.name}")
-      val newBonoboUser = BonoboUser(consumer.id, formData)
+      val newBonoboUser = BonoboUser(consumer.kongConsumerId, formData)
       dynamo.saveUser(newBonoboUser)
 
-      val newKongKey = KongKey(consumer.id, consumer, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
+      val newKongKey = KongKey(consumer.kongConsumerId, consumer, Tier.Developer.rateLimit, Tier.Developer, formData.productName, formData.productUrl)
       dynamo.saveKey(newKongKey, List.empty)
     }
 

@@ -2,13 +2,14 @@ package controllers
 
 import email.MailClient
 import kong.Kong
-import kong.Kong.{ GenericFailure, ConflictFailure }
+import kong.Kong.{ ConflictFailure, GenericFailure }
 import logic.DeveloperFormLogic
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.i18n.{ I18nSupport, MessagesApi }
 import play.api.mvc._
 import store.DB
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
