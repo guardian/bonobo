@@ -2,15 +2,15 @@ package components
 
 import java.io.FileInputStream
 
-import auth.{ GoogleGroupsAuthorisation, DummyAuthorisation, Authorisation }
+import auth.{ Authorisation, DummyAuthorisation, GoogleGroupsAuthorisation }
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
-import com.gu.googleauth.{ GoogleServiceAccount, GoogleAuthConfig }
-import email.{ MailClient, AwsEmailClient }
+import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
+import email.{ AwsEmailClient, MailClient }
 import kong.{ Kong, KongClient }
 import models.LabelProperties
 import org.joda.time.Duration
@@ -18,7 +18,7 @@ import play.api.ApplicationLoader.Context
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
 import play.api.routing.Router
-import play.api.{ Logger, Mode, BuiltInComponents, BuiltInComponentsFromContext }
+import play.api.{ BuiltInComponents, BuiltInComponentsFromContext, Logger, Mode }
 import play.filters.csrf.CSRFComponents
 import play.filters.headers.{ SecurityHeadersConfig, SecurityHeadersFilter }
 import store.Dynamo
@@ -85,10 +85,12 @@ trait KongComponent {
 }
 
 trait KongComponentImpl extends KongComponent { self: BuiltInComponents with NingWSComponents =>
+
+  def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
+
   val kong = {
-    def confString(key: String) = configuration.getString(key) getOrElse sys.error(s"Missing configuration key: $key")
-    val apiAddress = confString("kong.apiAddress")
-    val apiName = confString("kong.apiName")
+    val apiAddress = confString("kong.new.apiAddress")
+    val apiName = confString("kong.new.apiName")
     new KongClient(wsClient, apiAddress, apiName)
   }
 }
@@ -138,7 +140,7 @@ trait ControllersComponent {
   def authController = new Auth(googleAuthConfig, authorisation, wsApi)
 
   val developerFormController = new DeveloperForm(dynamo, kong, awsEmail, messagesApi)
-  val commercialFormController = new CommercialForm(dynamo, kong, awsEmail, messagesApi)
+  val commercialFormController = new CommercialForm(dynamo, awsEmail, messagesApi)
 
   val assets = new controllers.Assets(httpErrorHandler)
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)

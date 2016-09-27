@@ -4,7 +4,6 @@ import java.util.UUID
 import controllers.Forms._
 import enumeratum.{ PlayJsonEnum, Enum, EnumEntry }
 import org.joda.time.DateTime
-import play.api.libs.json.{ Writes, Reads, Json }
 
 /* model used for saving the users on Bonobo */
 case class BonoboUser(
@@ -58,7 +57,7 @@ object AdditionalUserInfo {
 /* model used for saving the keys on Kong */
 case class KongKey(
   bonoboId: String,
-  kongId: String,
+  kongConsumerId: String,
   key: String,
   requestsPerDay: Int,
   requestsPerMinute: Int,
@@ -75,12 +74,12 @@ object KongKey {
 
   private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
 
-  def apply(bonoboId: String, kongId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
-    new KongKey(bonoboId, kongId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
+  def apply(bonoboId: String, kongConsumerId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
+    new KongKey(bonoboId, kongConsumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
   def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
-    new KongKey(bonoboId, consumer.id, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
+    new KongKey(bonoboId, consumer.kongConsumerId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
 }
@@ -90,7 +89,7 @@ case class BonoboInfo(kongKey: KongKey, bonoboUser: BonoboUser)
 
 case class ResultsPage[A](items: List[A], hasNext: Boolean)
 
-case class ConsumerCreationResult(id: String, createdAt: DateTime, key: String)
+case class ConsumerCreationResult(kongConsumerId: String, createdAt: DateTime, key: String)
 
 case class RateLimits(requestsPerMinute: Int, requestsPerDay: Int)
 

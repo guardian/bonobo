@@ -379,7 +379,7 @@ object Dynamo {
     val item = new Item()
       .withPrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey)
       .withString("bonoboId", kongKey.bonoboId)
-      .withString("kongId", kongKey.kongId)
+      .withString("kongConsumerId", kongKey.kongConsumerId)
       .withString("keyValue", kongKey.key)
       .withInt("requests_per_day", kongKey.requestsPerDay)
       .withInt("requests_per_minute", kongKey.requestsPerMinute)
@@ -402,7 +402,7 @@ object Dynamo {
     }
     KongKey(
       bonoboId = item.getString("bonoboId"),
-      kongId = item.getString("kongId"),
+      kongConsumerId = item.getString("kongConsumerId"),
       key = item.getString("keyValue"),
       requestsPerDay = item.getInt("requests_per_day"),
       requestsPerMinute = item.getInt("requests_per_minute"),

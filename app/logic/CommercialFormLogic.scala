@@ -1,12 +1,11 @@
 package logic
 
 import controllers.Forms.CommercialRequestKeyFormData
-import kong.Kong
 import models.BonoboUser
 import play.api.Logger
 import store.DB
 
-class CommercialFormLogic(dynamo: DB, kong: Kong) {
+class CommercialFormLogic(dynamo: DB) {
 
   /**
    * Checks if a user with the same email already exists,
