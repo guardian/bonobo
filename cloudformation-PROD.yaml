@@ -1,0 +1,260 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation for Bonobo
+Parameters:
+  BonoboSecurityGroupForKong:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group for Bonobo instances to access Kong internal LB
+  VPC:
+    Description: Virtual Private Cloud to run EC2 instances within
+    Type: AWS::EC2::VPC::Id
+  Subnets:
+    Description: Subnets to run load balancer within
+    Type: List<AWS::EC2::Subnet::Id>
+  Stage:
+    Description: Environment name
+    Type: String
+    Default: CODE
+  SSLCertificate:
+    Description: The ARN of the SSL certificate to use for the ELB
+    Type: String
+  AMI:
+    Description: AMI ID
+    Type: String
+    Default: ami-6b50e218
+Resources:
+  RootRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+  DownloadConfigFromS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: download-config-from-s3
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          Resource: arn:aws:s3:::content-api-config/*
+      Roles:
+      - Ref: RootRole
+  DynamoDBPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: dynamodb-policy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:*
+          Resource: !Sub arn:aws:dynamodb:*:***REMOVED***:table/bonobo-${Stage}-*
+      Roles:
+      - Ref: RootRole
+  EmailPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: email-policy
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - ses:SendEmail
+          - ses:SendRawEmail
+          Resource: "*"
+      Roles:
+      - Ref: RootRole
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: RootRole
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+      - Ref: LoadBalancerSecurityGroup
+      Subnets:
+        Ref: Subnets
+      CrossZone: true
+      Listeners:
+      - LoadBalancerPort: '443'
+        InstancePort: '9000'
+        Protocol: HTTPS
+        SSLCertificateId:
+          Ref: SSLCertificate
+      HealthCheck:
+        Target: HTTP:9000/healthcheck
+        Timeout: '5'
+        Interval: '10'
+        UnhealthyThreshold: '2'
+        HealthyThreshold: '2'
+      Tags:
+      - Key: Stack
+        Value: content-api-bonobo
+      - Key: Stage
+        Value:
+          Ref: Stage
+      - Key: App
+        Value: bonobo
+      AccessLoggingPolicy:
+        EmitInterval: 60
+        Enabled: 'true'
+        S3BucketName: content-api-logs
+        S3BucketPrefix: !Sub bonobo/${Stage}
+  AutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LoadBalancerNames:
+      - Ref: LoadBalancer
+      VPCZoneIdentifier:
+        Ref: Subnets
+      AvailabilityZones:
+        Fn::GetAZs: ''
+      LaunchConfigurationName:
+        Ref: LaunchConfig
+      MinSize: '1'
+      MaxSize: '2'
+      DesiredCapacity: '1'
+      Tags:
+      - Key: Stack
+        Value: content-api
+        PropagateAtLaunch: 'true'
+      - Key: Stage
+        Value:
+          Ref: Stage
+        PropagateAtLaunch: 'true'
+      - Key: App
+        Value: bonobo
+        PropagateAtLaunch: 'true'
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId:
+        Ref: AMI
+      InstanceType: t2.micro
+      IamInstanceProfile:
+        Ref: InstanceProfile
+      SecurityGroups:
+      - Ref: BonoboSecurityGroup
+      - Ref: BonoboSecurityGroupForKong
+      AssociatePublicIpAddress: true
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/usr/bin/env bash
+            wget -NP /home/ubuntu/.ssh --no-check-certificate https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys
+            adduser --disabled-password content-api
+            cd /home/content-api
+            mkdir logs
+            mkdir -p /etc/gu
+
+            wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api/${Stage}/bonobo/bonobo-1.0-SNAPSHOT.tgz
+            wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api/${Stage}/bonobo/bonobo.service
+
+            tar -xvf bonobo-1.0-SNAPSHOT.tgz
+            mv bonobo-1.0-SNAPSHOT bonobo
+            mv bonobo.service /etc/systemd/system
+
+            aws s3 cp s3://content-api-config/bonobo/${Stage}/bonobo.conf /etc/gu/bonobo.conf
+            aws s3 cp s3://content-api-config/bonobo/bonobo-google-service-account.json /etc/gu/bonobo-google-service-account.json
+            chown -R content-api:content-api /home/content-api /etc/gu
+            systemctl start bonobo.service
+
+  BonoboSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Bonobo instances
+      VpcId:
+        Ref: VPC
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 77.91.248.0/21
+      - IpProtocol: tcp
+        FromPort: '9000'
+        ToPort: '9000'
+        SourceSecurityGroupId:
+          Ref: LoadBalancerSecurityGroup
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Bonobo load balancer
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+  Egress9000:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId:
+        Ref: LoadBalancerSecurityGroup
+      IpProtocol: tcp
+      FromPort: '9000'
+      ToPort: '9000'
+      DestinationSecurityGroupId:
+        !GetAtt BonoboSecurityGroup.GroupId
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub bonobo-${Stage}-users
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      - AttributeName: email
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 20
+        WriteCapacityUnits: 10
+      GlobalSecondaryIndexes:
+      - IndexName: email-index
+        KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 20
+          WriteCapacityUnits: 10
+  KeysTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub bonobo-${Stage}-keys
+      AttributeDefinitions:
+      - AttributeName: hashkey
+        AttributeType: S
+      - AttributeName: rangekey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: hashkey
+        KeyType: HASH
+      - AttributeName: rangekey
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 20
+        WriteCapacityUnits: 10
