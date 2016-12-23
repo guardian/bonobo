@@ -1,0 +1,23 @@
+version: '2'
+services:
+  
+  kong:
+    image: mashape/kong:0.9.0
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=postgres
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8443:8443"
+      - "7946:7946"
+      - "7946:7946/udp"
+
+  postgres:
+    image: postgres:9.4
+    environment:
+      - POSTGRES_USER=kong
+      - POSTGRES_DB=kong
