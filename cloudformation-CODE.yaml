@@ -55,7 +55,7 @@ Resources:
         - Effect: Allow
           Action:
           - dynamodb:*
-          Resource: !Sub arn:aws:dynamodb:*:308506855511:table/bonobo-${Stage}-*
+          Resource: !Sub arn:aws:dynamodb:*:${AWS::AccountId}:table/bonobo-${Stage}-*
       Roles:
       - Ref: RootRole
   EmailPolicy:
