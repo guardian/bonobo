@@ -1,0 +1,21 @@
+stacks:
+  - content-api
+
+regions:
+  - eu-west-1
+
+deployments:
+  bonobo:
+    type: autoscaling
+    parameters:
+      bucket: content-api-dist
+  bonobo-ami-update:
+    type: ami-cloudformation-parameter
+    parameters:
+      amiTags:
+        Recipe: ubuntu-wily-java8
+        AmigoStage: PROD
+      cloudFormationStackName: bonobo
+      prependStackToCloudFormationStackName: false
+      cloudFormationStackByTags: false
+    dependencies: [bonobo]
