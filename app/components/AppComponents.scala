@@ -17,6 +17,7 @@ import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.i18n.{ DefaultLangs, DefaultMessagesApi, MessagesApi }
 import play.api.libs.ws.ning.NingWSComponents
+import play.api.mvc.{ Filter, RequestHeader, Result, Results }
 import play.api.routing.Router
 import play.api.{ BuiltInComponents, BuiltInComponentsFromContext, Logger, Mode }
 import play.filters.csrf.CSRFComponents
@@ -24,6 +25,8 @@ import play.filters.headers.{ SecurityHeadersConfig, SecurityHeadersFilter }
 import store.Dynamo
 import util.AWSConstants._
 import router.Routes
+
+import scala.concurrent.Future
 
 trait GoogleAuthComponent { self: BuiltInComponents =>
 
@@ -126,10 +129,22 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
 trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
   val contentSecurityPolicy = "script-src 'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com https://ajax.googleapis.com"
   override lazy val httpFilters = Seq(
+    MaintenanceFilter,
     csrfFilter,
     SecurityHeadersFilter(SecurityHeadersConfig(contentSecurityPolicy = Some(contentSecurityPolicy))),
     CacheFilter.setFilters()
   )
+
+  object MaintenanceFilter extends Filter with Results {
+    //Filter all requests while in maintenance mode
+    def apply(next: (RequestHeader) => Future[Result])(request: RequestHeader): Future[Result] = {
+      if (request.path != "/healthcheck" && configuration.getBoolean("maintenanceMode").getOrElse(false)) {
+        Future.successful(ServiceUnavailable("503 - Server is down for maintenance, please try again later"))
+      } else {
+        next(request)
+      }
+    }
+  }
 }
 
 trait ControllersComponent {
