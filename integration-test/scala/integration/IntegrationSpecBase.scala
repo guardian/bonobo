@@ -12,10 +12,10 @@ import store.Dynamo
 import kong.KongClient
 import components._
 import integration.fixtures._
-import org.scalatest.Suite
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatest.TestSuite
+import org.scalatestplus.play.components.OneAppPerSuiteWithComponents
 import play.api.ApplicationLoader.Context
-import play.api.libs.ws.ning.NingWSComponents
+import play.api.libs.ws.ahc.AhcWSComponents
 import play.api._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,14 +43,14 @@ trait IntegrationSpecBase
     with DynamoDbClientFixture
     with DynamoDbLocalServerFixture
     with KongFixture
-    with OneAppPerSuite { self: Suite =>
+    with OneAppPerSuiteWithComponents { self: TestSuite =>
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
   trait FakeDynamoComponent extends DynamoComponent {
     val dynamo = self.dynamo
   }
-  trait FakeKongComponent extends KongComponent { self: NingWSComponents =>
+  trait FakeKongComponent extends KongComponent { self: AhcWSComponents =>
     val kong = new KongClient(wsClient, kongUrl, kongApiName)
   }
   trait FakeAwsEmailComponent extends AwsEmailComponent {
@@ -61,23 +61,35 @@ trait IntegrationSpecBase
       "id-label-2" -> LabelProperties("label-2", "#123123"),
       "id-label-3" -> LabelProperties("label-3", "#123412"))
   }
+  
   class TestComponents(context: Context)
       extends BuiltInComponentsFromContext(context)
-      with NingWSComponents
+      with AhcWSComponents
       with GoogleAuthComponent
       with AuthorisationComponent
       with FakeDynamoComponent
       with FakeKongComponent
       with FakeAwsEmailComponent
       with FakeLabelsComponent
-      with ControllersComponent {
-    def enableAuth = false
+      with NoHttpFiltersComponents {
+
+    import play.api.mvc.Results
+    import play.api.routing.Router
+    import play.api.routing.sird._
+        
+    lazy val router: Router = Router.from({
+      case GET(p"/") => defaultActionBuilder {
+        Results.Ok("success!")
+      }
+    })
   }
 
-  val context = ApplicationLoader.createContext(
+  override lazy val context = ApplicationLoader.createContext(
     new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
   )
-  val components = new TestComponents(context)
+  
+  override def components = new TestComponents(context)
+
   val wsClient = components.wsClient
 
   override implicit lazy val app = components.application
@@ -114,7 +126,7 @@ trait IntegrationSpecBase
 
   def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
     wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
-      .withQueryString("consumer_id" -> consumerId).get().map {
+      .withQueryStringParameters(("consumer_id" -> consumerId)).get().map {
       response =>
         val maybeDay = (response.json \\ "day").headOption
         val maybeMinutes = (response.json \\ "minute").headOption

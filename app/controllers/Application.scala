@@ -3,11 +3,11 @@ package controllers
 import email.MailClient
 import logic.ApplicationLogic
 import models._
-import com.gu.googleauth.{ UserIdentity, GoogleAuthConfig }
+import com.gu.googleauth.{ AuthAction, UserIdentity, GoogleAuthConfig }
 import org.slf4j.LoggerFactory
 import play.api.data.Forms._
 import play.api.data._
-import play.api.i18n.{ I18nSupport, MessagesApi }
+import play.api.i18n.I18nSupport
 import play.api.libs.json.Json
 import play.api.mvc.Security.{ AuthenticatedRequest, AuthenticatedBuilder }
 import play.api.mvc._
@@ -15,79 +15,89 @@ import store._
 import kong._
 import kong.Kong._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[String, LabelProperties], val messagesApi: MessagesApi, val authConfig: GoogleAuthConfig, val enableAuth: Boolean) extends Controller
-    with AuthActions
+class Application(
+  override val controllerComponents: ControllerComponents,
+  dynamo: DB,
+  kong: Kong,
+  awsEmail: MailClient,
+  labelsMap: Map[String, LabelProperties],
+  authConfig: GoogleAuthConfig,
+  assetsFinder: AssetsFinder,
+  // Unit tests will pass in a fake auth action builder
+  maybeAuth: Option[ActionBuilder[AuthReq, AnyContent]] = None)(implicit ec: ExecutionContext)
+    extends BaseController
     with I18nSupport {
 
   import Application._
   import Forms._
 
-  type AuthReq[A] = AuthenticatedRequest[A, UserIdentity]
-
-  object FakeAuthAction extends AuthenticatedBuilder[UserIdentity](userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)))
-
-  private def maybeAuth: ActionBuilder[AuthReq] = if (enableAuth) (AuthAction andThen AuditAction) else FakeAuthAction
-
   private val logic = new ApplicationLogic(dynamo, kong)
 
-  object AuditAction extends ActionFunction[AuthReq, AuthReq] {
+  private val authAction = maybeAuth getOrElse {
+    object AuditAction extends ActionFunction[AuthReq, AuthReq] {
 
-    private val auditLogger = LoggerFactory.getLogger("audit")
+      private val auditLogger = LoggerFactory.getLogger("audit")
 
-    def invokeBlock[A](request: AuthReq[A], block: AuthReq[A] => Future[Result]): Future[Result] = {
+      def invokeBlock[A](request: AuthReq[A], block: AuthReq[A] => Future[Result]): Future[Result] = {
 
-      def getPostBody(request: AuthReq[A]): String = {
-        request.body match {
-          case body: AnyContent if body.asFormUrlEncoded.isDefined => s"${body.asFormUrlEncoded.get}"
-          case _ => "cannot process body of POST request"
+        def getPostBody(request: AuthReq[A]): String = {
+          request.body match {
+            case body: AnyContent if body.asFormUrlEncoded.isDefined => s"${body.asFormUrlEncoded.get}"
+            case _ => "cannot process body of POST request"
+          }
         }
+
+        auditLogger.info(
+          if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
+          else s"${request.user.email}, ${request}"
+        )
+
+        block(request)
       }
 
-      auditLogger.info(
-        if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
-        else s"${request.user.email}, ${request}"
-      )
-
-      block(request)
+      def executionContext = ec
     }
+
+    val authAction = new AuthAction[AnyContent](authConfig, routes.Auth.loginAction(), controllerComponents.parsers.default)
+    authAction andThen AuditAction
   }
 
-  def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+  def showKeys(labels: List[String], direction: String, range: Option[String]) = authAction { implicit request =>
     val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val totalKeys = dynamo.getNumberOfKeys()
     val givenDirection = if (range.isDefined) direction else ""
-    Ok(views.html.showKeys(keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
+    Ok(views.html.showKeys(assetsFinder, keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
   }
 
-  def filter(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
+  def filter(labels: List[String], direction: String, range: Option[String]) = authAction { implicit request =>
     val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
   }
 
-  def search = maybeAuth { implicit request =>
+  def search = authAction { implicit request =>
     searchForm.bindFromRequest.fold(
       formWithErrors => {
-        BadRequest(views.html.showKeys(List.empty, lastDirection = "", hasNext = false, totalKeys = 0, labelsMap, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
+        BadRequest(views.html.showKeys(assetsFinder, List.empty, lastDirection = "", hasNext = false, totalKeys = 0, labelsMap, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
       },
       searchFormData => {
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
-        Ok(views.html.showKeys(keys, lastDirection = "", hasNext = false, keys.length, labelsMap, request.user.firstName, pageTitle = searchResultsMessage, query = Some(searchFormData.query)))
+        Ok(views.html.showKeys(assetsFinder, keys, lastDirection = "", hasNext = false, keys.length, labelsMap, request.user.firstName, pageTitle = searchResultsMessage, query = Some(searchFormData.query)))
       }
     )
   }
 
-  def createUserPage = maybeAuth { implicit request =>
-    Ok(views.html.createUser(createUserForm, labelsMap, request.user.firstName, createUserPageTitle))
+  def createUserPage = authAction { implicit request =>
+    Ok(views.html.createUser(assetsFinder, createUserForm, labelsMap, request.user.firstName, createUserPageTitle))
   }
 
-  def createUser = maybeAuth.async { implicit request =>
+  def createUser = authAction.async { implicit request =>
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.createUser(form, labelsMap, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createUser(assetsFinder, form, labelsMap, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(formData: CreateUserFormData): Future[Result] = {
@@ -100,37 +110,37 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
           }
         } else Future.successful(Redirect(routes.Application.editUserPage(consumer.kongConsumerId)))
       } recover {
-        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
-        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case ConflictFailure(errorMessage) => Conflict(views.html.createUser(assetsFinder, createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
+        case GenericFailure(errorMessage) => InternalServerError(views.html.createUser(assetsFinder, createUserForm.fill(formData), labelsMap, request.user.firstName, createUserPageTitle, error = Some(errorMessage)))
       }
     }
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editUserPage(id: String) = maybeAuth { implicit request =>
+  def editUserPage(id: String) = authAction { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) =>
         val idsString = consumer.labelIds.mkString(",")
         val filledForm = editUserForm.fill(EditUserFormData(consumer.name, consumer.email, consumer.companyName, consumer.companyUrl, idsString))
-        Ok(views.html.editUser(id, filledForm, Some(consumer.additionalInfo), consumer.labelIds, labelsMap, request.user.firstName, userKeys, editUserPageTitle))
+        Ok(views.html.editUser(assetsFinder, id, filledForm, Some(consumer.additionalInfo), consumer.labelIds, labelsMap, request.user.firstName, userKeys, editUserPageTitle))
       case None =>
-        NotFound(views.html.editUser(id, editUserForm, None, List.empty, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
+        NotFound(views.html.editUser(assetsFinder, id, editUserForm, None, List.empty, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some("User not found.")))
     }
   }
 
-  def editUser(id: String) = maybeAuth { implicit request =>
+  def editUser(id: String) = authAction { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     val user = dynamo.getUserWithId(id)
     val additionalInfo = user.map(_.additionalInfo)
     val userLabels = user.map(_.labelIds).getOrElse(List.empty)
     def handleInvalidForm(form: Form[EditUserFormData]): Result = {
-      BadRequest(views.html.editUser(id, form, additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
+      BadRequest(views.html.editUser(assetsFinder, id, form, additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(invalidFormMessage)))
     }
 
     def handleValidForm(form: EditUserFormData): Result = {
       logic.updateUser(id, form) match {
-        case Left(error) => Conflict(views.html.editUser(id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
+        case Left(error) => Conflict(views.html.editUser(assetsFinder, id, editUserForm.fill(form), additionalInfo, userLabels, labelsMap, request.user.firstName, userKeys, editUserPageTitle, error = Some(error)))
         case Right(_) => Redirect(routes.Application.editUserPage(id)).flashing("success" -> "The user has been successfully updated.")
       }
     }
@@ -138,13 +148,13 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  def createKeyPage(userId: String) = maybeAuth { implicit request =>
-    Ok(views.html.createKey(userId, createKeyForm, request.user.firstName, createKeyPageTitle))
+  def createKeyPage(userId: String) = authAction { implicit request =>
+    Ok(views.html.createKey(assetsFinder, userId, createKeyForm, request.user.firstName, createKeyPageTitle))
   }
 
-  def createKey(userId: String) = maybeAuth.async { implicit request =>
+  def createKey(userId: String) = authAction.async { implicit request =>
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
-      Future.successful(BadRequest(views.html.createKey(userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
+      Future.successful(BadRequest(views.html.createKey(assetsFinder, userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
     }
 
     def handleValidForm(form: CreateKeyFormData): Future[Result] = {
@@ -160,29 +170,29 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
               }
             } else Future.successful(Redirect(routes.Application.editUserPage(userId)))
           }
-          case None => Future.successful(NotFound(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
+          case None => Future.successful(NotFound(views.html.createKey(assetsFinder, userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"User not found"))))
         }
       } recover {
-        case ConflictFailure(message) => Conflict(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
-        case GenericFailure(message) => InternalServerError(views.html.createKey(userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
+        case ConflictFailure(message) => Conflict(views.html.createKey(assetsFinder, userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Conflict failure: $message")))
+        case GenericFailure(message) => InternalServerError(views.html.createKey(assetsFinder, userId, createKeyForm.fill(form), request.user.firstName, createKeyPageTitle, error = Some(s"Generic failure: $message")))
       }
     }
 
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
+  def editKeyPage(keyValue: String) = authAction { implicit request =>
     dynamo.getKeyWithValue(keyValue) match {
       case Some(value) => {
         val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.productName, value.productUrl, value.requestsPerDay,
           value.requestsPerMinute, value.tier, defaultRequests = false, value.status))
-        Ok(views.html.editKey(value.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
+        Ok(views.html.editKey(assetsFinder, value.bonoboId, filledForm, request.user.firstName, editKeyPageTitle))
       }
       case None => NotFound
     }
   }
 
-  def editKey(keyValue: String) = maybeAuth.async { implicit request =>
+  def editKey(keyValue: String) = authAction.async { implicit request =>
     def retrievingKeyFromDynamo(f: KongKey => Future[Result]): Future[Result] = {
       val oldKey = dynamo.getKeyWithValue(keyValue)
       oldKey match {
@@ -196,8 +206,8 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
         logic.updateKey(key, newFormData).map { _ =>
           Redirect(routes.Application.editUserPage(key.bonoboId))
         } recover {
-          case ConflictFailure(message) => Conflict(views.html.editKey(key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Conflict failure: $message")))
-          case GenericFailure(message) => InternalServerError(views.html.editKey(key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Generic failure: $message")))
+          case ConflictFailure(message) => Conflict(views.html.editKey(assetsFinder, key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Conflict failure: $message")))
+          case GenericFailure(message) => InternalServerError(views.html.editKey(assetsFinder, key.bonoboId, editKeyForm.fill(newFormData), request.user.firstName, editKeyPageTitle, error = Some(s"Generic failure: $message")))
         }
       }
     }
@@ -205,14 +215,14 @@ class Application(dynamo: DB, kong: Kong, awsEmail: MailClient, labelsMap: Map[S
     def handleInvalidForm(form: Form[EditKeyFormData]): Future[Result] = {
       retrievingKeyFromDynamo { key =>
         val error = if (form.errors(0).message.contains("requests")) Some(form.errors(0).message) else Some(invalidFormMessage)
-        Future.successful(BadRequest(views.html.editKey(key.bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
+        Future.successful(BadRequest(views.html.editKey(assetsFinder, key.bonoboId, form, request.user.firstName, editKeyPageTitle, error = error)))
       }
     }
 
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
+  def getEmails(tier: String, status: String) = authAction { implicit request =>
     Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }
 

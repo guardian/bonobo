@@ -2,11 +2,13 @@ package controllers
 
 import email.MailClient
 import models._
+import com.gu.googleauth.UserIdentity
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
-import play.api.i18n.{ DefaultLangs, DefaultMessagesApi }
+import play.api.i18n._
 import play.api.mvc._
+import play.api.mvc.Security.AuthenticatedBuilder
 import play.api.test._
 import play.api.test.Helpers._
 import play.api.{ Configuration, Environment }
@@ -14,12 +16,26 @@ import store._
 import kong._
 import scala.concurrent.Future
 
-class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
+import scala.concurrent.ExecutionContext.Implicits.global
 
+class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar with StubBodyParserFactory with StubControllerComponentsFactory {
+
+  implicit val lang = Lang("en")
   val mockDynamo = mock[DB]
   val mockKong = mock[Kong]
   val mockEmail = mock[MailClient]
-  val messagesApi = new DefaultMessagesApi(Environment.simple(), Configuration.reference, new DefaultLangs(Configuration.reference))
+  val mockActionBuilder = new AuthenticatedBuilder[UserIdentity](
+    userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)),
+    defaultParser = stubBodyParser[AnyContent](),
+    onUnauthorized = _ => Results.Ok
+  )
+  val mockAssetsFinder = mock[AssetsFinder]
+  val mockMessages = new DefaultMessagesApi(
+    Map("en" ->
+      Map("error.required" -> "This field is required")
+    )
+  )
+  val mockCC = stubControllerComponents(messagesApi = mockMessages)
 
   "showKeys" should "contains some keys" in {
     val dynamo = new DB {
@@ -66,21 +82,21 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar {
       def getLabelsFor(bonoboId: String): List[String] = ???
 
     }
-    val application = new Application(dynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
+    val application = new Application(mockCC, dynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
     val result: Future[Result] = application.showKeys(List.empty, "next", None).apply(FakeRequest())
     contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
-    val application = new Application(mockDynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
+    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
 
     val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
-    val application = new Application(mockDynamo, mockKong, mockEmail, Map.empty, messagesApi, null, false)
+    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }

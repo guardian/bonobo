@@ -1,6 +1,7 @@
-@(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, query: Option[String] = None, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, req: RequestHeader)
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, query: Option[String] = None, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, req: RequestHeader)
 
-@main("Keys", firstName, pageTitle, success, error, query = query){
+@main(assets, "Keys", firstName, pageTitle, success, error, query = query){
     <div class="row">
         <p class="col-md-6">Total number of keys: <strong>@totalKeys</strong></p>
         <div id="btnFilter" class="col-md-6">
@@ -29,6 +30,6 @@
     <div class="row" id="show-keys-container" style="margin-bottom: 30px; padding-bottom:30px;">
         @renderKeysTable(keys, lastDirection, hasNext)
     </div>
-    <script src="@routes.Assets.versioned("javascripts/showKeys.js")" type="text/javascript"></script>
+    <script src="@assets.path("javascripts/showKeys.js")" type="text/javascript"></script>
 }
 

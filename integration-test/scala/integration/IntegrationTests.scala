@@ -17,7 +17,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "create a new user"
 
   it should "add a Bonobo user and a custom key to Dynamo" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "test@thetestcompany.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -55,7 +55,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "show error message when the email hasn't been sent" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "testing-email@wayneenterprises.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -74,7 +74,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "add a Bonobo user and a randomly generated key" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "fsdlfkjsd@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -105,7 +105,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "work with empty optional fields" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "jkjkjkjkjkjk@email.com",
       "name" -> "Joanna Bloggs",
       "companyName" -> "",
@@ -162,7 +162,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       productUrl = Some("www.labels.com"),
       rangeKey = "123"
     )
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,
@@ -199,7 +199,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "adding a second key to an existing user"
 
   it should "add a new key for the existing user" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -217,7 +217,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val bonoboId = dynamo.getKeyWithValue("the-dark-knight").value.bonoboId
 
-    val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
@@ -243,7 +243,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "making a key inactive"
 
   it should "delete the key from Kong and set it has inactive on Bonobo" in {
-    val createUserResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val createUserResult = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "sldkjfdslk@sdlkfjsl.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -264,7 +264,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     // check the key exists on Kong
     Await.result(checkKeyExistsOnKong(kongConsumerId), atMost = 10.seconds) shouldBe true
 
-    val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
+    val makeKeyInactiveResult = route(app, FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
       "productName" -> "Another product",
       "productUrl" -> "http://anotherproduct.co.uk",
@@ -283,7 +283,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
 
     // trying to create a new key with the same value as an inactive key should fail
-    val failUser = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val failUser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com-2",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -305,7 +305,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "updating the rate limits for a key"
 
   it should "update the rate limits on the Bonobo-Keys table, as well as the consumer on Kong" in {
-    val request = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val request = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "some-user@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -321,7 +321,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(request) shouldBe 303
 
-    val update = route(FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
+    val update = route(app, FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
       "key" -> "some-key",
       "productName" -> "Another product",
       "productUrl" -> "http://anotherproduct.co.uk",
@@ -342,7 +342,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "creating a duplicate key"
 
   it should "fail" in {
-    val req1 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val req1 = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -358,7 +358,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(req1) shouldBe 303
 
-    val req2 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val req2 = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-2@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -380,7 +380,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "creating a new user using the open registration form"
 
   it should "add a Bonobo user and key to Dynamo" in {
-    val result = route(FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
       "name" -> "Joe Bloggs",
       "email" -> "test@openform.com",
       "companyName" -> "The Test Company",
@@ -408,7 +408,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "work with empty company, companyUrl and productUrl fields" in {
-    val result = route(FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
       "name" -> "Joanna Bloggs",
       "email" -> "testing@openform.com",
       "companyName" -> "",
@@ -454,7 +454,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
         labelIds = List.empty)
-    val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,
@@ -494,7 +494,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
         labelIds = List.empty)
-    val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,

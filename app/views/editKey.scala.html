@@ -1,8 +1,9 @@
 @import controllers.csrf.CSRFSupport
-@(userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
-@main("Edit key", firstName, pageTitle, success, error) {
+@main(assets, "Edit key", firstName, pageTitle, success, error) {
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
@@ -22,5 +23,5 @@
         }
         </div>
     </div>
-    <script src="@routes.Assets.versioned("javascripts/editKey.js")" type="text/javascript"></script>
+    <script src="@assets.path("javascripts/editKey.js")" type="text/javascript"></script>
 }

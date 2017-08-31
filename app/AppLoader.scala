@@ -1,11 +1,11 @@
-import play.api.{ Logger, Application, ApplicationLoader }
+import play.api.{ LoggerConfigurator, Application, ApplicationLoader }
 import components.AppComponents
 
 import play.api.ApplicationLoader.Context
 
 class AppLoader extends ApplicationLoader {
   override def load(context: Context): Application = {
-    Logger.configure(context.environment)
+    LoggerConfigurator(context.environment.classLoader).foreach { _.configure(context.environment) }
 
     println(
       """
