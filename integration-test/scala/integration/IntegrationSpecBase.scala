@@ -16,7 +16,8 @@ import org.scalatest.TestSuite
 import org.scalatestplus.play.components.OneAppPerSuiteWithComponents
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api._
+import play.api.{ ApplicationLoader, BuiltInComponentsFromContext, Environment, NoHttpFiltersComponents, Mode }
+import controllers.AssetsComponents
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -71,18 +72,9 @@ trait IntegrationSpecBase
       with FakeKongComponent
       with FakeAwsEmailComponent
       with FakeLabelsComponent
-      with NoHttpFiltersComponents {
-
-    import play.api.mvc.Results
-    import play.api.routing.Router
-    import play.api.routing.sird._
-        
-    lazy val router: Router = Router.from({
-      case GET(p"/") => defaultActionBuilder {
-        Results.Ok("success!")
-      }
-    })
-  }
+      with ControllersComponent
+      with NoHttpFiltersComponents
+      with AssetsComponents
 
   override lazy val context = ApplicationLoader.createContext(
     new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
