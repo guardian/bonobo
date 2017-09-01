@@ -17,7 +17,7 @@ import models.LabelProperties
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{ ActionBuilder, ActionFunction, AnyContent, ControllerComponents, Filter, RequestHeader, Result, Results }
+import play.api.mvc.{ ActionBuilder, ActionFunction, AnyContent, Filter, RequestHeader, Result, Results }
 import play.api.routing.Router
 import play.api.{ BuiltInComponents, BuiltInComponentsFromContext, Logger, Mode }
 import play.filters.csrf.CSRFComponents
@@ -147,17 +147,12 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
   }
 }
 
-class AppComponents(context: Context)
-    extends BuiltInComponentsFromContext(context)
-    with AhcWSComponents
-    with GoogleAuthComponent
-    with AuthorisationComponent
-    with DynamoComponentImpl
-    with KongComponentImpl
-    with AwsEmailComponentImpl
-    with LabelsComponentImpl
-    with FiltersComponent
-    with AssetsComponents {
+trait ControllersComponent {
+  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent =>
+
+  def assetsFinder: AssetsFinder
+
+  def assets: Assets
 
   def appController = new Application(
     controllerComponents,
@@ -174,3 +169,16 @@ class AppComponents(context: Context)
 
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
 }
+
+class AppComponents(context: Context)
+  extends BuiltInComponentsFromContext(context)
+  with AhcWSComponents
+  with GoogleAuthComponent
+  with AuthorisationComponent
+  with DynamoComponentImpl
+  with KongComponentImpl
+  with AwsEmailComponentImpl
+  with LabelsComponentImpl
+  with FiltersComponent
+  with AssetsComponents
+  with ControllersComponent
