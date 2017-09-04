@@ -24,10 +24,6 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar with Stub
   val mockDynamo = mock[DB]
   val mockKong = mock[Kong]
   val mockEmail = mock[MailClient]
-  val mockActionBuilder = new AuthenticatedBuilder[UserIdentity](
-    userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)),
-    defaultParser = stubBodyParser[AnyContent](),
-    onUnauthorized = _ => Results.Ok)
   val mockAssetsFinder = mock[AssetsFinder]
   val mockMessages = new DefaultMessagesApi(
     Map("en" ->
@@ -80,21 +76,21 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar with Stub
       def getLabelsFor(bonoboId: String): List[String] = ???
 
     }
-    val application = new Application(mockCC, dynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
+    val application = new Application(mockCC, dynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, false)
     val result: Future[Result] = application.showKeys(List.empty, "next", None).apply(FakeRequest())
     contentAsString(result) should include("my-new-key")
   }
 
   "brokenForm" should "check form validation works" in {
     val myRequest: (String, String) = ("name", "")
-    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
+    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, false)
 
     val result: Future[Result] = application.createUser.apply(FakeRequest().withFormUrlEncodedBody(myRequest))
     contentAsString(result) should include("This field is required")
   }
 
   "emptySearch" should "do not allow an empty search" in {
-    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, Some(mockActionBuilder))
+    val application = new Application(mockCC, mockDynamo, mockKong, mockEmail, Map.empty, null, mockAssetsFinder, false)
     val result: Future[Result] = application.search.apply(FakeRequest().withFormUrlEncodedBody(Map("query" -> "").toSeq: _*))
     contentAsString(result) should include("Invalid search")
   }
