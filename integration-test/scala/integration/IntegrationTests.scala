@@ -27,8 +27,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "123124-13434-32323-3439",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -66,8 +65,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "the-dark",
       "labelIds" -> "",
-      "sendEmail" -> "true"
-    )).get
+      "sendEmail" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
     flash(result).get("error") shouldBe defined
@@ -84,8 +82,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -115,8 +112,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "",
       "key" -> "",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -160,8 +156,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       createdAt = DateTime.now(),
       productName = "Label Product",
       productUrl = Some("www.labels.com"),
-      rangeKey = "123"
-    )
+      rangeKey = "123")
     val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
@@ -172,8 +167,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> keyToSave.tier.friendlyName,
       "key" -> keyToSave.key,
       "labelIds" -> userToSave.labelIds.mkString(","),
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -210,8 +204,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "the-dark-knight",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -222,8 +215,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "key" -> "the-dark-day",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -254,8 +246,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -271,8 +262,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "requestsPerDay" -> "10000",
       "requestsPerMinute" -> "720",
       "tier" -> "RightsManaged",
-      "status" -> "Inactive"
-    )).get
+      "status" -> "Inactive")).get
 
     status(makeKeyInactiveResult) shouldBe 303 // on success it redirects to the "edit key" page
 
@@ -294,8 +284,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     // check we return a conflict error, and that the key table is still inactive
     status(failUser) shouldBe 409
@@ -316,8 +305,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-update-rate-limits",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(request) shouldBe 303
 
@@ -328,8 +316,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "requestsPerDay" -> "444",
       "requestsPerMinute" -> "44",
       "tier" -> "External",
-      "status" -> "active"
-    )).get
+      "status" -> "active")).get
 
     status(update) shouldBe 303
 
@@ -353,8 +340,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(req1) shouldBe 303
 
@@ -369,12 +355,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     // check we return a conflict error, and no user is added on Bonobo-Keys
     status(req2) shouldBe 409
-    dynamo.isEmailInUse("user-2@email.com") should be (false)
+    dynamo.isEmailInUse("user-2@email.com") should be(false)
   }
 
   behavior of "creating a new user using the open registration form"
@@ -387,8 +372,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "companyUrl" -> "http://thetestcompany.co.uk",
       "productName" -> "blabla",
       "productUrl" -> "http://blabla",
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the show key page
 
@@ -415,8 +399,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "companyUrl" -> "",
       "productName" -> "blabla",
       "productUrl" -> "",
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the show key page
 
@@ -453,7 +436,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = List.empty)
+      labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
@@ -467,8 +450,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "content" -> userToSave.additionalInfo.content.value,
       "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the message page
 
@@ -493,7 +475,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = List.empty)
+      labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
@@ -507,8 +489,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "content" -> userToSave.additionalInfo.content.value,
       "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the message page
     flash(result).get("error") shouldBe defined

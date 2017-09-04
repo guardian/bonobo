@@ -9,8 +9,9 @@ class Auth(
   override val controllerComponents: ControllerComponents,
   val authConfig: GoogleAuthConfig,
   override val wsClient: WSClient)(
-    implicit val executionContext: ExecutionContext)
-    extends BaseController with LoginSupport {
+  implicit
+  val executionContext: ExecutionContext)
+  extends BaseController with LoginSupport {
 
   /**
    * Shows UI for login button and logout error feedback

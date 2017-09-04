@@ -5,9 +5,11 @@ import java.io.FileInputStream
 import akka.stream.Materializer
 import auth.{ Authorisation, DummyAuthorisation, GoogleGroupsAuthorisation }
 import com.amazonaws.regions.Regions
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClientBuilder
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsync
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
@@ -39,8 +41,7 @@ trait GoogleAuthComponent { self: BuiltInComponents =>
       redirectUrl = configuration.get[String]("google.redirectUrl"),
       domain = "guardian.co.uk",
       maxAuthAge = Some(Duration.standardDays(90)),
-      enforceValidity = true
-    )
+      enforceValidity = true)
   }
 
 }
@@ -75,10 +76,11 @@ trait DynamoComponent {
 trait DynamoComponentImpl extends DynamoComponent { self: BuiltInComponents =>
   val dynamo = {
     val awsRegion = Regions.fromName(configuration.getOptional[String]("aws.region") getOrElse "eu-west-1")
+    val clientBuilder = AmazonDynamoDBClientBuilder.standard()
     val usersTable = configuration.getOptional[String]("aws.dynamo.usersTableName") getOrElse "Bonobo-Users"
     val keysTable = configuration.getOptional[String]("aws.dynamo.keysTableName") getOrElse "Bonobo-Keys"
     val labelsTable = configuration.getOptional[String]("aws.dynamo.labelsTableName") getOrElse "Bonobo-Labels"
-    val client: AmazonDynamoDBClient = new AmazonDynamoDBClient(CredentialsProvider).withRegion(awsRegion)
+    val client: AmazonDynamoDB = clientBuilder.withCredentials(CredentialsProvider).withRegion(awsRegion).build()
     new Dynamo(new DynamoDB(client), usersTable, keysTable, labelsTable)
   }
 }
@@ -106,7 +108,8 @@ trait AwsEmailComponent {
 trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents =>
   val awsEmail = {
     val awsRegion = Regions.fromName(configuration.getOptional[String]("aws.region") getOrElse "eu-west-1")
-    val amazonSesClient: AmazonSimpleEmailServiceAsyncClient = new AmazonSimpleEmailServiceAsyncClient(CredentialsProvider).withRegion(awsRegion)
+    val clientBuilder = AmazonSimpleEmailServiceAsyncClientBuilder.standard()
+    val amazonSesClient: AmazonSimpleEmailServiceAsync = clientBuilder.withCredentials(CredentialsProvider).withRegion(awsRegion).build()
     val fromAddress = "no-reply@open-platform.theguardian.com" //The open-platform.theguardian.com domain is verified, therefore any email can be used (e.g. test@open-platform.theguardian.com)
     val enableEmail = configuration.getOptional[Boolean]("email.enabled") getOrElse false
     new AwsEmailClient(amazonSesClient, fromAddress, enableEmail)
@@ -132,8 +135,7 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
     new MaintenanceFilter,
     csrfFilter,
     SecurityHeadersFilter(SecurityHeadersConfig(contentSecurityPolicy = Some(contentSecurityPolicy))),
-    new CacheFilter
-  )
+    new CacheFilter)
 
   class MaintenanceFilter(implicit val mat: Materializer) extends Filter with Results {
     //Filter all requests while in maintenance mode
@@ -148,11 +150,7 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
 }
 
 trait ControllersComponent {
-  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent =>
-
-  def assetsFinder: AssetsFinder
-
-  def assets: Assets
+  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with AssetsComponents =>
 
   def appController = new Application(
     controllerComponents,

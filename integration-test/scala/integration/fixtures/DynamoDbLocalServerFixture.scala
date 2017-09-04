@@ -2,7 +2,7 @@ package integration.fixtures
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.TableStatus
-import org.scalatest.{BeforeAndAfterAll, Suite}
+import org.scalatest.{ BeforeAndAfterAll, Suite }
 import util.AWSConstants._
 
 import scala.annotation.tailrec
@@ -23,6 +23,5 @@ trait DynamoDbLocalServerFixture extends BeforeAndAfterAll { self: Suite =>
     try super.afterAll()
     finally dynamoServer.destroy()
   }
-
 
 }

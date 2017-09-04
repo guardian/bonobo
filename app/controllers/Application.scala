@@ -28,8 +28,8 @@ class Application(
   assetsFinder: AssetsFinder,
   // Unit tests will pass in a fake auth action builder
   maybeAuth: Option[ActionBuilder[AuthReq, AnyContent]] = None)(implicit ec: ExecutionContext)
-    extends BaseController
-    with I18nSupport {
+  extends BaseController
+  with I18nSupport {
 
   import Application._
   import Forms._
@@ -52,8 +52,7 @@ class Application(
 
         auditLogger.info(
           if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
-          else s"${request.user.email}, ${request}"
-        )
+          else s"${request.user.email}, ${request}")
 
         block(request)
       }
@@ -87,8 +86,7 @@ class Application(
         val keys: List[BonoboInfo] = dynamo.search(searchFormData.query)
         val searchResultsMessage = s"Search results for query: ${searchFormData.query}"
         Ok(views.html.showKeys(assetsFinder, keys, lastDirection = "", hasNext = false, keys.length, labelsMap, request.user.firstName, pageTitle = searchResultsMessage, query = Some(searchFormData.query)))
-      }
-    )
+      })
   }
 
   def createUserPage = authAction { implicit request =>
@@ -255,9 +253,7 @@ object Application {
       "key" -> optional(text(maxLength = 200)
         .verifying(invalidKeyMessage, key => keyRegexPattern.matcher(key).matches())),
       "sendEmail" -> boolean,
-      "labelIds" -> text(maxLength = 200)
-    )(CreateUserFormData.apply)(CreateUserFormData.unapply)
-  )
+      "labelIds" -> text(maxLength = 200))(CreateUserFormData.apply)(CreateUserFormData.unapply))
 
   val editUserForm: Form[EditUserFormData] = Form(
     mapping(
@@ -265,9 +261,7 @@ object Application {
       "email" -> email.verifying("Maximum length is 200", _.length <= 200),
       "companyName" -> optional(text(maxLength = 200)),
       "companyUrl" -> optional(text(maxLength = 200)),
-      "labelIds" -> text(maxLength = 200)
-    )(EditUserFormData.apply)(EditUserFormData.unapply)
-  )
+      "labelIds" -> text(maxLength = 200))(EditUserFormData.apply)(EditUserFormData.unapply))
 
   val createKeyForm: Form[CreateKeyFormData] = Form(
     mapping(
@@ -278,9 +272,7 @@ object Application {
         .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "productName" -> nonEmptyText(maxLength = 200),
       "productUrl" -> optional(text(maxLength = 200)),
-      "sendEmail" -> boolean
-    )(CreateKeyFormData.apply)(CreateKeyFormData.unapply)
-  )
+      "sendEmail" -> boolean)(CreateKeyFormData.apply)(CreateKeyFormData.unapply))
 
   val editKeyForm: Form[EditKeyFormData] = Form(
     mapping(
@@ -293,13 +285,9 @@ object Application {
         .verifying(invalidTierMessage, tier => Tier.isValid(tier))
         .transform(tier => Tier.withNameOption(tier).get, (tier: Tier) => tier.toString),
       "defaultRequests" -> boolean,
-      "status" -> nonEmptyText(maxLength = 200)
-    )(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests)
-  )
+      "status" -> nonEmptyText(maxLength = 200))(EditKeyFormData.apply)(EditKeyFormData.unapply) verifying ("The number of requests per day is smaller than the number of requests per minute.", data => data.validateRequests))
 
   val searchForm = Form(
     mapping(
-      "query" -> nonEmptyText(minLength = 2, maxLength = 45)
-    )(SearchFormData.apply)(SearchFormData.unapply)
-  )
+      "query" -> nonEmptyText(minLength = 2, maxLength = 45))(SearchFormData.apply)(SearchFormData.unapply))
 }

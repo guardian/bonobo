@@ -10,6 +10,5 @@ object AWSConstants {
     new SystemPropertiesCredentialsProvider(),
     new ProfileCredentialsProvider("capi"),
     new ProfileCredentialsProvider(),
-    new InstanceProfileCredentialsProvider()
-  )
+    new InstanceProfileCredentialsProvider())
 }

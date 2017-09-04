@@ -12,7 +12,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class CommercialForm(override val controllerComponents: ControllerComponents, dynamo: DB, awsEmail: MailClient, assetsFinder: AssetsFinder)
-    extends BaseController with I18nSupport {
+  extends BaseController with I18nSupport {
   import CommercialForm._
   import Forms.CommercialRequestKeyFormData
 
@@ -72,7 +72,5 @@ object CommercialForm {
       "content" -> nonEmptyText(maxLength = 200),
       "articlesPerDay" -> number,
       "contentFormat" -> nonEmptyText(maxLength = 200),
-      "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
-    )(CommercialRequestKeyFormData.apply)(CommercialRequestKeyFormData.unapply)
-  )
+      "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms))(CommercialRequestKeyFormData.apply)(CommercialRequestKeyFormData.unapply))
 }

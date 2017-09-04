@@ -3,7 +3,7 @@ package integration.fixtures
 import com.amazonaws.ClientConfiguration
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
 import com.amazonaws.services.dynamodbv2.model.TableStatus
-import org.scalatest.{Suite, BeforeAndAfterAll}
+import org.scalatest.{ Suite, BeforeAndAfterAll }
 import util.AWSConstants._
 
 import scala.annotation.tailrec

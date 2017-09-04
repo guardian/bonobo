@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder)
-    extends BaseController with I18nSupport {
+  extends BaseController with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
 
@@ -60,7 +60,5 @@ object DeveloperForm {
       "productUrl" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
       "companyName" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
       "companyUrl" -> optional(text.verifying("Maximum length is 200", _.length <= 200)),
-      "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms)
-    )(DeveloperCreateKeyFormData.apply)(DeveloperCreateKeyFormData.unapply)
-  )
+      "acceptTerms" -> boolean.verifying("You have to accept the Guardian Open Platform terms and conditions.", terms => terms))(DeveloperCreateKeyFormData.apply)(DeveloperCreateKeyFormData.unapply))
 }

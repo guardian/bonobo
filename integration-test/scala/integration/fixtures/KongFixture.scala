@@ -2,7 +2,7 @@ package integration.fixtures
 
 import org.scalatest.{ BeforeAndAfterAll, Suite }
 import scala.annotation.tailrec
-import scala.util.{Try, Random}
+import scala.util.{ Try, Random }
 import sys.process._
 
 trait KongFixture extends BeforeAndAfterAll { this: Suite =>
@@ -71,7 +71,6 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
     super.beforeAll()
   }
-
 
   override def afterAll(): Unit = {
     try super.afterAll()

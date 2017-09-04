@@ -67,8 +67,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       .withFilterExpression("contains (#1, :s) OR contains (#2, :s)")
       .withNameMap(new NameMap()
         .`with`("#1", "keyValue")
-        .`with`("#2", "productName")
-      )
+        .`with`("#2", "productName"))
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
     val keys = KongTable.scan(keysScan).asScala.toList.map(fromKongItem)
@@ -81,8 +80,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       .withNameMap(new NameMap()
         .`with`("#1", "email")
         .`with`("#2", "name")
-        .`with`("#3", "companyName")
-      )
+        .`with`("#3", "companyName"))
       .withValueMap(new ValueMap().withString(":s", query))
       .withMaxResultSize(limit)
     val users = BonoboTable.scan(userScan).asScala.toList.map(fromBonoboItem)
@@ -100,7 +98,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
   }
 
   def updateUser(bonoboUser: BonoboUser): Unit = {
-    BonoboTable.updateItem(new PrimaryKey("id", bonoboUser.bonoboId),
+    BonoboTable.updateItem(
+      new PrimaryKey("id", bonoboUser.bonoboId),
       new AttributeUpdate("email").put(bonoboUser.email),
       new AttributeUpdate("name").put(bonoboUser.name),
       bonoboUser.companyUrl match {
@@ -114,20 +113,19 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       bonoboUser.labelIds match {
         case Nil => new AttributeUpdate("labelIds").delete()
         case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
-      }
-    )
+      })
     val keys = getKeysWithUserId(bonoboUser.bonoboId)
     keys.foreach(kongKey => updateKeyLabelIds(kongKey, bonoboUser.labelIds))
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
   }
 
   private def updateKeyLabelIds(kongKey: KongKey, labelIds: List[String]): Unit = {
-    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
+    KongTable.updateItem(
+      new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
       labelIds match {
         case Nil => new AttributeUpdate("labelIds").delete()
         case ids: List[String] => new AttributeUpdate("labelIds").put(ids.asJava)
-      }
-    )
+      })
   }
 
   def getUserWithId(id: String): Option[BonoboUser] = {
@@ -161,7 +159,8 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
   }
 
   def updateKey(kongKey: KongKey): Unit = {
-    KongTable.updateItem(new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
+    KongTable.updateItem(
+      new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey),
       new AttributeUpdate("productName").put(kongKey.productName),
       new AttributeUpdate("requests_per_day").put(kongKey.requestsPerDay),
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
@@ -170,8 +169,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       kongKey.productUrl match {
         case Some(url) => new AttributeUpdate("productUrl").put(url)
         case None => new AttributeUpdate("productUrl").delete()
-      }
-    )
+      })
     Logger.info(s"DynamoDB: Key ${kongKey.key} has been updated")
   }
 
@@ -302,8 +300,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val query = new ScanSpec()
       .withFilterExpression("#sts = :s AND tier = :t")
       .withNameMap(new NameMap()
-        .`with`("#sts", "status")
-      )
+        .`with`("#sts", "status"))
       .withValueMap(new ValueMap().withString(":s", status.capitalize).withString(":t", tier.capitalize))
 
     val userIds = KongTable.scan(query).asScala.toList.map(_.getString("bonoboId"))
@@ -364,7 +361,8 @@ object Dynamo {
       email = item.getString("email"),
       companyName = Option(item.getString("companyName")),
       companyUrl = Option(item.getString("companyUrl")),
-      additionalInfo = AdditionalUserInfo(createdAt = new DateTime(item.getString("createdAt").toLong),
+      additionalInfo = AdditionalUserInfo(
+        createdAt = new DateTime(item.getString("createdAt").toLong),
         registrationType = toRegistrationType(item.getString("registrationType")),
         businessArea = Option(item.getString("businessArea")),
         monthlyUsers = Option(item.getString("monthlyUsers")),
@@ -372,8 +370,7 @@ object Dynamo {
         content = Option(item.getString("content")),
         contentFormat = Option(item.getString("contentFormat")),
         articlesPerDay = Option(item.getString("articlesPerDay"))),
-      labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList) getOrElse List.empty
-    )
+      labelIds = Option(item.getList[String]("labelIds")) map (_.asScala.toList) getOrElse List.empty)
   }
   def toKongItem(kongKey: KongKey, labelIds: List[String]): Item = {
     val item = new Item()
@@ -411,8 +408,7 @@ object Dynamo {
       createdAt = new DateTime(item.getString("createdAt").toLong),
       productName = item.getString("productName"),
       productUrl = Option(item.getString("productUrl")),
-      rangeKey = item.getString("rangekey")
-    )
+      rangeKey = item.getString("rangekey"))
   }
 
   def toLabel(item: Item): Label = {
@@ -420,8 +416,7 @@ object Dynamo {
       id = item.getString("id"),
       properties = LabelProperties(
         name = item.getString("name"),
-        colour = item.getString("colour"))
-    )
+        colour = item.getString("colour")))
   }
 
   def fromLabel(label: Label): Item = {

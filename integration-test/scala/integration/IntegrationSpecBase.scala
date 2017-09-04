@@ -5,8 +5,8 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
-import models.{BonoboUser, LabelProperties}
-import play.api.libs.json.{JsNumber, JsString}
+import models.{ BonoboUser, LabelProperties }
+import play.api.libs.json.{ JsNumber, JsString }
 import play.api.mvc.RequestHeader
 import store.Dynamo
 import kong.KongClient
@@ -38,13 +38,13 @@ class FakeEmailClient extends MailClient {
 }
 
 trait IntegrationSpecBase
-    extends BonoboKeysTableFixture
-    with BonoboUserTableFixture
-    with BonoboLabelsTableFixture
-    with DynamoDbClientFixture
-    with DynamoDbLocalServerFixture
-    with KongFixture
-    with OneAppPerSuiteWithComponents { self: TestSuite =>
+  extends BonoboKeysTableFixture
+  with BonoboUserTableFixture
+  with BonoboLabelsTableFixture
+  with DynamoDbClientFixture
+  with DynamoDbLocalServerFixture
+  with KongFixture
+  with OneAppPerSuiteWithComponents { self: TestSuite =>
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
@@ -58,28 +58,28 @@ trait IntegrationSpecBase
     val awsEmail = new FakeEmailClient()
   }
   trait FakeLabelsComponent extends LabelsComponent {
-    val labelsMap = Map("id-label-1" -> LabelProperties("label-1", "#121212"),
+    val labelsMap = Map(
+      "id-label-1" -> LabelProperties("label-1", "#121212"),
       "id-label-2" -> LabelProperties("label-2", "#123123"),
       "id-label-3" -> LabelProperties("label-3", "#123412"))
   }
-  
+
   class TestComponents(context: Context)
-      extends BuiltInComponentsFromContext(context)
-      with AhcWSComponents
-      with GoogleAuthComponent
-      with AuthorisationComponent
-      with FakeDynamoComponent
-      with FakeKongComponent
-      with FakeAwsEmailComponent
-      with FakeLabelsComponent
-      with ControllersComponent
-      with NoHttpFiltersComponents
-      with AssetsComponents
+    extends BuiltInComponentsFromContext(context)
+    with AhcWSComponents
+    with GoogleAuthComponent
+    with AuthorisationComponent
+    with FakeDynamoComponent
+    with FakeKongComponent
+    with FakeAwsEmailComponent
+    with FakeLabelsComponent
+    with ControllersComponent
+    with NoHttpFiltersComponents
+    with AssetsComponents
 
   override lazy val context = ApplicationLoader.createContext(
-    new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
-  )
-  
+    new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test))
+
   override def components = new TestComponents(context)
 
   val wsClient = components.wsClient
@@ -119,14 +119,14 @@ trait IntegrationSpecBase
   def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
     wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
       .withQueryStringParameters(("consumer_id" -> consumerId)).get().map {
-      response =>
-        val maybeDay = (response.json \\ "day").headOption
-        val maybeMinutes = (response.json \\ "minute").headOption
+        response =>
+          val maybeDay = (response.json \\ "day").headOption
+          val maybeMinutes = (response.json \\ "minute").headOption
 
-        (maybeDay, maybeMinutes) match {
-          case (Some(JsNumber(day)), Some(JsNumber(minute)))  if day.toInt == day && minute.toInt == minutes => true
-          case _ => false
-        }
-    }
+          (maybeDay, maybeMinutes) match {
+            case (Some(JsNumber(day)), Some(JsNumber(minute))) if day.toInt == day && minute.toInt == minutes => true
+            case _ => false
+          }
+      }
   }
 }

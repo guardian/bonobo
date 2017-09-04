@@ -157,8 +157,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   def updateConsumerUsername(consumerId: String, tier: Tier): Future[Happy.type] = {
     val username = s"${UUID.randomUUID}:${tier.conciergeName}"
     ws.url(s"$serverUrl/consumers/$consumerId").patch(Map(
-      "username" -> Seq(username)
-    )).flatMap {
+      "username" -> Seq(username))).flatMap {
       response =>
         response.status match {
           case 200 => success(s"Kong: The username for the consumer with id $consumerId has been updated successfully", Happy)
