@@ -13,7 +13,7 @@ import kong.KongClient
 import components._
 import integration.fixtures._
 import org.scalatest.TestSuite
-import org.scalatestplus.play.components.OneAppPerSuiteWithComponents
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.{ ApplicationLoader, BuiltInComponentsFromContext, Environment, NoHttpFiltersComponents, Mode }
@@ -44,7 +44,7 @@ trait IntegrationSpecBase
   with DynamoDbClientFixture
   with DynamoDbLocalServerFixture
   with KongFixture
-  with OneAppPerSuiteWithComponents { self: TestSuite =>
+  with GuiceOneAppPerSuite { self: TestSuite =>
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
@@ -75,12 +75,14 @@ trait IntegrationSpecBase
     with FakeLabelsComponent
     with ControllersComponent
     with NoHttpFiltersComponents
-    with AssetsComponents
+    with AssetsComponents {
+    def enableAuth = false
+  }
 
-  override lazy val context = ApplicationLoader.createContext(
+  val context = ApplicationLoader.createContext(
     new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test))
 
-  override def components = new TestComponents(context)
+  def components = new TestComponents(context)
 
   val wsClient = components.wsClient
 

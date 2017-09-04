@@ -26,8 +26,7 @@ class Application(
   labelsMap: Map[String, LabelProperties],
   authConfig: GoogleAuthConfig,
   assetsFinder: AssetsFinder,
-  // Unit tests will pass in a fake auth action builder
-  maybeAuth: Option[ActionBuilder[AuthReq, AnyContent]] = None)(implicit ec: ExecutionContext)
+  enableAuth: Boolean)(implicit ec: ExecutionContext)
   extends BaseController
   with I18nSupport {
 
@@ -36,48 +35,51 @@ class Application(
 
   private val logic = new ApplicationLogic(dynamo, kong)
 
-  private val authAction = maybeAuth getOrElse {
-    object AuditAction extends ActionFunction[AuthReq, AuthReq] {
+  object FakeAuthAction extends AuthenticatedBuilder[UserIdentity](
+    userinfo = _ => Some(UserIdentity("", "", "First", "Last", Long.MaxValue, None)),
+    controllerComponents.parsers.default)
 
-      private val auditLogger = LoggerFactory.getLogger("audit")
+  private val authAction = new AuthAction[AnyContent](authConfig, routes.Auth.loginAction(), controllerComponents.parsers.default)
 
-      def invokeBlock[A](request: AuthReq[A], block: AuthReq[A] => Future[Result]): Future[Result] = {
+  private def maybeAuth: ActionBuilder[AuthReq, AnyContent] = if (enableAuth) (authAction andThen AuditAction) else FakeAuthAction
 
-        def getPostBody(request: AuthReq[A]): String = {
-          request.body match {
-            case body: AnyContent if body.asFormUrlEncoded.isDefined => s"${body.asFormUrlEncoded.get}"
-            case _ => "cannot process body of POST request"
-          }
+  object AuditAction extends ActionFunction[AuthReq, AuthReq] {
+
+    private val auditLogger = LoggerFactory.getLogger("audit")
+
+    def invokeBlock[A](request: AuthReq[A], block: AuthReq[A] => Future[Result]): Future[Result] = {
+
+      def getPostBody(request: AuthReq[A]): String = {
+        request.body match {
+          case body: AnyContent if body.asFormUrlEncoded.isDefined => s"${body.asFormUrlEncoded.get}"
+          case _ => "cannot process body of POST request"
         }
-
-        auditLogger.info(
-          if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
-          else s"${request.user.email}, ${request}")
-
-        block(request)
       }
 
-      def executionContext = ec
+      auditLogger.info(
+        if (request.method == "POST") s"${request.user.email}, ${request} - ${getPostBody(request)}"
+        else s"${request.user.email}, ${request}")
+
+      block(request)
     }
 
-    val authAction = new AuthAction[AnyContent](authConfig, routes.Auth.loginAction(), controllerComponents.parsers.default)
-    authAction andThen AuditAction
+    def executionContext = ec
   }
 
-  def showKeys(labels: List[String], direction: String, range: Option[String]) = authAction { implicit request =>
+  def showKeys(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
     val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val totalKeys = dynamo.getNumberOfKeys()
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.showKeys(assetsFinder, keys.items, lastDirection = givenDirection, keys.hasNext, totalKeys, labelsMap, request.user.firstName, pageTitle = "All Keys"))
   }
 
-  def filter(labels: List[String], direction: String, range: Option[String]) = authAction { implicit request =>
+  def filter(labels: List[String], direction: String, range: Option[String]) = maybeAuth { implicit request =>
     val keys = dynamo.getKeys(direction, range, filterLabels = Some(labels).filter(_.nonEmpty))
     val givenDirection = if (range.isDefined) direction else ""
     Ok(views.html.renderKeysTable(keys.items, givenDirection, keys.hasNext))
   }
 
-  def search = authAction { implicit request =>
+  def search = maybeAuth { implicit request =>
     searchForm.bindFromRequest.fold(
       formWithErrors => {
         BadRequest(views.html.showKeys(assetsFinder, List.empty, lastDirection = "", hasNext = false, totalKeys = 0, labelsMap, request.user.firstName, pageTitle = "Invalid search", error = Some("Try again with a valid query.")))
@@ -89,11 +91,11 @@ class Application(
       })
   }
 
-  def createUserPage = authAction { implicit request =>
+  def createUserPage = maybeAuth { implicit request =>
     Ok(views.html.createUser(assetsFinder, createUserForm, labelsMap, request.user.firstName, createUserPageTitle))
   }
 
-  def createUser = authAction.async { implicit request =>
+  def createUser = maybeAuth.async { implicit request =>
     def handleInvalidForm(form: Form[CreateUserFormData]): Future[Result] = {
       Future.successful(BadRequest(views.html.createUser(assetsFinder, form, labelsMap, request.user.firstName, createUserPageTitle, error = Some(invalidFormMessage))))
     }
@@ -115,7 +117,7 @@ class Application(
     createUserForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editUserPage(id: String) = authAction { implicit request =>
+  def editUserPage(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     dynamo.getUserWithId(id) match {
       case Some(consumer) =>
@@ -127,7 +129,7 @@ class Application(
     }
   }
 
-  def editUser(id: String) = authAction { implicit request =>
+  def editUser(id: String) = maybeAuth { implicit request =>
     val userKeys = dynamo.getKeysWithUserId(id)
     val user = dynamo.getUserWithId(id)
     val additionalInfo = user.map(_.additionalInfo)
@@ -146,11 +148,11 @@ class Application(
     editUserForm.bindFromRequest.fold(handleInvalidForm, handleValidForm)
   }
 
-  def createKeyPage(userId: String) = authAction { implicit request =>
+  def createKeyPage(userId: String) = maybeAuth { implicit request =>
     Ok(views.html.createKey(assetsFinder, userId, createKeyForm, request.user.firstName, createKeyPageTitle))
   }
 
-  def createKey(userId: String) = authAction.async { implicit request =>
+  def createKey(userId: String) = maybeAuth.async { implicit request =>
     def handleInvalidForm(brokenKeyForm: Form[CreateKeyFormData]): Future[Result] = {
       Future.successful(BadRequest(views.html.createKey(assetsFinder, userId, brokenKeyForm, request.user.firstName, createKeyPageTitle, error = Some(invalidFormMessage))))
     }
@@ -179,7 +181,7 @@ class Application(
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def editKeyPage(keyValue: String) = authAction { implicit request =>
+  def editKeyPage(keyValue: String) = maybeAuth { implicit request =>
     dynamo.getKeyWithValue(keyValue) match {
       case Some(value) => {
         val filledForm = editKeyForm.fill(EditKeyFormData(value.key, value.productName, value.productUrl, value.requestsPerDay,
@@ -190,7 +192,7 @@ class Application(
     }
   }
 
-  def editKey(keyValue: String) = authAction.async { implicit request =>
+  def editKey(keyValue: String) = maybeAuth.async { implicit request =>
     def retrievingKeyFromDynamo(f: KongKey => Future[Result]): Future[Result] = {
       val oldKey = dynamo.getKeyWithValue(keyValue)
       oldKey match {
@@ -220,7 +222,7 @@ class Application(
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def getEmails(tier: String, status: String) = authAction { implicit request =>
+  def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
     Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }
 

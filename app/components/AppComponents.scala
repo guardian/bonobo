@@ -152,6 +152,8 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
 trait ControllersComponent {
   self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with AssetsComponents =>
 
+  def enableAuth: Boolean
+
   def appController = new Application(
     controllerComponents,
     dynamo,
@@ -159,7 +161,8 @@ trait ControllersComponent {
     awsEmail,
     labelsMap,
     googleAuthConfig,
-    assetsFinder)
+    assetsFinder,
+    enableAuth)
   def authController = new Auth(controllerComponents, googleAuthConfig, wsClient)
 
   val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder)
@@ -179,4 +182,7 @@ class AppComponents(context: Context)
   with LabelsComponentImpl
   with FiltersComponent
   with AssetsComponents
-  with ControllersComponent
+  with ControllersComponent {
+
+  def enableAuth = false
+}
