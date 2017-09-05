@@ -1,7 +1,9 @@
 package integration.fixtures
 
 import com.amazonaws.ClientConfiguration
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient
+import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
 import com.amazonaws.services.dynamodbv2.model.TableStatus
 import org.scalatest.{ Suite, BeforeAndAfterAll }
 import util.AWSConstants._
@@ -11,10 +13,16 @@ import scala.util.Random
 
 trait DynamoDbClientFixture extends BeforeAndAfterAll { self: Suite =>
 
-  val dynamoClient: AmazonDynamoDBClient = {
+  val dynamoClient: AmazonDynamoDB = {
+    val clientBuilder = AmazonDynamoDBClientBuilder.standard()
     val config = new ClientConfiguration()
     config.setMaxErrorRetry(20)
-    new AmazonDynamoDBClient(CredentialsProvider, config).withEndpoint("http://localhost:8500")
+    val endpoint = new EndpointConfiguration("http://localhost:8500", "eu-west-1")
+    clientBuilder
+      .withCredentials(CredentialsProvider)
+      .withClientConfiguration(config)
+      .withEndpointConfiguration(endpoint)
+      .build()
   }
 
   def randomTableName(prefix: String): String = s"$prefix-${Random.alphanumeric.take(10).mkString}"
