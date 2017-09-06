@@ -1,4 +1,5 @@
-@(title: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None)(content: Html)
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, title: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None)(content: Html)
 
 <!DOCTYPE html>
 
@@ -6,14 +7,14 @@
     <head>
         <title>@title</title>
         <link rel="stylesheet" media="screen" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-        <link rel="stylesheet" type="text/css" href="/assets/stylesheets/open-platform.css"></link>
-        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" type="text/css" href="@assets.path("stylesheets/open-platform.css")"></link>
+        <link rel="shortcut icon" type="image/png" href="@assets.path("images/favicon.png")">
     </head>
     <body role="document">
         <nav class="navbar navbar-default navbar-fixed-top" id="top" role="banner">
           <div class="container" style="margin-bottom: 0px">
               <div class="navbar-header">
-                <a href="http://open-platform.theguardian.com/" class="navbar-brand"><img src="/assets/images/guardian-logo.svg" alt="Guardian"/> <span>/ open platform</span></a>
+                <a href="http://open-platform.theguardian.com/" class="navbar-brand"><img src="@assets.path("images/guardian-logo.svg")" alt="Guardian"/> <span>/ open platform</span></a>
               
               <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
                 <span class="sr-only">Toggle navigation</span>

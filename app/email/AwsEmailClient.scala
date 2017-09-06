@@ -1,7 +1,7 @@
 package email
 
 import com.amazonaws.handlers.AsyncHandler
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClient
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsync
 import com.amazonaws.services.simpleemail.model._
 import models.BonoboUser
 import play.api.Logger
@@ -17,7 +17,7 @@ trait MailClient {
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 }
 
-class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsyncClient, fromAddress: String, enableEmail: Boolean) extends MailClient {
+class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, enableEmail: Boolean) extends MailClient {
 
   private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     if (enableEmail) {

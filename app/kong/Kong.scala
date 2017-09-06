@@ -125,8 +125,8 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   private def getPluginId(consumerId: String): Future[String] = {
     ws.url(s"$serverUrl/apis/$apiName/plugins")
-      .withQueryString("consumer_id" -> s"$consumerId")
-      .withQueryString("name" -> RateLimitingPluginName).get().flatMap {
+      .withQueryStringParameters(("consumer_id" -> s"$consumerId"), ("name" -> RateLimitingPluginName))
+      .get().flatMap {
         response =>
           (response.json \\ "id").headOption match {
             case Some(JsString(id)) => success(s"Kong: the id of the $RateLimitingPluginName plugin has been found successfully: $id", id)
@@ -157,8 +157,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   def updateConsumerUsername(consumerId: String, tier: Tier): Future[Happy.type] = {
     val username = s"${UUID.randomUUID}:${tier.conciergeName}"
     ws.url(s"$serverUrl/consumers/$consumerId").patch(Map(
-      "username" -> Seq(username)
-    )).flatMap {
+      "username" -> Seq(username))).flatMap {
       response =>
         response.status match {
           case 200 => success(s"Kong: The username for the consumer with id $consumerId has been updated successfully", Happy)

@@ -9,9 +9,8 @@ object CSRFSupport {
   val config = CSRFConfig()
 
   def getToken(request: RequestHeader): Option[String] = {
-    request.tags.get(Token.RequestTag)
-      // Check cookie if cookie name is defined
-      .orElse(config.cookieName.flatMap(n => request.cookies.get(n).map(_.value)))
+    // Check cookie if cookie name is defined
+    config.cookieName.flatMap(n => request.cookies.get(n).map(_.value))
       // Check session
       .orElse(request.session.get(config.tokenName))
   }

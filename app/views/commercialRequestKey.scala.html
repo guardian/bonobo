@@ -1,8 +1,9 @@
 @import controllers.csrf.CSRFSupport
-@(keyForm: Form[controllers.Forms.CommercialRequestKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: Messages, request: RequestHeader)
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, keyForm: Form[controllers.Forms.CommercialRequestKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.vertical.fieldConstructor }
 
-@mainOpenForm("Request a key", success, error) {
+@mainOpenForm(assets, "Request a key", success, error) {
     <div class="row">
         <div class="col-md-8 col-md-offset-2 column">
         @b3.form(routes.CommercialForm.requestKey()) {

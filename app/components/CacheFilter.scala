@@ -1,12 +1,13 @@
 package components
 
+import akka.stream.Materializer
 import org.joda.time.DateTime
 import play.api.mvc.{ Result, RequestHeader, Filter }
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
-class CacheFilter extends Filter {
+class CacheFilter(implicit val mat: Materializer) extends Filter {
   def apply(nextFilter: RequestHeader => Future[Result])(request: RequestHeader): Future[Result] = {
     nextFilter(request).map { result =>
       result
@@ -16,8 +17,4 @@ class CacheFilter extends Filter {
         .withHeaders("Pragma" -> "no-cache")
     }
   }
-}
-
-object CacheFilter {
-  def setFilters(): CacheFilter = new CacheFilter
 }

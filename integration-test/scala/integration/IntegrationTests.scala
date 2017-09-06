@@ -17,7 +17,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "create a new user"
 
   it should "add a Bonobo user and a custom key to Dynamo" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "test@thetestcompany.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -27,8 +27,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "123124-13434-32323-3439",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -55,7 +54,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "show error message when the email hasn't been sent" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "testing-email@wayneenterprises.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -66,15 +65,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "the-dark",
       "labelIds" -> "",
-      "sendEmail" -> "true"
-    )).get
+      "sendEmail" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
     flash(result).get("error") shouldBe defined
   }
 
   it should "add a Bonobo user and a randomly generated key" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "fsdlfkjsd@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -84,8 +82,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -105,7 +102,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "work with empty optional fields" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "jkjkjkjkjkjk@email.com",
       "name" -> "Joanna Bloggs",
       "companyName" -> "",
@@ -115,8 +112,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "",
       "key" -> "",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -160,9 +156,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       createdAt = DateTime.now(),
       productName = "Label Product",
       productUrl = Some("www.labels.com"),
-      rangeKey = "123"
-    )
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      rangeKey = "123")
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,
@@ -172,8 +167,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> keyToSave.tier.friendlyName,
       "key" -> keyToSave.key,
       "labelIds" -> userToSave.labelIds.mkString(","),
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -199,7 +193,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "adding a second key to an existing user"
 
   it should "add a new key for the existing user" in {
-    val result = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -210,20 +204,18 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "the-dark-knight",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val bonoboId = dynamo.getKeyWithValue("the-dark-knight").value.bonoboId
 
-    val addKeyResult = route(FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/$bonoboId").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "key" -> "the-dark-day",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(addKeyResult) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -243,7 +235,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "making a key inactive"
 
   it should "delete the key from Kong and set it has inactive on Bonobo" in {
-    val createUserResult = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val createUserResult = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "sldkjfdslk@sdlkfjsl.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -254,8 +246,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(createUserResult) shouldBe 303 // on success it redirects to the "edit user" page
 
@@ -264,15 +255,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     // check the key exists on Kong
     Await.result(checkKeyExistsOnKong(kongConsumerId), atMost = 10.seconds) shouldBe true
 
-    val makeKeyInactiveResult = route(FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
+    val makeKeyInactiveResult = route(app, FakeRequest(POST, "/key/testing-inactive/edit").withFormUrlEncodedBody(
       "key" -> "testing-inactive",
       "productName" -> "Another product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "requestsPerDay" -> "10000",
       "requestsPerMinute" -> "720",
       "tier" -> "RightsManaged",
-      "status" -> "Inactive"
-    )).get
+      "status" -> "Inactive")).get
 
     status(makeKeyInactiveResult) shouldBe 303 // on success it redirects to the "edit key" page
 
@@ -283,7 +273,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     dynamo.getKeyWithValue("testing-inactive").value.status shouldBe "Inactive"
 
     // trying to create a new key with the same value as an inactive key should fail
-    val failUser = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val failUser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "bruce.wayne@wayneenterprises.com-2",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -294,8 +284,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-inactive",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     // check we return a conflict error, and that the key table is still inactive
     status(failUser) shouldBe 409
@@ -305,7 +294,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "updating the rate limits for a key"
 
   it should "update the rate limits on the Bonobo-Keys table, as well as the consumer on Kong" in {
-    val request = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val request = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "some-user@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -316,20 +305,18 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-update-rate-limits",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(request) shouldBe 303
 
-    val update = route(FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
+    val update = route(app, FakeRequest(POST, "/key/testing-update-rate-limits/edit").withFormUrlEncodedBody(
       "key" -> "some-key",
       "productName" -> "Another product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "requestsPerDay" -> "444",
       "requestsPerMinute" -> "44",
       "tier" -> "External",
-      "status" -> "active"
-    )).get
+      "status" -> "active")).get
 
     status(update) shouldBe 303
 
@@ -342,7 +329,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "creating a duplicate key"
 
   it should "fail" in {
-    val req1 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val req1 = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -353,12 +340,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     status(req1) shouldBe 303
 
-    val req2 = route(FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+    val req2 = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-2@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
@@ -369,26 +355,24 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "tier" -> "RightsManaged",
       "key" -> "testing-duplicate-keys",
       "labelIds" -> "",
-      "sendEmail" -> "false"
-    )).get
+      "sendEmail" -> "false")).get
 
     // check we return a conflict error, and no user is added on Bonobo-Keys
     status(req2) shouldBe 409
-    dynamo.isEmailInUse("user-2@email.com") should be (false)
+    dynamo.isEmailInUse("user-2@email.com") should be(false)
   }
 
   behavior of "creating a new user using the open registration form"
 
   it should "add a Bonobo user and key to Dynamo" in {
-    val result = route(FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
       "name" -> "Joe Bloggs",
       "email" -> "test@openform.com",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
       "productName" -> "blabla",
       "productUrl" -> "http://blabla",
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the show key page
 
@@ -408,15 +392,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   }
 
   it should "work with empty company, companyUrl and productUrl fields" in {
-    val result = route(FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
+    val result = route(app, FakeRequest(POST, "/register/developer").withFormUrlEncodedBody(
       "name" -> "Joanna Bloggs",
       "email" -> "testing@openform.com",
       "companyName" -> "",
       "companyUrl" -> "",
       "productName" -> "blabla",
       "productUrl" -> "",
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the show key page
 
@@ -453,8 +436,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = List.empty)
-    val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
+      labelIds = List.empty)
+    val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,
@@ -467,8 +450,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "content" -> userToSave.additionalInfo.content.value,
       "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the message page
 
@@ -493,8 +475,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
         registrationType = CommercialRegistration),
-        labelIds = List.empty)
-    val result = route(FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
+      labelIds = List.empty)
+    val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
       "name" -> userToSave.name,
       "email" -> userToSave.email,
       "companyName" -> userToSave.companyName.value,
@@ -507,8 +489,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "content" -> userToSave.additionalInfo.content.value,
       "contentFormat" -> userToSave.additionalInfo.contentFormat.value,
       "articlesPerDay" -> userToSave.additionalInfo.articlesPerDay.value,
-      "acceptTerms" -> "true"
-    )).get
+      "acceptTerms" -> "true")).get
 
     status(result) shouldBe 303 // on success it redirects to the message page
     flash(result).get("error") shouldBe defined

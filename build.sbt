@@ -1,6 +1,15 @@
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+import scalariform.formatter.preferences._
+
 name := "bonobo"
 version := "1.0-SNAPSHOT"
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
+
+val preferences =
+  ScalariformKeys.preferences := ScalariformKeys.preferences.value
+    .setPreference(AlignSingleLineCaseStatements, true)
+    .setPreference(DoubleIndentConstructorArguments, true)
+    .setPreference(DanglingCloseParenthesis, Preserve)
 
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala, RiffRaffArtifact, UniversalPlugin)
@@ -21,25 +30,26 @@ riffRaffManifestProjectName := {
 libraryDependencies ++= Seq(
   ws,
   filters,
-  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.10.20",
-  "com.amazonaws" % "aws-java-sdk-ses" % "1.10.20",
-  "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
-  "com.gu" %% "play-googleauth" % "0.3.3",
+  "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery"),
+  "org.webjars" % "jquery" % "3.2.1",
+  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.188",
+  "com.amazonaws" % "aws-java-sdk-ses" % "1.11.188",
+  "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
+  "com.gu" %% "play-googleauth" % "0.7.0",
   "org.scalatest" % "scalatest_2.11" % "2.2.5" % "it,test",
-  "org.scalatestplus" % "play_2.11" % "1.4.0-M4" % "it,test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % "it,test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
-  "com.beachape" %% "enumeratum" % "1.3.2",
-  "com.beachape" %% "enumeratum-play-json" % "1.3.2"
+  "com.beachape" %% "enumeratum" % "1.5.12",
+  "com.beachape" %% "enumeratum-play-json" % "1.5.12-2.6.0-M7"
 )
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 routesGenerator := InjectedRoutesGenerator
 
-scalariformSettings
-
 testOptions in Test += Tests.Argument("-oF")
 
 parallelExecution in IntegrationTest := false
 
 sourceDirectory in IntegrationTest <<= baseDirectory { base => base / "integration-test" }
+

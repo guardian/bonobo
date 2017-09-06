@@ -1,6 +1,7 @@
-@(success: Option[String] = None, error: Option[String] = None)
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, success: Option[String] = None, error: Option[String] = None)
 
-@mainOpenForm("Request sent", success, error) {
+@mainOpenForm(assets, "Request sent", success, error) {
     <div>
         <div class="row">
             <div class="col-md-8 col-md-offset-2 column">

@@ -11,8 +11,7 @@ trait BonoboUserTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
   override def beforeAll() {
     val attributeDefinitions: List[AttributeDefinition] = List(
       new AttributeDefinition().withAttributeName("id").withAttributeType("S"),
-      new AttributeDefinition().withAttributeName("email").withAttributeType("S")
-    )
+      new AttributeDefinition().withAttributeName("email").withAttributeType("S"))
     val keySchema: List[KeySchemaElement] = new KeySchemaElement().withAttributeName("id").withKeyType(KeyType.HASH) :: Nil
     val indexKeySchema: List[KeySchemaElement] = new KeySchemaElement().withAttributeName("email").withKeyType(KeyType.HASH) :: Nil
 
