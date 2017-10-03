@@ -1,7 +1,7 @@
 package controllers.csrf
 
 import play.api.mvc.RequestHeader
-import play.filters.csrf.CSRF.Token
+import play.filters.csrf.CSRF
 import play.filters.csrf.CSRFConfig
 import play.twirl.api.Html
 
@@ -9,8 +9,9 @@ object CSRFSupport {
   val config = CSRFConfig()
 
   def getToken(request: RequestHeader): Option[String] = {
-    // Check cookie if cookie name is defined
-    config.cookieName.flatMap(n => request.cookies.get(n).map(_.value))
+    CSRF.getToken(request).map(_.value)
+      // Check cookie if cookie name is defined
+      .orElse(config.cookieName.flatMap(n => request.cookies.get(n).map(_.value)))
       // Check session
       .orElse(request.session.get(config.tokenName))
   }
