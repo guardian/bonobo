@@ -3,7 +3,7 @@ import scalariform.formatter.preferences._
 
 name := "bonobo"
 version := "1.0-SNAPSHOT"
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.4"
 
 val preferences =
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-ses" % "1.11.188",
   "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
   "com.gu" %% "play-googleauth" % "0.7.0",
-  "org.scalatest" % "scalatest_2.11" % "2.2.5" % "it,test",
+  "org.scalatest" % "scalatest_2.12" % "3.0.4" % "it,test",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % "it,test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.beachape" %% "enumeratum" % "1.5.12",
