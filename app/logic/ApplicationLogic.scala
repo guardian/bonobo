@@ -168,6 +168,9 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
     }
   }
 
+  def deleteKey(key: KongKey): Future[Happy.type] =
+    kong.deleteKey(key.consumerId)
+
   private def checkingIfKeyAlreadyTaken[A](key: Option[String])(f: => Future[A]): Future[A] = key match {
     case Some(value) =>
       if (dynamo.isKeyPresent(value))
