@@ -222,6 +222,10 @@ class Application(
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
+  def deleteKey(keyId: String) = maybeAuth.async { implicit request => 
+    
+  }
+
   def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
     Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }
