@@ -12,7 +12,7 @@ GET         /key/create/:userId         controllers.Application.createKeyPage(us
 POST        /key/create/:userId         controllers.Application.createKey(userId: String)
 GET         /key/:id/edit               controllers.Application.editKeyPage(id: String)
 POST        /key/:id/edit               controllers.Application.editKey(id: String)
-DELETE      /key/:id                    controllers.Application.deleteKey(id: String)
+DELETE      /key/:id/edit               controllers.Application.deleteKey(id: String)
 
 GET         /user/create                controllers.Application.createUserPage
 POST        /user/create                controllers.Application.createUser
