@@ -3,7 +3,7 @@
 @(assets: AssetsFinder, userForm: Form[controllers.Forms.CreateUserFormData], labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
-@main(assets, "Create user", firstName, pageTitle, success, error) {
+@main(assets, "Create user", firstName, pageTitle, success, error){ }{
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
             @b3.form(routes.Application.createUser) {

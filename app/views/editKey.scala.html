@@ -4,6 +4,12 @@
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Edit key", firstName, pageTitle, success, error) {
+    @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right") {
+        <button type="submit" class="btn btn-danger">
+            <span class="glyphicon glyphicon-remove"></span> Delete key
+        </button>
+    }
+}{
     <div class="row">
         <div class="col-md-8 col-md-offset-1 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
@@ -18,16 +24,10 @@
             @b3.select( form("status"), options = Seq(KongKey.Active -> "Active", KongKey.Inactive -> "Inactive"), '_label -> "Status" )
             @b3.free('_id -> "idFormGroup") {
                 <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save changes</button>
-                <button data-url="@routes.Application.deleteKey(form("key").value.get)" 
-                        data-redirect-url="@routes.Application.editUser(userId)"
-                        type="button" class="btn btn-danger js-delete-key">
-                    <span class="glyphicon glyphicon-remove"></span> Delete key
-                </button>
                 <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
             }
         }
         </div>
     </div>
     <script src="@assets.path("javascripts/editKey.js")" type="text/javascript"></script>
-    <script src="@assets.path("javascripts/deleteKey.js")" type="text/javascript"></script>
 }

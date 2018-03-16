@@ -1,7 +1,7 @@
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean, totalKeys: Long, labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, query: Option[String] = None, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, req: RequestHeader)
 
-@main(assets, "Keys", firstName, pageTitle, success, error, query = query){
+@main(assets, "Keys", firstName, pageTitle, success, error, query = query){ }{
     <div class="row">
         <p class="col-md-6">Total number of keys: <strong>@totalKeys</strong></p>
         <div id="btnFilter" class="col-md-6">

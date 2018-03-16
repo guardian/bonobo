@@ -3,7 +3,7 @@
 @(assets: AssetsFinder, userId: String, keyForm: Form[controllers.Forms.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
-@main(assets, "Add a key for existing user", firstName, pageTitle, success, error) {
+@main(assets, "Add a key for existing user", firstName, pageTitle, success, error){ }{
   <div>
     <h4>Add a key for the current user</h4>
     <div class="row">

@@ -3,7 +3,7 @@
 @(assets: AssetsFinder, id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: List[String], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, flash: Flash, request: RequestHeader)
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
-@main(assets, "Edit User", firstName, pageTitle, success, error, flash = Option(flash)) {
+@main(assets, "Edit User", firstName, pageTitle, success, error, flash = Option(flash)){ }{
   <div class="row">
     <div class="col-md-6 col-md-offset-2 column">
     @b3.form(routes.Application.editUser(id)) {
@@ -102,11 +102,13 @@
             <td>@key.requestsPerDay</td>
             <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
             <td>@key.status</td>
-            <td><button data-url="@routes.Application.deleteKey(key.key)"
-                        data-redirect-url="@routes.Application.editUser(id)"
-                        type="button" class="btn btn-danger btn-sm js-delete-key">
-                <span class="glyphicon glyphicon-remove"></span>
-            </button></td>
+            <td>
+              @b3.form(routes.Application.deleteKey(key.key)) {
+                <button type="submit" class="btn btn-danger btn-sm">
+                  <span class="glyphicon glyphicon-remove"></span>
+                </button>
+              }
+            </td>
           </tr>
         }
         </tbody>
@@ -115,6 +117,5 @@
     <a href="@routes.Application.createKeyPage(id)" class="btn btn-success" style="margin-bottom: 20px;"><span class="glyphicon glyphicon-plus"></span> Add new key</a>
   </div>
   <script src="@assets.path("javascripts/createUser.js")" type="text/javascript"></script>
-  <script src="@assets.path("javascripts/deleteKey.js")" type="text/javascript"></script>
   <link href="@assets.path("stylesheets/labelStyle.css")" type="text/css" rel="stylesheet"/>
 }
