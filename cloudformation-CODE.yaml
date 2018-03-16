@@ -152,7 +152,7 @@ Resources:
         Fn::Base64:
           !Sub |
             #!/usr/bin/env bash
-            wget -NP /home/ubuntu/.ssh --no-check-certificate https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys
+            curl https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys >> /home/ubuntu/.ssh/authorized_keys
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
