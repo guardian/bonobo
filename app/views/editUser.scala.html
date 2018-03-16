@@ -104,6 +104,7 @@
             <td>@key.status</td>
             <td>
               @b3.form(routes.Application.deleteKey(key.key), 'class -> "js-delete-key") {
+                @CSRFSupport.formField
                 <button type="submit" class="btn btn-danger btn-sm">
                   <span class="glyphicon glyphicon-remove"></span>
                 </button>

@@ -5,6 +5,7 @@
 
 @main(assets, "Edit key", firstName, pageTitle, success, error) {
     @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right js-delete-key") {
+        @CSRFSupport.formField
         <button type="submit" class="btn btn-danger">
             <span class="glyphicon glyphicon-remove"></span> Delete key
         </button>
