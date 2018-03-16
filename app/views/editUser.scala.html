@@ -103,7 +103,7 @@
             <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
             <td>@key.status</td>
             <td>
-              @b3.form(routes.Application.deleteKey(key.key)) {
+              @b3.form(routes.Application.deleteKey(key.key), 'class -> "js-delete-key") {
                 <button type="submit" class="btn btn-danger btn-sm">
                   <span class="glyphicon glyphicon-remove"></span>
                 </button>
@@ -117,5 +117,6 @@
     <a href="@routes.Application.createKeyPage(id)" class="btn btn-success" style="margin-bottom: 20px;"><span class="glyphicon glyphicon-plus"></span> Add new key</a>
   </div>
   <script src="@assets.path("javascripts/createUser.js")" type="text/javascript"></script>
+  <script src="@assets.path("javascripts/deleteKey.js")" type="text/javascript"></script>
   <link href="@assets.path("stylesheets/labelStyle.css")" type="text/css" rel="stylesheet"/>
 }

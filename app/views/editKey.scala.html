@@ -4,7 +4,7 @@
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Edit key", firstName, pageTitle, success, error) {
-    @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right") {
+    @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right js-delete-key") {
         <button type="submit" class="btn btn-danger">
             <span class="glyphicon glyphicon-remove"></span> Delete key
         </button>
@@ -30,4 +30,5 @@
         </div>
     </div>
     <script src="@assets.path("javascripts/editKey.js")" type="text/javascript"></script>
+    <script src="@assets.path("javascripts/deleteKey.js")" type="text/javascript"></script>
 }
