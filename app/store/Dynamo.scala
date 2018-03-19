@@ -178,6 +178,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
   def deleteKey(kongKey: KongKey): Unit = {
     KongTable.deleteItem(
       new PrimaryKey("hashkey", "hashkey", "rangekey", kongKey.rangeKey))
+    Logger.info(s"DynamoDB: Key ${kongKey.key} has been deleted")
   }
 
   def getKeys(direction: String, range: Option[String], limit: Int = 20, filterLabels: Option[List[String]] = None): ResultsPage[BonoboInfo] = {
