@@ -60,8 +60,6 @@ trait Kong {
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
 
   def deleteKey(consumerId: String): Future[Happy.type]
-
-  def deleteKeyById(consumerId: String, keyId: String): Future[Happy.type]
 }
 
 class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
