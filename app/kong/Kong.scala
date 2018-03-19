@@ -193,6 +193,17 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     }
   }
 
+  def deleteKeyById(consumerId: String, keyId: String): Future[Happy.type] = {
+    ws.url(s"$serverUrl/consumers/$consumerId/$KeyAuthPluginName/$keyId").delete().flatMap {
+      response =>
+        response.status match {
+          case 204 => success(s"Kong: The key with id $keyId has been deleted successfully", Happy)
+          case other =>
+            genericFail(s"Kong responded with status $other - ${response.body} when trying to delete the key $keyId for consumer $consumerId")
+        }
+    }
+  }
+  
   private def genericFail[A](errorMsg: String): Future[A] = {
     Logger.warn(errorMsg)
     Future.failed[A](GenericFailure(errorMsg))
