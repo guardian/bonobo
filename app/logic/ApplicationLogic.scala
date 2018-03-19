@@ -169,7 +169,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
   }
 
   def deleteKey(key: KongKey): Future[Happy.type] = for {
-    _ <- kong.deleteKey(key.kongConsumerId, key.bonoboId)
+    _ <- kong.deleteKeyById(key.kongConsumerId, key.bonoboId)
     _ <- Future.successful(dynamo.deleteKey(key))
   } yield Happy
 
