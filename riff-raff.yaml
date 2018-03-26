@@ -16,6 +16,7 @@ deployments:
       amiTags:
         Recipe: ubuntu-xenial-java8
         AmigoStage: PROD
+      amiEncrypted: true
       cloudFormationStackName: bonobo
       prependStackToCloudFormationStackName: false
       cloudFormationStackByTags: false
