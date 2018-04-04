@@ -9,13 +9,14 @@ deployments:
     type: autoscaling
     parameters:
       bucket: content-api-dist
+    dependencies: [ bonobo-ami-update ]
   bonobo-ami-update:
     type: ami-cloudformation-parameter
     parameters:
       amiTags:
         Recipe: ubuntu-xenial-java8
         AmigoStage: PROD
+      amiEncrypted: true
       cloudFormationStackName: bonobo
       prependStackToCloudFormationStackName: false
       cloudFormationStackByTags: false
-    dependencies: [bonobo]

@@ -4,8 +4,15 @@
 @implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Edit key", firstName, pageTitle, success, error) {
+    @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right js-delete-key") {
+        @CSRFSupport.formField
+        <button type="submit" class="btn btn-danger">
+            <span class="glyphicon glyphicon-remove"></span> Delete key
+        </button>
+    }
+}{
     <div class="row">
-        <div class="col-md-6 col-md-offset-2 column">
+        <div class="col-md-8 col-md-offset-1 column">
         @b3.form(routes.Application.editKey(form("key").value.get)) {
             @CSRFSupport.formField
             @b3.text( form("key"), '_label -> "Key", 'readonly -> true )
@@ -24,4 +31,5 @@
         </div>
     </div>
     <script src="@assets.path("javascripts/editKey.js")" type="text/javascript"></script>
+    <script src="@assets.path("javascripts/deleteKey.js")" type="text/javascript"></script>
 }

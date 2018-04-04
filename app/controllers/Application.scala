@@ -222,6 +222,15 @@ class Application(
     editKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
+  def deleteKey(keyId: String) = maybeAuth.async { implicit request =>
+    dynamo.getKeyWithValue(keyId) match {
+      case Some(key) => logic.deleteKey(key) map { _ =>
+        Redirect(routes.Application.editUserPage(key.bonoboId))
+      }
+      case None => Future.successful(NotFound)
+    }
+  }
+
   def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
     Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }

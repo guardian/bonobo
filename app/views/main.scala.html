@@ -1,5 +1,5 @@
 @import controllers.AssetsFinder
-@(assets: AssetsFinder, title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None, query: Option[String] = None)(content: Html)(implicit req: RequestHeader)
+@(assets: AssetsFinder, title: String, firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None, flash: Option[Flash] = None, query: Option[String] = None)(pageActions: Html)(content: Html)(implicit req: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -43,7 +43,7 @@
             </div>
         </nav>
         <div class="container" role="main" style="margin-top: 35px;">
-            @renderTitle(pageTitle)
+            @renderTitle(pageTitle)(pageActions)
             @renderMessage(success, error, flash)
             @content
         </div>
