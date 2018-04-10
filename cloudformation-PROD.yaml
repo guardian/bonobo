@@ -33,6 +33,8 @@ Resources:
             - ec2.amazonaws.com
           Action:
           - sts:AssumeRole
+      ManagedPolicyArns:
+          - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
       Path: "/"
   DownloadConfigFromS3Policy:
     Type: AWS::IAM::Policy
@@ -152,7 +154,6 @@ Resources:
         Fn::Base64:
           !Sub |
             #!/usr/bin/env bash
-            curl https://s3-eu-west-1.amazonaws.com/content-api-dist/authorized_keys >> /home/ubuntu/.ssh/authorized_keys
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
