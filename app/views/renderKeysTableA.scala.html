@@ -1,0 +1,40 @@
+@(keys: List[BonoboInfo])
+
+<div class="col-md-12">
+    <table class="table table-responsive table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Product</th>
+                <th>Tier</th>
+                <th>Status</th>
+                <th>Created at</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(key <- keys) {
+                <tr>
+                    <td>@key.kongKey.key</td>
+                    <td>@key.kongKey.productName</td>
+                    <td>@key.kongKey.tier.friendlyName</td>
+                    <td>@key.kongKey.status</td>
+                    <td>
+                        @key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")
+                        @key.kongKey.extendedAt.map{ d => <br />Extended @d.toString("dd-MM-yyyy hh:mma") }
+                    </td>
+                    <td>
+                        <a href="@routes.Application.extendKeyByUser(key.bonoboUser.bonoboId, key.kongKey.key)" class="btn btn-sm">
+                            <span class="glyphicon glyphicon-refresh"></span>
+                            Extend
+                        </a>
+                        <a href="@routes.Application.deleteKeyByUser(key.bonoboUser.bonoboId, key.kongKey.key)" class="btn btn-danger btn-sm">
+                            <span class="glyphicon glyphicon-remove"></span>
+                            Delete
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
