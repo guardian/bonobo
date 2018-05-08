@@ -414,6 +414,8 @@ object Dynamo {
       status = item.getString("status"),
       tier = toTier(item.getString("tier")),
       createdAt = new DateTime(item.getString("createdAt").toLong),
+      remindedAt = if (item.isPresent("remindedAt")) Some(new DateTime(item.getString("remindedAt").toLong)) else None,
+      extendedAt = if (item.isPresent("extendedAt")) Some(new DateTime(item.getString("extendedAt").toLong)) else None,
       productName = item.getString("productName"),
       productUrl = Option(item.getString("productUrl")),
       rangeKey = item.getString("rangekey"))
