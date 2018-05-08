@@ -48,6 +48,18 @@ Resources:
           Resource: arn:aws:s3:::content-api-config/*
       Roles:
       - Ref: RootRole
+  DownloadDistFromS3Policy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: download-dist-from-s3
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          Resource: arn:aws:s3:::content-api-dist/*
+      Roles:
+      - Ref: RootRole
   DynamoDBPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -159,8 +171,8 @@ Resources:
             mkdir logs
             mkdir -p /etc/gu
 
-            wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api/${Stage}/bonobo/bonobo-1.0-SNAPSHOT.tgz
-            wget https://s3-eu-west-1.amazonaws.com/content-api-dist/content-api/${Stage}/bonobo/bonobo.service
+            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo-1.0-SNAPSHOT.tgz bonobo-1.0-SNAPSHOT.tgz
+            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.service bonobo.service
 
             tar -xvf bonobo-1.0-SNAPSHOT.tgz
             mv bonobo-1.0-SNAPSHOT bonobo
