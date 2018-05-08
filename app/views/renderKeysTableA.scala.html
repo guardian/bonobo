@@ -1,4 +1,4 @@
-@(keys: List[BonoboInfo])
+@(user: BonoboUser, keys: List[KongKey])
 
 <div class="col-md-12">
     <table class="table table-responsive table-striped table-hover">
@@ -15,20 +15,20 @@
         <tbody>
             @for(key <- keys) {
                 <tr>
-                    <td>@key.kongKey.key</td>
-                    <td>@key.kongKey.productName</td>
-                    <td>@key.kongKey.tier.friendlyName</td>
-                    <td>@key.kongKey.status</td>
+                    <td>@key.key</td>
+                    <td>@key.productName</td>
+                    <td>@key.tier.friendlyName</td>
+                    <td>@key.status</td>
                     <td>
-                        @key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")
-                        @key.kongKey.extendedAt.map{ d => <br />Extended @d.toString("dd-MM-yyyy hh:mma") }
+                        @key.createdAt.toString("dd-MM-yyyy hh:mma")
+                        @key.extendedAt.map{ d => <br />Extended @d.toString("dd-MM-yyyy hh:mma") }
                     </td>
                     <td>
-                        <a href="@routes.Application.extendKeyByUser(key.bonoboUser.bonoboId, key.kongKey.key)" class="btn btn-sm">
+                        <a href="@routes.Application.extendKeyByUser(user.bonoboId, key.key)" class="btn btn-sm">
                             <span class="glyphicon glyphicon-refresh"></span>
                             Extend
                         </a>
-                        <a href="@routes.Application.deleteKeyByUser(key.bonoboUser.bonoboId, key.kongKey.key)" class="btn btn-danger btn-sm">
+                        <a href="@routes.Application.deleteKeyByUser(user.bonoboId, key.key)" class="btn btn-danger btn-sm">
                             <span class="glyphicon glyphicon-remove"></span>
                             Delete
                         </a>
