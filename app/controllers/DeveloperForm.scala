@@ -45,7 +45,9 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
   }
 
   def deleteKeys(id: String) = Action.async { implicit request =>
-    logic.deleteKeys(id).map {
+    logic.deleteKeys(id).recover {
+      case GenericFailure(_) => awsEmail.sendEmailDeletionFailed(id)
+    }.map {
       _ => Ok(views.html.developerDeleteComplete(assetsFinder))
     }
   }

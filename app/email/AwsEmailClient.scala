@@ -15,6 +15,8 @@ trait MailClient {
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult]
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
+
+  def sendEmailDeletionFailed(userId: String): Future[SendEmailResult]
 }
 
 class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, enableEmail: Boolean) extends MailClient {
@@ -98,5 +100,19 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
          |For more details on how to use the open platform API, check out the documentation available at http://open-platform.theguardian.com/documentation/
          |""".stripMargin
     sendEmail(toEmail, "New Key Created", message)
+  }
+
+  def sendEmailDeletionFailed(userId: String): Future[SendEmailResult] = {
+    val message =
+      s"""Hey.
+         |
+         |Something went wrong when trying to delete the keys of user
+         |
+         |     $userId
+         |
+         |inside the Kong repository. The records in the Bonobo database are gone,
+         |but since some Kong records may presumably still be there, there is a
+         |chance some manual cleanup will be needed.""".stripMargin
+    sendEmail(fromAddress, "Keys deletion failed", message)
   }
 }
