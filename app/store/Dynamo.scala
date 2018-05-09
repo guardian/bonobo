@@ -17,6 +17,8 @@ trait DB {
 
   def updateUser(bonoboUser: BonoboUser): Unit
 
+  def deleteUser(bonoboUser: BonoboUser): Unit
+
   def getUserWithId(id: String): Option[BonoboUser]
 
   def isEmailInUse(email: String): Boolean
@@ -119,6 +121,12 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val keys = getKeysWithUserId(bonoboUser.bonoboId)
     keys.foreach(kongKey => updateKeyLabelIds(kongKey, bonoboUser.labelIds))
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
+  }
+
+  def deleteUser(bonoboUser: BonoboUser): Unit = {
+    BonoboTable.deleteItem(
+      new PrimaryKey("id", bonoboUser.bonoboId))
+    Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been deleted")
   }
 
   private def updateKeyLabelIds(kongKey: KongKey, labelIds: List[String]): Unit = {

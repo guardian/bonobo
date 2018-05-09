@@ -53,7 +53,9 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
         } yield {
           dynamo.deleteKey(key)
         }
-      }.map(_ => ())
+      }.map { _ =>
+        dynamo.deleteUser(user)
+      }
     }
   }
 
