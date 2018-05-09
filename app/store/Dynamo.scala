@@ -168,6 +168,10 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
       new AttributeUpdate("tier").put(kongKey.tier.toString),
+      kongKey.extendedAt match {
+        case Some(d) => new AttributeUpdate("extendedAt").put(d.getMillis)
+        case None => new AttributeUpdate("extendedAt").delete()
+      },
       kongKey.productUrl match {
         case Some(url) => new AttributeUpdate("productUrl").put(url)
         case None => new AttributeUpdate("productUrl").delete()

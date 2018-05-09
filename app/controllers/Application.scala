@@ -4,6 +4,7 @@ import email.MailClient
 import logic.ApplicationLogic
 import models._
 import com.gu.googleauth.{ AuthAction, UserIdentity, GoogleAuthConfig }
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 import play.api.data.Forms._
 import play.api.data._
@@ -245,8 +246,21 @@ class Application(
     Future.successful(Ok("Done"))
   }
 
-  def extendKeyByUser(id: String, keyId: String) = Action.async { implicit request =>
-    Future.successful(Ok("Done"))
+  def extendKeyByUser(id: String, keyId: String) = Action { implicit request =>
+    val prog = for {
+      user <- dynamo.getUserWithId(id)
+      key <- dynamo.getKeyWithValue(keyId)
+      if (key.bonoboId == user.bonoboId)
+    } yield {
+      dynamo.updateKey(key.copy(extendedAt = Some(DateTime.now())))
+    }
+
+    prog match {
+      case Some(_) =>
+        Redirect(routes.Application.showKeysByUser(id))
+      case None =>
+        Redirect(routes.Application.showKeysByUser(id)).flashing("error" -> s"We were unable to extend your key.")
+    }
   }
 
   def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
