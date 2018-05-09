@@ -154,6 +154,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       tier = Tier.Developer,
       status = "Active",
       createdAt = DateTime.now(),
+      extendedAt = None,
+      remindedAt = None,
       productName = "Label Product",
       productUrl = Some("www.labels.com"),
       rangeKey = "123")
