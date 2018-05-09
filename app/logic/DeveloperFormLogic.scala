@@ -65,10 +65,5 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def getUserWithKeys(id: String): Future[(BonoboUser, List[KongKey])] =
-    dynamo.getUserWithId(id).fold(userNotFound(id): Future[(BonoboUser, List[KongKey])]) { user =>
-      Future.successful((user, dynamo.getKeysWithUserId(id)))
-    }
-
   private def userNotFound(id: String) = Future.failed(new Throwable(s"User $id not found"))
 }
