@@ -236,7 +236,7 @@ class Application(
     dynamo.getUserWithId(id) match {
       case Some(user) =>
         val userKeys = dynamo.getKeysWithUserId(id)
-        Ok(views.html.viewKeysByUser(assetsFinder, user, userKeys, editKeyPageTitle))
+        Ok(views.html.viewKeysByUser(assetsFinder, user, userKeys, s"Hello, ${user.name}. Here are all your keys"))
       case None =>
         Ok("done")
     }
