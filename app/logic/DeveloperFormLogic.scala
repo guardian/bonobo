@@ -47,10 +47,13 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     dynamo.getUserWithId(id).fold(userNotFound(id): Future[Unit]) { user =>
       val keys = dynamo.getKeysWithUserId(id)
       Future.traverse(keys) { key =>
-        kong.deleteKey(key.kongConsumerId).map { _ =>
+        for {
+          _ <- kong.deleteKey(key.kongConsumerId)
+          _ <- kong.deleteConsumer(key.kongConsumerId)
+        } yield {
           dynamo.deleteKey(key)
         }
-      }.map { _ => () }
+      }.map(_ => ())
     }
   }
 
