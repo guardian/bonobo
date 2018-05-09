@@ -243,7 +243,21 @@ class Application(
   }
 
   def deleteKeyByUser(id: String, keyId: String) = Action.async { implicit request =>
-    Future.successful(Ok("Done"))
+    val prog = for {
+      user <- dynamo.getUserWithId(id)
+      key <- dynamo.getKeyWithValue(keyId)
+      if (key.bonoboId == user.bonoboId)
+    } yield {
+      (user, key)
+    }
+
+    prog.fold(Future.successful(Redirect(routes.Application.showKeysByUser(id)).flashing("error" -> s"We were unable to extend your key."))) {
+      case (user, key) =>
+        kong.deleteKey(key.kongConsumerId).map { _ =>
+          dynamo.deleteKey(key)
+          Redirect(routes.Application.showKeysByUser(id))
+        }
+    }
   }
 
   def extendKeyByUser(id: String, keyId: String) = Action { implicit request =>
