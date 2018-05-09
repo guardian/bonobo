@@ -1,0 +1,15 @@
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, success: Option[String] = None, error: Option[String] = None)
+
+@mainOpenForm(assets, "Show key", success, error) {
+    <div>
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2 column">
+                <p>Thank you and welcome to the open platform!</p>
+                <p>You have successfully registered for a key - we have sent it to the email address you used.</p>
+                <p>This key is unique to you so please keep it secret.</p>
+                <p>For further information on how to use our API, consult the <a href="http://open-platform.theguardian.com/documentation/">documentation</a>.</p>
+            </div>
+        </div>
+    </div>
+}

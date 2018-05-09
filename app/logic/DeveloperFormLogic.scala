@@ -4,6 +4,7 @@ import controllers.Forms.DeveloperCreateKeyFormData
 import kong.Kong
 import kong.Kong.ConflictFailure
 import models._
+import org.joda.time.DateTime
 import play.api.Logger
 import store.DB
 
@@ -41,4 +42,30 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
       }
     }
   }
+
+  def deleteKeys(id: String): Future[Unit] = {
+    dynamo.getUserWithId(id).fold(userNotFound(id): Future[Unit]) { user =>
+      val keys = dynamo.getKeysWithUserId(id)
+      Future.traverse(keys) { key =>
+        kong.deleteKey(key.kongConsumerId).map { _ =>
+          dynamo.deleteKey(key)
+        }
+      }.map { _ => () }
+    }
+  }
+
+  def extendKeys(id: String): Future[Unit] = {
+    dynamo.getUserWithId(id).fold(userNotFound(id): Future[Unit]) { user =>
+      val keys = dynamo.getKeysWithUserId(id)
+      val now = Some(DateTime.now())
+      Future.traverse(keys)(key => Future.successful(dynamo.updateKey(key.copy(extendedAt = now)))).map { _ => () }
+    }
+  }
+
+  def getUserWithKeys(id: String): Future[(BonoboUser, List[KongKey])] =
+    dynamo.getUserWithId(id).fold(userNotFound(id): Future[(BonoboUser, List[KongKey])]) { user =>
+      Future.successful((user, dynamo.getKeysWithUserId(id)))
+    }
+
+  private def userNotFound(id: String) = Future.failed(new Throwable(s"User $id not found"))
 }

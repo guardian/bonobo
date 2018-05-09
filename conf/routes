@@ -18,9 +18,6 @@ GET         /user/create                controllers.Application.createUserPage
 POST        /user/create                controllers.Application.createUser
 GET         /user/:id/edit              controllers.Application.editUserPage(id: String)
 POST        /user/:id/edit              controllers.Application.editUser(id: String)
-GET         /user/:id/keys              controllers.Application.showKeysByUser(id: String)
-GET         /user/:id/key/:kid/delete   controllers.Application.deleteKeyByUser(id: String, kid: String)
-GET         /user/:id/key/:kid/extend   controllers.Application.extendKeyByUser(id: String, kid: String)
 
 GET         /email/:tier/:status        controllers.Application.getEmails(tier: String, status: String)
 
@@ -30,6 +27,9 @@ GET         /healthcheck                controllers.Application.healthcheck
 GET         /register/developer         controllers.DeveloperForm.createKeyPage
 POST        /register/developer         controllers.DeveloperForm.createKey
 GET         /register/complete          controllers.DeveloperForm.complete
+GET         /user/:id/keys              controllers.DeveloperForm.showKeys(id: String)
+GET         /user/:id/keys/delete       controllers.DeveloperForm.deleteKeys(id: String)
+GET         /user/:id/keys/extend       controllers.DeveloperForm.extendKeys(id: String)
 
 #Commercial request key form
 GET         /register/commercial        controllers.CommercialForm.requestKeyPage

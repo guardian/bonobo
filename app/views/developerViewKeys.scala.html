@@ -1,0 +1,11 @@
+@import controllers.csrf.CSRFSupport
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, user: BonoboUser, keys: List[KongKey], success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
+
+@implicitFieldConstructor = @{ b3.vertical.fieldConstructor }
+
+@mainOpenForm(assets, "Edit your keys", success, error) {
+
+  @renderKeysTableA(user, keys)
+
+}

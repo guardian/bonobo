@@ -24,11 +24,11 @@
                         @key.extendedAt.map{ d => <br />Extended @d.toString("dd-MM-yyyy hh:mma") }
                     </td>
                     <td>
-                        <a href="@routes.Application.extendKeyByUser(user.bonoboId, key.key)" class="btn btn-primary btn-sm">
+                        <a href="@routes.DeveloperForm.extendKeys(user.bonoboId)" class="btn btn-primary btn-sm">
                             <span class="glyphicon glyphicon-refresh"></span>
                             Extend
                         </a>
-                        <a href="@routes.Application.deleteKeyByUser(user.bonoboId, key.key)" class="btn btn-danger btn-sm">
+                        <a href="@routes.DeveloperForm.deleteKeys(user.bonoboId)" class="btn btn-danger btn-sm">
                             <span class="glyphicon glyphicon-remove"></span>
                             Delete
                         </a>

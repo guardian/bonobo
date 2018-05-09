@@ -44,6 +44,24 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
+  def showKeys(id: String) = Action.async { implicit request =>
+    logic.getUserWithKeys(id).map {
+      case (user, keys) => Ok(views.html.developerViewKeys(assetsFinder, user, keys))
+    }
+  }
+
+  def deleteKeys(id: String) = Action.async { implicit request =>
+    logic.deleteKeys(id).map {
+      _ => Ok(views.html.developerDeleteComplete(assetsFinder))
+    }
+  }
+
+  def extendKeys(id: String) = Action.async { implicit request =>
+    logic.extendKeys(id).map {
+      _ => Ok(views.html.developerExtendComplete(assetsFinder))
+    }
+  }
+
   def complete = Action {
     Ok(views.html.developerRegisterComplete(assetsFinder))
   }
