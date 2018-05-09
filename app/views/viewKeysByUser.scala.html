@@ -1,0 +1,10 @@
+@import controllers.csrf.CSRFSupport
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, user: BonoboUser, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, flash: Flash, request: RequestHeader)
+@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
+
+@main(assets, "Your keys", "", pageTitle, success, error, flash = Option(flash)){ }{
+
+  @renderKeysTableA(user, keys)
+
+}e

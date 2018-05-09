@@ -231,6 +231,24 @@ class Application(
     }
   }
 
+  def showKeysByUser(id: String) = Action { implicit request =>
+    dynamo.getUserWithId(id) match {
+      case Some(user) =>
+        val userKeys = dynamo.getKeysWithUserId(id)
+        Ok(views.html.viewKeysByUser(assetsFinder, user, userKeys, editKeyPageTitle))
+      case None =>
+        Ok("done")
+    }
+  }
+
+  def deleteKeyByUser(id: String, keyId: String) = Action.async { implicit request =>
+    Future.successful(Ok("Done"))
+  }
+
+  def extendKeyByUser(id: String, keyId: String) = Action.async { implicit request =>
+    Future.successful(Ok("Done"))
+  }
+
   def getEmails(tier: String, status: String) = maybeAuth { implicit request =>
     Ok(Json.toJson(dynamo.getEmails(tier, status)))
   }
