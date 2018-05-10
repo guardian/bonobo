@@ -104,15 +104,17 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
 
   def sendEmailDeletionFailed(userId: String): Future[SendEmailResult] = {
     val message =
-      s"""Hey.
+      s"""Damn Daniel.
          |
-         |Something went wrong when trying to delete the keys of user
+         |Something went wrong when trying to delete assets for user
          |
          |     $userId
          |
-         |inside the Kong repository. The records in the Bonobo database are gone,
-         |but since some Kong records may presumably still be there, there is a
-         |chance some manual cleanup will be needed.""".stripMargin
+         |inside the Kong repository. As a result, all their assets are still there.
+         |Sorry but you'll have to investigate. Presumably the `kongConsumerId` field
+         |led to a nonexistent key, or Kong returned a bortched response.
+         |
+         |Good luck.""".stripMargin
     sendEmail(fromAddress, "Keys deletion failed", message)
   }
 }
