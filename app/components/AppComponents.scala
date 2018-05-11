@@ -14,6 +14,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
 import email.{ AwsEmailClient, MailClient }
+import java.security.MessageDigest
 import kong.{ Kong, KongClient }
 import models.LabelProperties
 import org.joda.time.Duration
@@ -129,6 +130,21 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   }
 }
 
+trait HashComponent { self: BuiltInComponents =>
+  val digest = MessageDigest.getInstance("MD5")
+
+  def md5(str: String): String = {
+    val hash = str + nonce
+    digest.digest(hash.getBytes).map("%02X".format(_)).mkString
+  }
+
+  def nonce: String
+}
+
+trait HashComponentImpl extends HashComponent { self: BuiltInComponents =>
+  val nonce = configuration.get[String]("nonce")
+}
+
 trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
   val contentSecurityPolicy = "script-src 'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com https://ajax.googleapis.com"
   override lazy val httpFilters = Seq(
@@ -150,7 +166,7 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
 }
 
 trait ControllersComponent {
-  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with AssetsComponents =>
+  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with HashComponent with AssetsComponents =>
 
   def enableAuth: Boolean
 
@@ -165,7 +181,7 @@ trait ControllersComponent {
     enableAuth)
   def authController = new Auth(controllerComponents, googleAuthConfig, wsClient)
 
-  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder)
+  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder, md5)
   val commercialFormController = new CommercialForm(controllerComponents, dynamo, awsEmail, assetsFinder)
 
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
@@ -180,6 +196,7 @@ class AppComponents(context: Context)
   with KongComponentImpl
   with AwsEmailComponentImpl
   with LabelsComponentImpl
+  with HashComponentImpl
   with FiltersComponent
   with AssetsComponents
   with ControllersComponent {
