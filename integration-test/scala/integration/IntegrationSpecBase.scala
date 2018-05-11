@@ -5,6 +5,7 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
+import java.security.MessageDigest
 import models.{ BonoboUser, LabelProperties }
 import play.api.libs.json.{ JsNumber, JsString }
 import play.api.mvc.RequestHeader
@@ -49,6 +50,15 @@ trait IntegrationSpecBase
   with GuiceOneAppPerSuite { self: TestSuite =>
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
+
+  val digest = MessageDigest.getInstance("MD5")
+
+  val salt = "super-secret"
+
+  def md5(str: String): String = {
+    val hash = str + salt
+    digest(hash.getBytes).map("%02X".format(_)).mkString
+  }
 
   trait FakeDynamoComponent extends DynamoComponent {
     val dynamo = self.dynamo
