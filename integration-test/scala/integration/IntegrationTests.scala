@@ -508,7 +508,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 200
   }
 
-  it should "swallow the error if the grace period expired"{
+  it should "delete the user's keys and account"{
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
@@ -525,7 +525,18 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("user-1@email.com")
-    val threeWeeksAgo = DateTime.now.minusWeeks(3).getMillis
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
+      "tier" -> "RightsManaged",
+      "productName" -> "Another Product",
+      "productUrl" -> "http://anotherproduct.co.uk",
+      "key" -> "the-dark-day",
+      "sendEmail" -> "false")).get
+
+    val keysBefore = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+
+    keysBefore.length shouldBe 1
+
     val hashedId = md5(userBefore.value.bonoboId)
 
     dynamo.updateUser(userBefore.value.copy(
@@ -537,8 +548,10 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resdelete) shouldBe 200
 
     val userAfter = dynamo.getUserWithEmail("user-1@email.com")
+    val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
 
-    userAfter shouldBe defined
+    userAfter shouldBe None
+    keysAfter.length shouldBe 0
   }
 
   behavior of "extending a user's keys"
@@ -549,37 +562,5 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 200
   }
 
-  it should "swallow the error if the grace period expired"{
-    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
-      "email" -> "user-1@email.com",
-      "name" -> "Joe Bloggs",
-      "companyName" -> "The Test Company",
-      "companyUrl" -> "http://thetestcompany.co.uk",
-      "productName" -> "blabla",
-      "productUrl" -> "http://blabla",
-      "url" -> "some url",
-      "tier" -> "RightsManaged",
-      "key" -> "testing-duplicate-keys",
-      "labelIds" -> "",
-      "sendEmail" -> "false")).get
-
-    status(resuser) shouldBe 303
-
-    val userBefore = dynamo.getUserWithEmail("user-1@email.com")
-    val threeWeeksAgo = DateTime.now.minusWeeks(3).getMillis
-    val hashedId = md5(userBefore.value.bonoboId)
-
-    dynamo.updateUser(userBefore.value.copy(
-      hashedId = Some(hashedId),
-      remindedAt = Some(threeWeeksAgo)))
-
-    val resdelete = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/extend"))
-
-    status(resdelete) shouldBe 200
-
-    val userAfter = dynamo.getUserWithEmail("user-1@email.com")
-
-    userAfter shouldBe defined
-  }
 }
 
