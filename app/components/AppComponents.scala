@@ -130,7 +130,7 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   }
 }
 
-trait HashComponent { self: BuiltInComponents =>
+trait HashComponent {
   val digest = MessageDigest.getInstance("MD5")
 
   def md5(str: String): String = {

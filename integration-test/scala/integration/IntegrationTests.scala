@@ -522,7 +522,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("user-1@email.com")
-    val hashedId = md5(userBefore.value.bonoboId)
+    val hashedId = components.md5(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -571,7 +571,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
-    val hashedId = md5(userBefore.value.bonoboId)
+    val hashedId = components.md5(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",

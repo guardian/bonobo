@@ -5,7 +5,6 @@ import java.io.File
 import com.amazonaws.services.dynamodbv2.document.DynamoDB
 import com.amazonaws.services.simpleemail.model.SendEmailResult
 import email.MailClient
-import java.security.MessageDigest
 import models.{ BonoboUser, LabelProperties }
 import play.api.libs.json.{ JsNumber, JsString }
 import play.api.mvc.RequestHeader
@@ -51,15 +50,6 @@ trait IntegrationSpecBase
 
   val dynamo = new Dynamo(new DynamoDB(dynamoClient), usersTableName, keysTableName, labelsTableName)
 
-  val digest = MessageDigest.getInstance("MD5")
-
-  val salt = "super-secret"
-
-  def md5(str: String): String = {
-    val hash = str + salt
-    digest.digest(hash.getBytes).map("%02X".format(_)).mkString
-  }
-
   trait FakeDynamoComponent extends DynamoComponent {
     val dynamo = self.dynamo
   }
@@ -76,6 +66,10 @@ trait IntegrationSpecBase
       "id-label-3" -> LabelProperties("label-3", "#123412"))
   }
 
+  trait FakeHashComponent extends HashComponent {
+    val salt = "super-secret"
+  }
+
   class TestComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with AhcWSComponents
@@ -85,6 +79,7 @@ trait IntegrationSpecBase
     with FakeKongComponent
     with FakeAwsEmailComponent
     with FakeLabelsComponent
+    with FakeHashComponent
     with ControllersComponent
     with NoHttpFiltersComponents
     with AssetsComponents {
