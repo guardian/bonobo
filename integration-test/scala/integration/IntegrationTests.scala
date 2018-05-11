@@ -521,7 +521,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "delete the user's keys and account" in {
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
-      "email" -> "user-1@email.com",
+      "email" -> "malcolm.gladwell@email.me",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
@@ -529,13 +529,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
-      "key" -> "testing-duplicate-keys",
+      "key" -> "malcom-has-a-key",
       "labelIds" -> "",
       "sendEmail" -> "false")).get
 
     status(resuser) shouldBe 303
 
-    val userBefore = dynamo.getUserWithEmail("user-1@email.com")
+    val userBefore = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
     val hashedId = components.md5(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
@@ -592,7 +592,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       "productUrl" -> "http://blabla",
       "url" -> "some url",
       "tier" -> "RightsManaged",
-      "key" -> "testing-duplicate-keys",
+      "key" -> "this-is-herber-key",
       "labelIds" -> "",
       "sendEmail" -> "false")).get
 
