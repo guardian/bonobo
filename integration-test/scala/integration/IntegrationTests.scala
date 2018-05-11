@@ -552,7 +552,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(resdelete) shouldBe 200
 
-    val userAfter = dynamo.getUserWithEmail("user-1@email.com")
+    val userAfter = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
     val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
 
     userAfter shouldBe None
@@ -615,7 +615,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(resextend) shouldBe 200
 
-    val userAfter = dynamo.getUserWithEmail("user-1@email.com")
+    val userAfter = dynamo.getUserWithEmail("herbert.simon@email.com")
     val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
 
     userAfter shouldBe defined
