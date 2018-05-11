@@ -134,15 +134,15 @@ trait HashComponent { self: BuiltInComponents =>
   val digest = MessageDigest.getInstance("MD5")
 
   def md5(str: String): String = {
-    val hash = str + nonce
+    val hash = str + salt
     digest.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
 
-  def nonce: String
+  def salt: String
 }
 
 trait HashComponentImpl extends HashComponent { self: BuiltInComponents =>
-  val nonce = configuration.get[String]("nonce")
+  val salt = configuration.get[String]("salt")
 }
 
 trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
