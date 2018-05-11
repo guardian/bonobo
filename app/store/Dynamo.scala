@@ -152,9 +152,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val twoWeeksAgo = DateTime.now.minusWeeks(2).getMillis
     val userQuery = new QuerySpec()
       .withKeyConditionExpression("hashedId = :i")
-      .withFilterExpression("remindedAt > :d")
       .withValueMap(new ValueMap().withString(":i", hashedId))
-      .withValueMap(new ValueMap().withLong(":d", twoWeeksAgo))
       .withMaxResultSize(1)
     BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
   }
