@@ -560,5 +560,49 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 200
   }
 
+  it should "extend the user's keys"{
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "user-1@email.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "testing-duplicate-keys",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val userBefore = dynamo.getUserWithEmail("user-1@email.com")
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
+      "tier" -> "RightsManaged",
+      "productName" -> "Another Product",
+      "productUrl" -> "http://anotherproduct.co.uk",
+      "key" -> "the-dark-day",
+      "sendEmail" -> "false")).get
+
+    val keysBefore = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+
+    keysBefore.length shouldBe 1
+
+    val hashedId = md5(userBefore.value.bonoboId)
+
+    dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
+
+    val resextend = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/extend"))
+
+    status(resextend) shouldBe 200
+
+    val userAfter = dynamo.getUserWithEmail("user-1@email.com")
+    val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+
+    userAfter shouldBe defined
+    keysAfter.length shouldBe 1
+    keysAfter.head.extendedAt shouldBe defined
+  }
 }
 
