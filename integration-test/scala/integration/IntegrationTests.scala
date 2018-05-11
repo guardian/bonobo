@@ -501,13 +501,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   behavior of "deleting a user's keys and account"
 
-  it should "swallow the error if the user does not exist" {
+  it should "swallow the error if the user does not exist"{
     val result = route(app, FakeRequest(GET, "/user/758947205/keys/delete")).get
 
     status(result) shouldBe 200
   }
 
-  it should "swallow the error if the grace period expired" {
+  it should "swallow the error if the grace period expired"{
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
