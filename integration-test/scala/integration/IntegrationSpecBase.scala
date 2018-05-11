@@ -57,7 +57,7 @@ trait IntegrationSpecBase
 
   def md5(str: String): String = {
     val hash = str + salt
-    digest(hash.getBytes).map("%02X".format(_)).mkString
+    digest.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
 
   trait FakeDynamoComponent extends DynamoComponent {
