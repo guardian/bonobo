@@ -499,8 +499,22 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   behavior of "deleting a user's keys and account"
 
+  it should "fail if hash is absent" in {
+    val result = route(app, FakeRequest(GET, "/user/1245/keys/delete")).get
+
+    status(result) shouldBe 400
+  }
+
+  it should "forbid if hash is wrong" in {
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, "/user/${userId}/keys/delete?h=blablabla")).get
+
+    status(result) shouldBe 403
+  }
+
   it should "swallow the error if the user does not exist" in {
-    val result = route(app, FakeRequest(GET, "/user/758947205/keys/delete")).get
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, "/user/${userId}/keys/delete?h=${md5(userId)}")).get
 
     status(result) shouldBe 200
   }
@@ -548,8 +562,22 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   behavior of "extending a user's keys"
 
+  it should "fail if hash is absent" in {
+    val result = route(app, FakeRequest(GET, "/user/1245/keys/extend")).get
+
+    status(result) shouldBe 400
+  }
+
+  it should "forbid if hash is wrong" in {
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, "/user/${userId}/keys/extend?h=blablabla")).get
+
+    status(result) shouldBe 403
+  }
+
   it should "swallow the error if the user does not exist" in {
-    val result = route(app, FakeRequest(GET, "/user/758947205/keys/extend")).get
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, "/user/${userId}/keys/extend?h=${md5(userId)}")).get
 
     status(result) shouldBe 200
   }
