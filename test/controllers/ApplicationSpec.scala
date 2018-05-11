@@ -43,6 +43,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar with Stub
 
       def getUserWithId(id: String): Option[BonoboUser] = ???
 
+      def getUserWithHashedId(id: String): Option[BonoboUser] = ???
+
       def isEmailInUse(email: String): Boolean = ???
 
       def getUserWithEmail(email: String): Option[BonoboUser] = ???

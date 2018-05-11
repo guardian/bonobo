@@ -21,6 +21,8 @@ trait DB {
 
   def getUserWithId(id: String): Option[BonoboUser]
 
+  def getUserWithHashedId(id: String): Option[BonoboUser]
+
   def isEmailInUse(email: String): Boolean
 
   /**
@@ -142,6 +144,17 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val userQuery = new QuerySpec()
       .withKeyConditionExpression("id = :i")
       .withValueMap(new ValueMap().withString(":i", id))
+      .withMaxResultSize(1)
+    BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
+  }
+
+  def getUserWithHashedId(hashedId: String): Option[BonoboUser] = {
+    val twoWeeksAgo = DateTime.now.minusWeeks(2).getMillis
+    val userQuery = new QuerySpec()
+      .withKeyConditionExpression("hashedId = :i")
+      .withFilterExpression("remindedAt > :d")
+      .withValueMap(new ValueMap().withString(":i", hashedId))
+      .withValueMap(new ValueMap().withLong(":d", twoWeeksAgo))
       .withMaxResultSize(1)
     BonoboTable.query(userQuery).asScala.toList.map(fromBonoboItem).headOption
   }
