@@ -539,9 +539,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val hashedId = md5(userBefore.value.bonoboId)
 
-    dynamo.updateUser(userBefore.value.copy(
-      hashedId = Some(hashedId),
-      remindedAt = Some(threeWeeksAgo)))
+    dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
 
     val resdelete = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/delete"))
 
