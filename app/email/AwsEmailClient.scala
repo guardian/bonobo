@@ -16,7 +16,9 @@ trait MailClient {
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
 
-  def sendEmailDeletionFailed(userId: String): Future[SendEmailResult]
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult]
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult]
 }
 
 class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, enableEmail: Boolean) extends MailClient {
@@ -102,7 +104,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
     sendEmail(toEmail, "New Key Created", message)
   }
 
-  def sendEmailDeletionFailed(userId: String): Future[SendEmailResult] = {
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult] = {
     val message =
       s"""Damn Daniel.
          |
@@ -110,9 +112,27 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
          |
          |     $userId
          |
-         |inside the Kong repository. As a result, all their assets are still there.
-         |Sorry but you'll have to investigate. Presumably the `kongConsumerId` field
-         |led to a nonexistent key, or Kong returned a bortched response.
+         |As a result, all their assets are still there. Sorry but you'll have to investigate.
+         |Here's all I've got:
+         |
+         | $err
+         |
+         |Good luck.""".stripMargin
+    sendEmail(fromAddress, "Keys deletion failed", message)
+  }
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult] = {
+    val message =
+      s"""Damn Daniel.
+         |
+         |Something went wrong when trying to extend assets for user
+         |
+         |     $userId
+         |
+         |As a result, all their assets are still there. Sorry but you'll have to investigate.
+         |Here's all I've got:
+         |
+         | $err
          |
          |Good luck.""".stripMargin
     sendEmail(fromAddress, "Keys deletion failed", message)

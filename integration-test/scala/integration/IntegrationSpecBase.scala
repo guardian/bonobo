@@ -36,7 +36,9 @@ class FakeEmailClient extends MailClient {
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for new key"))
 
-  def sendEmailDeletionFailed(userId: String): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for a failed deletion"))
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for a failed deletion"))
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for a failed deletion"))
 }
 
 trait IntegrationSpecBase
