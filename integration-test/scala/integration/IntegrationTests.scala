@@ -502,13 +502,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   behavior of "deleting a user's keys and account"
 
-  it should "swallow the error if the user does not exist"{
+  it should "swallow the error if the user does not exist" in {
     val result = route(app, FakeRequest(GET, "/user/758947205/keys/delete")).get
 
     status(result) shouldBe 200
   }
 
-  it should "delete the user's keys and account"{
+  it should "delete the user's keys and account" in {
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
@@ -554,13 +554,13 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   behavior of "extending a user's keys"
 
-  it should "swallow the error if the user does not exist"{
+  it should "swallow the error if the user does not exist" in {
     val result = route(app, FakeRequest(GET, "/user/758947205/keys/extend")).get
 
     status(result) shouldBe 200
   }
 
-  it should "extend the user's keys"{
+  it should "extend the user's keys" in {
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
       "email" -> "user-1@email.com",
       "name" -> "Joe Bloggs",
