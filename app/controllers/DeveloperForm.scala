@@ -49,7 +49,9 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
       Future.successful(Forbidden)
     else
       logic.deleteKeys(id).recover {
-        case GenericFailure(_) => awsEmail.sendEmailDeletionFailed(id)
+        case _ =>
+          awsEmail.sendEmailDeletionFailed(id)
+          ()
       }.map {
         _ => Ok(views.html.developerDeleteComplete(assetsFinder))
       }
@@ -59,7 +61,9 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     if (md5(id) != hash)
       Future.successful(Forbidden)
     else
-      logic.extendKeys(id).map {
+      logic.extendKeys(id).recover {
+        case _ => ()
+      }.map {
         _ => Ok(views.html.developerExtendComplete(assetsFinder))
       }
   }
