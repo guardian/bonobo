@@ -27,8 +27,8 @@ GET         /healthcheck                controllers.Application.healthcheck
 GET         /register/developer         controllers.DeveloperForm.createKeyPage
 POST        /register/developer         controllers.DeveloperForm.createKey
 GET         /register/complete          controllers.DeveloperForm.complete
-GET         /user/:id/keys/delete       controllers.DeveloperForm.deleteKeys(id: String)
-GET         /user/:id/keys/extend       controllers.DeveloperForm.extendKeys(id: String)
+GET         /user/:id/keys/delete       controllers.DeveloperForm.deleteKeys(id: String, h: String)
+GET         /user/:id/keys/extend       controllers.DeveloperForm.extendKeys(id: String, h: String)
 
 #Commercial request key form
 GET         /register/commercial        controllers.CommercialForm.requestKeyPage

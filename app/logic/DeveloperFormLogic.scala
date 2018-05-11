@@ -43,8 +43,8 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def deleteKeys(hashedId: String): Future[Unit] = {
-    dynamo.getUserWithHashedId(hashedId).fold(userNotFound(hashedId): Future[Unit]) { user =>
+  def deleteKeys(id: String): Future[Unit] = {
+    dynamo.getUserWithId(id).fold(userNotFound(id): Future[Unit]) { user =>
       val keys = dynamo.getKeysWithUserId(user.bonoboId)
       Future.traverse(keys) { key =>
         for {
@@ -59,8 +59,8 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def extendKeys(hashedId: String): Future[Unit] = {
-    dynamo.getUserWithHashedId(hashedId).fold(userNotFound(hashedId): Future[Unit]) { user =>
+  def extendKeys(id: String): Future[Unit] = {
+    dynamo.getUserWithId(id).fold(userNotFound(id): Future[Unit]) { user =>
       val keys = dynamo.getKeysWithUserId(user.bonoboId)
       val now = Some(DateTime.now())
       Future.traverse(keys)(key => Future.successful(dynamo.updateKey(key.copy(extendedAt = now)))).map { _ => () }

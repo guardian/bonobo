@@ -139,7 +139,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "add a new user with associated labels and a key" in {
     val userToSave = BonoboUser(
       bonoboId = "id-user-with-labels",
-      hashedId = None,
       name = "Labels Guy",
       email = "labels@createuser.com",
       companyName = Some("The Labels Company"),
@@ -426,7 +425,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "add a Bonobo user to Dynamo" in {
     val userToSave = new BonoboUser(
       bonoboId = "id",
-      hashedId = None,
       name = "Joe Bloggs",
       email = "test@commercialform.com",
       companyName = Some("The Test Company"),
@@ -466,7 +464,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "show error message when the email hasn't been sent" in {
     val userToSave = new BonoboUser(
       bonoboId = "id",
-      hashedId = None,
       name = "Joe Bloggs",
       email = "test-email@commercialform.com",
       companyName = Some("The Test Company"),
@@ -525,6 +522,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("user-1@email.com")
+    val hashedId = md5(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -537,11 +535,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keysBefore.length shouldBe 1
 
-    val hashedId = md5(userBefore.value.bonoboId)
-
-    dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
-
-    val resdelete = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/delete")).get
+    val resdelete = route(app, FakeRequest(GET, s"/user/${userBefore.value.bonoboId}/keys/delete?h=${hashedId}")).get
 
     status(resdelete) shouldBe 200
 
@@ -562,7 +556,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "extend the user's keys" in {
     val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
-      "email" -> "user-1@email.com",
+      "email" -> "herbert.simon@email.com",
       "name" -> "Joe Bloggs",
       "companyName" -> "The Test Company",
       "companyUrl" -> "http://thetestcompany.co.uk",
@@ -576,7 +570,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(resuser) shouldBe 303
 
-    val userBefore = dynamo.getUserWithEmail("user-1@email.com")
+    val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
+    val hashedId = md5(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -589,11 +584,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keysBefore.length shouldBe 1
 
-    val hashedId = md5(userBefore.value.bonoboId)
-
-    dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
-
-    val resextend = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/extend")).get
+    val resextend = route(app, FakeRequest(GET, s"/user/${userBefore.value.bonoboId}/keys/extend?h=${hashedId}")).get
 
     status(resextend) shouldBe 200
 

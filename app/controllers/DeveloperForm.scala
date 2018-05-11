@@ -44,16 +44,16 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def deleteKeys(hashedId: String) = Action.async { implicit request =>
-    logic.deleteKeys(hashedId).recover {
-      case GenericFailure(_) => awsEmail.sendEmailDeletionFailed(hashedId)
+  def deleteKeys(id: String, hash: String) = Action.async { implicit request =>
+    logic.deleteKeys(id).recover {
+      case GenericFailure(_) => awsEmail.sendEmailDeletionFailed(id)
     }.map {
       _ => Ok(views.html.developerDeleteComplete(assetsFinder))
     }
   }
 
-  def extendKeys(hashedId: String) = Action.async { implicit request =>
-    logic.extendKeys(hashedId).map {
+  def extendKeys(id: String, hash: String) = Action.async { implicit request =>
+    logic.extendKeys(id).map {
       _ => Ok(views.html.developerExtendComplete(assetsFinder))
     }
   }
