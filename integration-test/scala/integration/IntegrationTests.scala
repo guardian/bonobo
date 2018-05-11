@@ -139,6 +139,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "add a new user with associated labels and a key" in {
     val userToSave = BonoboUser(
       bonoboId = "id-user-with-labels",
+      hashedId = None,
       name = "Labels Guy",
       email = "labels@createuser.com",
       companyName = Some("The Labels Company"),
