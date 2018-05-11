@@ -541,7 +541,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
 
-    val resdelete = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/delete"))
+    val resdelete = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/delete")).get
 
     status(resdelete) shouldBe 200
 
@@ -593,7 +593,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     dynamo.updateUser(userBefore.value.copy(hashedId = Some(hashedId)))
 
-    val resextend = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/extend"))
+    val resextend = route(app, FakeRequest(GET, s"/user/${hashedId}/keys/extend")).get
 
     status(resextend) shouldBe 200
 
