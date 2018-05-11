@@ -390,6 +390,7 @@ object Dynamo {
     }
     BonoboUser(
       bonoboId = item.getString("id"),
+      hashedId = Option(item.getString("hashedId")),
       name = item.getString("name"),
       email = item.getString("email"),
       companyName = Option(item.getString("companyName")),

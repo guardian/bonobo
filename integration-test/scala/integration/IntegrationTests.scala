@@ -425,6 +425,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "add a Bonobo user to Dynamo" in {
     val userToSave = new BonoboUser(
       bonoboId = "id",
+      hashedId = None,
       name = "Joe Bloggs",
       email = "test@commercialform.com",
       companyName = Some("The Test Company"),
@@ -464,6 +465,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   it should "show error message when the email hasn't been sent" in {
     val userToSave = new BonoboUser(
       bonoboId = "id",
+      hashedId = None,
       name = "Joe Bloggs",
       email = "test-email@commercialform.com",
       companyName = Some("The Test Company"),
