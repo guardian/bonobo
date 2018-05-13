@@ -513,7 +513,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.md5(userId)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.hash(userId)}")).get
 
     status(result) shouldBe 200
   }
@@ -535,7 +535,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
-    val hashedId = components.md5(userBefore.value.bonoboId)
+    val hashedId = components.hash(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
@@ -576,7 +576,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=${components.md5(userId)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=${components.hash(userId)}")).get
 
     status(result) shouldBe 200
   }
@@ -598,7 +598,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
-    val hashedId = components.md5(userBefore.value.bonoboId)
+    val hashedId = components.hash(userBefore.value.bonoboId)
 
     val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",

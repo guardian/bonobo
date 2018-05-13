@@ -13,7 +13,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, md5: String => String)
+class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hash: String => String)
   extends BaseController with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
@@ -45,7 +45,7 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
   }
 
   def deleteKeys(id: String, hash: String) = Action.async { implicit request =>
-    if (md5(id) != hash)
+    if (hash(id) != hash)
       Future.successful(Forbidden)
     else
       logic.deleteKeys(id).recover {
@@ -58,7 +58,7 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
   }
 
   def extendKeys(id: String, hash: String) = Action.async { implicit request =>
-    if (md5(id) != hash)
+    if (hash(id) != hash)
       Future.successful(Forbidden)
     else
       logic.extendKeys(id).recover {

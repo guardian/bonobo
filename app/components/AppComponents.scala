@@ -133,7 +133,7 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
 trait HashComponent {
   val digest = MessageDigest.getInstance("MD5")
 
-  def md5(str: String): String = {
+  def hash(str: String): String = {
     val hash = str + salt
     digest.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
@@ -181,7 +181,7 @@ trait ControllersComponent {
     enableAuth)
   def authController = new Auth(controllerComponents, googleAuthConfig, wsClient)
 
-  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder, md5)
+  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder, hash)
   val commercialFormController = new CommercialForm(controllerComponents, dynamo, awsEmail, assetsFinder)
 
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
