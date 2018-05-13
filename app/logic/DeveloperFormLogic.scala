@@ -59,11 +59,13 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def extendKeys(userId: String): Future[Unit] = {
-    dynamo.getUserWithId(userId).fold(userNotFound(userId): Future[Unit]) { user =>
-      val keys = dynamo.getKeysWithUserId(user.bonoboId)
-      val now = Some(DateTime.now())
-      Future.traverse(keys)(key => Future.successful(dynamo.updateKey(key.copy(extendedAt = now)))).map { _ => () }
+  def extendKeys(userId: String): Future[_] = {
+    dynamo.getUserWithId(userId) match {
+      case None => userNotFound(userId)
+      case Some(user) =>
+        val keys = dynamo.getKeysWithUserId(user.bonoboId)
+        val now = Some(DateTime.now())
+        Future.traverse(keys)(key => Future.successful(dynamo.updateKey(key.copy(extendedAt = now))))
     }
   }
 
