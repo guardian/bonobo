@@ -69,5 +69,5 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  private def userNotFound(id: String) = Future.failed(new Throwable(s"User $id not found"))
+  private def userNotFound(id: String) = Future.failed(new IllegalArgumentException(s"User $id not found"))
 }
