@@ -13,7 +13,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hash: String => String)
+class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hashFn: String => String)
   extends BaseController with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
@@ -44,26 +44,26 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def deleteKeys(id: String, hash: String) = Action.async { implicit request =>
-    if (hash(id) != hash)
+  def deleteKeys(userId: String, hash: String) = Action.async { implicit request =>
+    if (hashFn(userId) != hash)
       Future.successful(Forbidden)
     else
-      logic.deleteKeys(id).recover {
+      logic.deleteKeys(userId).recover {
         case err =>
-          awsEmail.sendEmailDeletionFailed(id, err)
+          awsEmail.sendEmailDeletionFailed(userId, err)
           ()
       }.map {
         _ => Ok(views.html.developerDeleteComplete(assetsFinder))
       }
   }
 
-  def extendKeys(id: String, hash: String) = Action.async { implicit request =>
-    if (hash(id) != hash)
+  def extendKeys(userId: String, hash: String) = Action.async { implicit request =>
+    if (hashFn(userId) != hash)
       Future.successful(Forbidden)
     else
-      logic.extendKeys(id).recover {
+      logic.extendKeys(userId).recover {
         case err =>
-          awsEmail.sendEmailExtensionFailed(id, err)
+          awsEmail.sendEmailExtensionFailed(userId, err)
           ()
       }.map {
         _ => Ok(views.html.developerExtendComplete(assetsFinder))
