@@ -141,7 +141,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     ws.url(s"$serverUrl/consumers/$consumerId").delete().flatMap { response =>
       response.status match {
         case 204 => success(s"Kong: Successfully deleted consumer $consumerId", Happy)
-        case _ => genericFail(s"Kong: Failed to delete consumer $consumerId. Response ${response.status} ${response.statusText}")
+        case _ => genericFail(s"Kong: Failed to delete consumer $consumerId. Response ${response.status} ${response.statusText}: ${response.body}")
       }
     }
   }
