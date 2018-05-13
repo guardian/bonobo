@@ -21,7 +21,7 @@ trait MailClient {
   def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult]
 }
 
-class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, enableEmail: Boolean) extends MailClient {
+class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, teamAddress: String, enableEmail: Boolean) extends MailClient {
 
   private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     if (enableEmail) {
@@ -118,7 +118,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
          | $err
          |
          |Good luck.""".stripMargin
-    sendEmail(fromAddress, "Keys deletion failed", message)
+    sendEmail(teamAddress, "Keys deletion failed", message)
   }
 
   def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult] = {
@@ -135,6 +135,6 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
          | $err
          |
          |Good luck.""".stripMargin
-    sendEmail(fromAddress, "Keys deletion failed", message)
+    sendEmail(teamAddress, "Keys deletion failed", message)
   }
 }
