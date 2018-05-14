@@ -46,7 +46,7 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
   }
 
   /**
-   * Extends the lifetime of a user's account and keys. This action is subsequent of
+   * Deletes user's account and keys. This action is subsequent of
    * the user receiving an email asking whether they are still using their api keys.
    * It is a strong constraint, so we make sure the user indeed received the email
    * by checking the `user.additionalInfo.remindedAt` field.
