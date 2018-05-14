@@ -507,17 +507,33 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 400
   }
 
-  it should "forbid if hash is wrong" in {
-    val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=blablabla")).get
-    status(result) shouldBe 403
-  }
-
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
     val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.hash(userId, 0)}")).get
 
     status(result) shouldBe 204
+  }
+
+  it should "forbid if hash is wrong" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "jed.samaritan@email.me",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "jed-flys-high",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val user = dynamo.getUserWithEmail("jed.samaritan@email.me")
+
+    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/keys/delete?h=blablabla")).get
+    status(result) shouldBe 403
   }
 
   it should "delete the user's keys and account" in {
@@ -554,7 +570,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keysBefore.length shouldBe 1
 
-    val resdelete = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/keys/delete?h=${hashedId}")).get
+    val resdelete = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/delete?h=${hashedId}")).get
 
     status(resdelete) shouldBe 200
 
@@ -568,23 +584,38 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "extending a user's keys"
 
   it should "fail if hash is absent" in {
-    val result = route(app, FakeRequest(GET, "/user/1245/keys/extend")).get
+    val result = route(app, FakeRequest(GET, "/user/1245/extend")).get
 
     status(result) shouldBe 400
   }
 
-  it should "forbid if hash is wrong" in {
-    val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=blablabla")).get
-
-    status(result) shouldBe 403
-  }
-
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=${components.hash(userId, 0)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/extend?h=${components.hash(userId, 0)}")).get
 
-    status(result) shouldBe 206
+    status(result) shouldBe 204
+  }
+
+  it should "forbid if hash is wrong" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "major@email.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "the-major-is-right",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val user = dynamo.getUserWithEmail("major@email.com")
+    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/extend?h=blablabla")).get
+
+    status(result) shouldBe 403
   }
 
   it should "extend the user's keys" in {
@@ -621,7 +652,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     keysBefore.length shouldBe 1
 
-    val resextend = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/keys/extend?h=${hashedId}")).get
+    val resextend = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/extend?h=${hashedId}")).get
 
     status(resextend) shouldBe 200
 
