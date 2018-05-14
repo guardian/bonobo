@@ -1,6 +1,7 @@
 package controllers
 
 import email.MailClient
+import org.joda.time.DateTime
 import kong.Kong
 import kong.Kong.{ ConflictFailure, GenericFailure }
 import logic.DeveloperFormLogic
@@ -13,7 +14,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hashFn: String => String)
+class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hashFn: (String, Long) => String)
   extends BaseController with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
@@ -44,30 +45,45 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
-  def deleteKeys(userId: String, hash: String) = Action.async { implicit request =>
-    if (hashFn(userId) != hash)
-      Future.successful(Forbidden)
-    else
-      logic.deleteKeys(userId).recover {
-        case err =>
-          awsEmail.sendEmailDeletionFailed(userId, err)
-          ()
-      }.map {
-        _ => Ok(views.html.developerDeleteComplete(assetsFinder))
-      }
+  def deleteUser(userId: String, hash: String) = Action.async { implicit request =>
+    Future { dynamo.getUserWithId(userId) } flatMap {
+      case None => Future.successful(NoContent)
+      case Some(user) =>
+        if (user.additionalInfo.remindedAt.exists(validate(userId, hash)))
+          logic.deleteUser(user).recover {
+            case err =>
+              awsEmail.sendEmailDeletionFailed(userId, err)
+              ()
+          }.map {
+            _ => Ok(views.html.developerDeleteComplete(assetsFinder))
+          }
+        else
+          Future.successful(Forbidden)
+    }
   }
 
-  def extendKeys(userId: String, hash: String) = Action.async { implicit request =>
-    if (hashFn(userId) != hash)
-      Future.successful(Forbidden)
-    else
-      logic.extendKeys(userId).recover {
-        case err =>
-          awsEmail.sendEmailExtensionFailed(userId, err)
-          ()
-      }.map {
-        _ => Ok(views.html.developerExtendComplete(assetsFinder))
-      }
+  def extendUser(userId: String, hash: String) = Action.async { implicit request =>
+    Future { dynamo.getUserWithId(userId) } flatMap {
+      case None => Future.successful(NoContent)
+      case Some(user) =>
+        if (user.additionalInfo.remindedAt.exists(validate(userId, hash)))
+          logic.extendUser(user).flatMap {
+            _ => logic.invalidateHash(user)
+          }.recover {
+            case err =>
+              awsEmail.sendEmailExtensionFailed(userId, err)
+              ()
+          }.map {
+            _ => Ok(views.html.developerExtendComplete(assetsFinder))
+          }
+        else
+          Future.successful(Forbidden)
+    }
+  }
+
+  def validate(userId: String, hash: String)(time: Long): Boolean = {
+    val twoWeeksAgo = DateTime.now.minusWeeks(2).getMillis
+    twoWeeksAgo <= time && hashFn(userId, time) == hash
   }
 
   def complete = Action {

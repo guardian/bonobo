@@ -176,10 +176,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
       new AttributeUpdate("requests_per_minute").put(kongKey.requestsPerMinute),
       new AttributeUpdate("status").put(kongKey.status),
       new AttributeUpdate("tier").put(kongKey.tier.toString),
-      kongKey.extendedAt match {
-        case Some(d) => new AttributeUpdate("extendedAt").put(d.getMillis)
-        case None => new AttributeUpdate("extendedAt").delete()
-      },
       kongKey.productUrl match {
         case Some(url) => new AttributeUpdate("productUrl").put(url)
         case None => new AttributeUpdate("productUrl").delete()
@@ -358,6 +354,8 @@ object Dynamo {
     bonoboKey.companyName.foreach(companyName => item.withString("companyName", companyName))
     bonoboKey.companyUrl.foreach(companyUrl => item.withString("companyUrl", companyUrl))
 
+    bonoboKey.additionalInfo.remindedAt.foreach(remindedAt => item.withLong("remindedAt", remindedAt))
+    bonoboKey.additionalInfo.extendedAt.foreach(extendedAt => item.withLong("extendedAt", extendedAt))
     bonoboKey.additionalInfo.businessArea.foreach(businessArea => item.withString("businessArea", businessArea))
     bonoboKey.additionalInfo.monthlyUsers.foreach(monthlyUsers => item.withString("monthlyUsers", monthlyUsers))
     bonoboKey.additionalInfo.commercialModel.foreach(commercialModel => item.withString("commercialModel", commercialModel))
@@ -383,6 +381,8 @@ object Dynamo {
       companyUrl = Option(item.getString("companyUrl")),
       additionalInfo = AdditionalUserInfo(
         createdAt = new DateTime(item.getString("createdAt").toLong),
+        remindedAt = Option(item.getString("remindedAt")).map(_.toLong),
+        extendedAt = Option(item.getString("extendedAt")).map(_.toLong),
         registrationType = toRegistrationType(item.getString("registrationType")),
         businessArea = Option(item.getString("businessArea")),
         monthlyUsers = Option(item.getString("monthlyUsers")),
@@ -426,8 +426,6 @@ object Dynamo {
       status = item.getString("status"),
       tier = toTier(item.getString("tier")),
       createdAt = new DateTime(item.getString("createdAt").toLong),
-      remindedAt = if (item.isPresent("remindedAt")) Some(new DateTime(item.getString("remindedAt").toLong)) else None,
-      extendedAt = if (item.isPresent("extendedAt")) Some(new DateTime(item.getString("extendedAt").toLong)) else None,
       productName = item.getString("productName"),
       productUrl = Option(item.getString("productUrl")),
       rangeKey = item.getString("rangekey"))

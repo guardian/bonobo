@@ -134,8 +134,8 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
 trait HashComponent {
   val digest = MessageDigest.getInstance("MD5")
 
-  def hash(str: String): String = {
-    val hash = str + salt
+  def hash(str: String, time: Long): String = {
+    val hash = s"${str}${time}${salt}"
     digest.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
 

@@ -33,7 +33,7 @@ object BonoboUser {
   }
   /* Method used when using the commercial form for creating a user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, None, None, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
     new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, Some(formData.companyName), Some(formData.companyUrl), additionalInfo, List.empty)
   }
 }
@@ -41,6 +41,8 @@ object BonoboUser {
 case class AdditionalUserInfo(
   createdAt: DateTime,
   registrationType: RegistrationType,
+  remindedAt: Option[Long],
+  extendedAt: Option[Long],
   businessArea: Option[String],
   monthlyUsers: Option[String],
   commercialModel: Option[String],
@@ -50,7 +52,7 @@ case class AdditionalUserInfo(
 
 object AdditionalUserInfo {
   def apply(date: DateTime, registrationType: RegistrationType): AdditionalUserInfo = {
-    new AdditionalUserInfo(date, registrationType, None, None, None, None, None, None)
+    new AdditionalUserInfo(date, registrationType, None, None, None, None, None, None, None, None)
   }
 }
 
@@ -64,8 +66,6 @@ case class KongKey(
   tier: Tier,
   status: String,
   createdAt: DateTime,
-  extendedAt: Option[DateTime],
-  remindedAt: Option[DateTime],
   productName: String,
   productUrl: Option[String],
   rangeKey: String)
@@ -77,11 +77,11 @@ object KongKey {
   private def uniqueRangeKey(createdAt: DateTime): String = s"${createdAt.getMillis}_${UUID.randomUUID}"
 
   def apply(bonoboId: String, kongConsumerId: String, form: EditKeyFormData, createdAt: DateTime, rateLimits: RateLimits, rangeKey: String): KongKey = {
-    new KongKey(bonoboId, kongConsumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, None, None, form.productName, form.productUrl, rangeKey)
+    new KongKey(bonoboId, kongConsumerId, form.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, form.tier, form.status, createdAt, form.productName, form.productUrl, rangeKey)
   }
 
   def apply(bonoboId: String, consumer: ConsumerCreationResult, rateLimits: RateLimits, tier: Tier, productName: String, productUrl: Option[String]): KongKey = {
-    new KongKey(bonoboId, consumer.kongConsumerId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, None, None, productName, productUrl, uniqueRangeKey(consumer.createdAt))
+    new KongKey(bonoboId, consumer.kongConsumerId, consumer.key, rateLimits.requestsPerDay, rateLimits.requestsPerMinute, tier, Active, consumer.createdAt, productName, productUrl, uniqueRangeKey(consumer.createdAt))
   }
 
 }

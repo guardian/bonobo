@@ -43,33 +43,25 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def deleteKeys(userId: String): Future[_] = {
-    Future { dynamo.getUserWithId(userId) } flatMap {
-      case None => userNotFound(userId)
-      case Some(user) =>
-        val keys = dynamo.getKeysWithUserId(user.bonoboId)
-        Future.traverse(keys) { key =>
-          for {
-            _ <- kong.deleteKey(key.kongConsumerId)
-            _ <- kong.deleteConsumer(key.kongConsumerId)
-          } yield {
-            dynamo.deleteKey(key)
-          }
-        }.map { _ =>
-          dynamo.deleteUser(user)
-        }
+  def deleteUser(user: BonoboUser): Future[_] = {
+    val keys = dynamo.getKeysWithUserId(user.bonoboId)
+    Future.traverse(keys) { key =>
+      for {
+        _ <- kong.deleteKey(key.kongConsumerId)
+        _ <- kong.deleteConsumer(key.kongConsumerId)
+      } yield {
+        dynamo.deleteKey(key)
+      }
+    }.map { _ =>
+      dynamo.deleteUser(user)
     }
   }
 
-  def extendKeys(userId: String): Future[_] = {
-    Future { dynamo.getUserWithId(userId) } flatMap {
-      case None => userNotFound(userId)
-      case Some(user) =>
-        val keys = dynamo.getKeysWithUserId(user.bonoboId)
-        val now = Some(DateTime.now())
-        Future.traverse(keys)(key => Future.successful(dynamo.updateKey(key.copy(extendedAt = now))))
-    }
+  def extendUser(user: BonoboUser): Future[_] = {
+    val now = Some(DateTime.now.getMillis)
+    Future { dynamo.updateUser(user.copy(additionalInfo = user.additionalInfo.copy(extendedAt = now))) }
   }
 
-  private def userNotFound(id: String) = Future.failed(new IllegalArgumentException(s"User $id not found"))
+  def invalidateHash(user: BonoboUser): Future[_] =
+    Future { dynamo.updateUser(user.copy(additionalInfo = user.additionalInfo.copy(remindedAt = None))) }
 }
