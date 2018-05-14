@@ -656,10 +656,10 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(resextend) shouldBe 200
 
-    val userAfter = dynamo.getUserWithEmail("herbert.simon@email.com")
+    val userAfter = dynamo.getUserWithId(user.bonoboId)
     val keysAfter = dynamo.getKeysWithUserId(user.bonoboId)
 
-    userAfter shouldBe defined
+    userAfter.map(_.bonoboId) shouldBe Just(user.bonoboId)
     keysAfter.length shouldBe 1
     userAfter.value.additionalInfo.extendedAt shouldBe defined
   }
