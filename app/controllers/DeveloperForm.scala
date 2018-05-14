@@ -45,6 +45,11 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
+  /** Extends the lifetime of a user's account and keys. This action is subsequent of
+    * the user receiving an email asking whether they are still using their api keys.
+    * It is a strong constraint, so we make sure the user indeed received the email
+    * by checking the `user.additionalInfo.remindedAt` field.
+    */  
   def deleteUser(userId: String, hash: String) = Action.async { implicit request =>
     Future { dynamo.getUserWithId(userId) } flatMap {
       case None => Future.successful(NoContent)
@@ -62,6 +67,11 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     }
   }
 
+  /** Extends the lifetime of a user's account and keys. This action is subsequent of
+    * the user receiving an email asking whether they are still using their api keys.
+    * It is a strong constraint, so we make sure the user indeed received the email
+    * by checking the `user.additionalInfo.remindedAt` field.
+    */  
   def extendUser(userId: String, hash: String) = Action.async { implicit request =>
     Future { dynamo.getUserWithId(userId) } flatMap {
       case None => Future.successful(NoContent)
