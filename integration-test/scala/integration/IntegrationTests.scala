@@ -511,7 +511,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val userId = "758947205"
     val result = route(app, FakeRequest(GET, s"/user/${userId}/delete?h=${components.hash(userId, 0)}")).get
 
-    status(result) shouldBe 204
+    status(result) shouldBe 403
   }
 
   it should "forbid if hash is wrong" in {
@@ -593,7 +593,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val userId = "758947205"
     val result = route(app, FakeRequest(GET, s"/user/${userId}/extend?h=${components.hash(userId, 0)}")).get
 
-    status(result) shouldBe 204
+    status(result) shouldBe 403
   }
 
   it should "forbid if hash is wrong" in {

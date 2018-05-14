@@ -52,19 +52,17 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
    * by checking the `user.additionalInfo.remindedAt` field.
    */
   def deleteUser(userId: String, hash: String) = Action.async { implicit request =>
-    Future { dynamo.getUserWithId(userId) } flatMap {
-      case None => Future.successful(NoContent)
-      case Some(user) =>
-        if (user.additionalInfo.remindedAt.exists(validate(userId, hash)))
-          logic.deleteUser(user).recover {
-            case err =>
-              awsEmail.sendEmailDeletionFailed(userId, err)
-              ()
-          }.map {
-            _ => Ok(views.html.developerDeleteComplete(assetsFinder))
-          }
-        else
-          Future.successful(Forbidden)
+    Future { dynamo.getUserWithId(userId) } flatMap { user =>
+      if (user.exists(_.additionalInfo.remindedAt.exists(validate(userId, hash))))
+        logic.deleteUser(user.get).recover {
+          case err =>
+            awsEmail.sendEmailDeletionFailed(userId, err)
+            ()
+        }.map {
+          _ => Ok(views.html.developerDeleteComplete(assetsFinder))
+        }
+      else
+        Future.successful(Forbidden)
     }
   }
 
@@ -75,21 +73,19 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
    * by checking the `user.additionalInfo.remindedAt` field.
    */
   def extendUser(userId: String, hash: String) = Action.async { implicit request =>
-    Future { dynamo.getUserWithId(userId) } flatMap {
-      case None => Future.successful(NoContent)
-      case Some(user) =>
-        if (user.additionalInfo.remindedAt.exists(validate(userId, hash)))
-          logic.extendUser(user).flatMap {
-            user => logic.invalidateHash(user)
-          }.recover {
-            case err =>
-              awsEmail.sendEmailExtensionFailed(userId, err)
-              ()
-          }.map {
-            _ => Ok(views.html.developerExtendComplete(assetsFinder))
-          }
-        else
-          Future.successful(Forbidden)
+    Future { dynamo.getUserWithId(userId) } flatMap { user =>
+      if (user.exists(_.additionalInfo.remindedAt.exists(validate(userId, hash))))
+        logic.extendUser(user.get).flatMap {
+          user => logic.invalidateHash(user)
+        }.recover {
+          case err =>
+            awsEmail.sendEmailExtensionFailed(userId, err)
+            ()
+        }.map {
+          _ => Ok(views.html.developerExtendComplete(assetsFinder))
+        }
+      else
+        Future.successful(Forbidden)
     }
   }
 
