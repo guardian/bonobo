@@ -154,8 +154,6 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
       tier = Tier.Developer,
       status = "Active",
       createdAt = DateTime.now(),
-      extendedAt = None,
-      remindedAt = None,
       productName = "Label Product",
       productUrl = Some("www.labels.com"),
       rangeKey = "123")
@@ -437,6 +435,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
+        extendedAt = None,
+        remindedAt = None,
         registrationType = CommercialRegistration),
       labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
@@ -476,6 +476,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
+        remindedAt = None,
+        extendedAt = None,
         registrationType = CommercialRegistration),
       labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
@@ -513,9 +515,9 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.hash(userId)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.hash(userId, 0)}")).get
 
-    status(result) shouldBe 200
+    status(result) shouldBe 204
   }
 
   it should "delete the user's keys and account" in {
@@ -535,25 +537,29 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
-    val hashedId = components.hash(userBefore.value.bonoboId)
+    val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
 
-    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
+    dynamo.updateUser(user)
+
+    val hashedId = components.hash(userBefore.value.bonoboId, user.additionalInfo.remindedAt.get)
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${user.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "key" -> "the-dark-day",
       "sendEmail" -> "false")).get
 
-    val keysBefore = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+    val keysBefore = dynamo.getKeysWithUserId(user.bonoboId)
 
     keysBefore.length shouldBe 1
 
-    val resdelete = route(app, FakeRequest(GET, s"/user/${userBefore.value.bonoboId}/keys/delete?h=${hashedId}")).get
+    val resdelete = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/keys/delete?h=${hashedId}")).get
 
     status(resdelete) shouldBe 200
 
     val userAfter = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
-    val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+    val keysAfter = dynamo.getKeysWithUserId(user.bonoboId)
 
     userAfter shouldBe None
     keysAfter.length shouldBe 0
@@ -576,9 +582,9 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=${components.hash(userId)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/extend?h=${components.hash(userId, 0)}")).get
 
-    status(result) shouldBe 200
+    status(result) shouldBe 206
   }
 
   it should "extend the user's keys" in {
@@ -598,29 +604,33 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(resuser) shouldBe 303
 
     val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
-    val hashedId = components.hash(userBefore.value.bonoboId)
+    val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
 
-    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${userBefore.value.bonoboId}").withFormUrlEncodedBody(
+    dynamo.updateUser(user)
+
+    val hashedId = components.hash(user.bonoboId, user.additionalInfo.remindedAt.get)
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${user.bonoboId}").withFormUrlEncodedBody(
       "tier" -> "RightsManaged",
       "productName" -> "Another Product",
       "productUrl" -> "http://anotherproduct.co.uk",
       "key" -> "the-dark-day",
       "sendEmail" -> "false")).get
 
-    val keysBefore = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+    val keysBefore = dynamo.getKeysWithUserId(user.bonoboId)
 
     keysBefore.length shouldBe 1
 
-    val resextend = route(app, FakeRequest(GET, s"/user/${userBefore.value.bonoboId}/keys/extend?h=${hashedId}")).get
+    val resextend = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/keys/extend?h=${hashedId}")).get
 
     status(resextend) shouldBe 200
 
     val userAfter = dynamo.getUserWithEmail("herbert.simon@email.com")
-    val keysAfter = dynamo.getKeysWithUserId(userBefore.value.bonoboId)
+    val keysAfter = dynamo.getKeysWithUserId(user.bonoboId)
 
     userAfter shouldBe defined
     keysAfter.length shouldBe 1
-    keysAfter.head.extendedAt shouldBe defined
+    userAfter.value.additionalInfo.extendedAt shouldBe defined
   }
 }
 
