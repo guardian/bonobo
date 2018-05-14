@@ -75,9 +75,7 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
   def extendUser(userId: String, hash: String) = Action.async { implicit request =>
     Future { dynamo.getUserWithId(userId) } flatMap { user =>
       if (user.exists(_.additionalInfo.remindedAt.exists(validate(userId, hash))))
-        logic.extendUser(user.get).flatMap {
-          user => logic.invalidateHash(user)
-        }.recover {
+        logic.extendUser(user.get).recover {
           case err =>
             awsEmail.sendEmailExtensionFailed(userId, err)
             ()

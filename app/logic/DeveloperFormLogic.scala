@@ -57,15 +57,11 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def extendUser(user: BonoboUser): Future[BonoboUser] = {
+  def extendUser(user: BonoboUser): Future[_] = {
     val now = Some(DateTime.now.getMillis)
-    val newUser = user.copy(additionalInfo = user.additionalInfo.copy(extendedAt = now))
+    val newUser = user.copy(additionalInfo = user.additionalInfo.copy(extendedAt = now, remindedAt = None))
     Future {
       dynamo.saveUser(newUser)
-      newUser
     }
   }
-
-  def invalidateHash(user: BonoboUser): Future[_] =
-    Future { dynamo.saveUser(user.copy(additionalInfo = user.additionalInfo.copy(remindedAt = None))) }
 }
