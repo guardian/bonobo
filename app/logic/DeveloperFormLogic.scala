@@ -43,19 +43,19 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def deleteUser(user: BonoboUser): Future[_] = {
-    val keys = dynamo.getKeysWithUserId(user.bonoboId)
-    Future.traverse(keys) { key =>
-      for {
-        _ <- kong.deleteKey(key.kongConsumerId)
-        _ <- kong.deleteConsumer(key.kongConsumerId)
-      } yield {
-        dynamo.deleteKey(key)
+  def deleteUser(user: BonoboUser): Future[_] =
+    Future { dynamo.getKeysWithUserId(user.bonoboId) } flatMap {
+      Future.traverse(_) { key =>
+        for {
+          _ <- kong.deleteKey(key.kongConsumerId)
+          _ <- kong.deleteConsumer(key.kongConsumerId)
+        } yield {
+          dynamo.deleteKey(key)
+        }
+      }.map { _ =>
+        dynamo.deleteUser(user)
       }
-    }.map { _ =>
-      dynamo.deleteUser(user)
     }
-  }
 
   def extendUser(user: BonoboUser): Future[_] = {
     val now = Some(DateTime.now.getMillis)
