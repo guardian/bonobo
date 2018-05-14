@@ -47,7 +47,6 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     Future { dynamo.getKeysWithUserId(user.bonoboId) } flatMap {
       Future.traverse(_) { key =>
         for {
-          _ <- if (key.status == KongKey.Active) kong.deleteKey(key.kongConsumerId) else Future.successful(())
           _ <- kong.deleteConsumer(key.kongConsumerId)
         } yield {
           dynamo.deleteKey(key)
