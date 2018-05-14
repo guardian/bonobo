@@ -17,6 +17,7 @@ import email.{ AwsEmailClient, MailClient }
 import java.security.MessageDigest
 import kong.{ Kong, KongClient }
 import models.LabelProperties
+import org.bouncycastle.jcajce.provider.digest.SHA3
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -132,11 +133,10 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
 }
 
 trait HashComponent {
-  val digest = MessageDigest.getInstance("MD5")
-
   def hash(str: String, time: Long): String = {
     val hash = s"${str}${time}${salt}"
-    digest.digest(hash.getBytes).map("%02X".format(_)).mkString
+    val md = new SHA3.DigestSHA3(512)
+    md.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
 
   def salt: String
