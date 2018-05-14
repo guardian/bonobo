@@ -502,14 +502,14 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
   behavior of "deleting a user's keys and account"
 
   it should "fail if hash is absent" in {
-    val result = route(app, FakeRequest(GET, "/user/1245/keys/delete")).get
+    val result = route(app, FakeRequest(GET, "/user/1245/delete")).get
 
     status(result) shouldBe 400
   }
 
   it should "swallow the error if the user does not exist" in {
     val userId = "758947205"
-    val result = route(app, FakeRequest(GET, s"/user/${userId}/keys/delete?h=${components.hash(userId, 0)}")).get
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/delete?h=${components.hash(userId, 0)}")).get
 
     status(result) shouldBe 204
   }
@@ -532,7 +532,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     val user = dynamo.getUserWithEmail("jed.samaritan@email.me")
 
-    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/keys/delete?h=blablabla")).get
+    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/delete?h=blablabla")).get
     status(result) shouldBe 403
   }
 
@@ -555,7 +555,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val userBefore = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
     val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
 
-    dynamo.updateUser(user)
+    dynamo.saveUser(user)
 
     val hashedId = components.hash(userBefore.value.bonoboId, user.additionalInfo.remindedAt.get)
 
@@ -637,7 +637,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
     val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
 
-    dynamo.updateUser(user)
+    dynamo.saveUser(user)
 
     val hashedId = components.hash(user.bonoboId, user.additionalInfo.remindedAt.get)
 
