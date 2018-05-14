@@ -14,10 +14,10 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
 import email.{ AwsEmailClient, MailClient }
-import java.security.MessageDigest
+import java.security.{ MessageDigest, Security }
 import kong.{ Kong, KongClient }
 import models.LabelProperties
-import org.bouncycastle.jcajce.provider.digest.SHA3
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -132,11 +132,17 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
   }
 }
 
+object HashComponent {
+  Security.addProvider(new BouncyCastleProvider())
+  private val messageDigest = MessageDigest.getInstance("SHA3-512")
+}
+
 trait HashComponent {
+  import HashComponent._
+
   def hash(str: String, time: Long): String = {
     val hash = s"${str}${time}${salt}"
-    val md = new SHA3.DigestSHA3(512)
-    md.digest(hash.getBytes).map("%02X".format(_)).mkString
+    messageDigest.digest(hash.getBytes).map("%02X".format(_)).mkString
   }
 
   def salt: String
