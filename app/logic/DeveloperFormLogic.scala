@@ -57,12 +57,12 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     }
   }
 
-  def extendUser(user: BonoboUser): Future[User] = {
+  def extendUser(user: BonoboUser): Future[BonoboUser] = {
     val now = Some(DateTime.now.getMillis)
     val newUser = user.copy(additionalInfo = user.additionalInfo.copy(extendedAt = now))
-    Future { 
+    Future {
       dynamo.saveUser(newUser)
-      newUser 
+      newUser
     }
   }
 
