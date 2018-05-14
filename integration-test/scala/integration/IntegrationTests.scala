@@ -661,6 +661,7 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     userAfter.map(_.bonoboId) shouldBe Some(user.bonoboId)
     keysAfter.length shouldBe 1
+    userAfter.value.additionalInfo.remindedAt shouldBe None
     userAfter.value.additionalInfo.extendedAt shouldBe defined
   }
 }

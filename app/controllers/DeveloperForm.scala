@@ -68,7 +68,7 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
       case Some(user) =>
         if (user.additionalInfo.remindedAt.exists(validate(userId, hash)))
           logic.extendUser(user).flatMap {
-            _ => logic.invalidateHash(user)
+            user => logic.invalidateHash(user)
           }.recover {
             case err =>
               awsEmail.sendEmailExtensionFailed(userId, err)
