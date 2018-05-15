@@ -87,10 +87,8 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     }
   }
 
-  def validate(userId: String, hash: String)(time: Long): Boolean = {
-    val twoWeeksAgo = DateTime.now.minusWeeks(gracePeriod).getMillis
-    twoWeeksAgo <= time && hashFn(userId, time) == hash
-  }
+  def validate(userId: String, hash: String)(time: Long): Boolean =
+    hashFn(userId, time) == hash
 
   def complete = Action {
     Ok(views.html.developerRegisterComplete(assetsFinder))
