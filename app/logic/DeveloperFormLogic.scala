@@ -47,7 +47,9 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
     Future { dynamo.getKeysWithUserId(user.bonoboId) } flatMap {
       Future.traverse(_) { key =>
         for {
-          _ <- kong.deleteConsumer(key.kongConsumerId)
+          _ <- kong.deleteConsumer(key.kongConsumerId).recover {
+            case Kong.GenericFailure(txt) if txt.contains("404") => ()
+          }
         } yield {
           dynamo.deleteKey(key)
         }
