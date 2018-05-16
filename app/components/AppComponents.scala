@@ -14,8 +14,10 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
 import com.gu.googleauth.{ GoogleAuthConfig, GoogleServiceAccount }
 import email.{ AwsEmailClient, MailClient }
+import java.security.{ MessageDigest, Security }
 import kong.{ Kong, KongClient }
 import models.LabelProperties
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -111,8 +113,9 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
     val clientBuilder = AmazonSimpleEmailServiceAsyncClientBuilder.standard()
     val amazonSesClient: AmazonSimpleEmailServiceAsync = clientBuilder.withCredentials(CredentialsProvider).withRegion(awsRegion).build()
     val fromAddress = "no-reply@open-platform.theguardian.com" //The open-platform.theguardian.com domain is verified, therefore any email can be used (e.g. test@open-platform.theguardian.com)
+    val teamAddress = configuration.get[String]("aws.email.teamAddress")
     val enableEmail = configuration.getOptional[Boolean]("email.enabled") getOrElse false
-    new AwsEmailClient(amazonSesClient, fromAddress, enableEmail)
+    new AwsEmailClient(amazonSesClient, fromAddress, teamAddress, enableEmail)
   }
 }
 
@@ -127,6 +130,26 @@ trait LabelsComponentImpl extends LabelsComponent with DynamoComponent {
       acc + (label.id -> label.properties)
     }
   }
+}
+
+object HashComponent {
+  Security.addProvider(new BouncyCastleProvider())
+  private val messageDigest = MessageDigest.getInstance("SHA3-512")
+}
+
+trait HashComponent {
+  import HashComponent._
+
+  def hash(str: String, time: Long): String = {
+    val hash = s"${str}${time}${salt}"
+    messageDigest.digest(hash.getBytes).map("%02X".format(_)).mkString
+  }
+
+  def salt: String
+}
+
+trait HashComponentImpl extends HashComponent { self: BuiltInComponents =>
+  val salt = configuration.get[String]("salt")
 }
 
 trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
@@ -150,7 +173,7 @@ trait FiltersComponent extends CSRFComponents { self: BuiltInComponents =>
 }
 
 trait ControllersComponent {
-  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with AssetsComponents =>
+  self: BuiltInComponentsFromContext with AhcWSComponents with GoogleAuthComponent with AuthorisationComponent with DynamoComponent with KongComponent with AwsEmailComponent with LabelsComponent with HashComponent with AssetsComponents =>
 
   def enableAuth: Boolean
 
@@ -165,7 +188,7 @@ trait ControllersComponent {
     enableAuth)
   def authController = new Auth(controllerComponents, googleAuthConfig, wsClient)
 
-  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder)
+  val developerFormController = new DeveloperForm(controllerComponents, dynamo, kong, awsEmail, assetsFinder, hash)
   val commercialFormController = new CommercialForm(controllerComponents, dynamo, awsEmail, assetsFinder)
 
   val router: Router = new Routes(httpErrorHandler, appController, developerFormController, commercialFormController, authController, assets)
@@ -180,6 +203,7 @@ class AppComponents(context: Context)
   with KongComponentImpl
   with AwsEmailComponentImpl
   with LabelsComponentImpl
+  with HashComponentImpl
   with FiltersComponent
   with AssetsComponents
   with ControllersComponent {

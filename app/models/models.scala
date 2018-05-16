@@ -33,7 +33,7 @@ object BonoboUser {
   }
   /* Method used when using the commercial form for creating a user */
   def apply(formData: CommercialRequestKeyFormData): BonoboUser = {
-    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
+    val additionalInfo = AdditionalUserInfo(DateTime.now(), CommercialRegistration, None, None, Some(formData.businessArea), Some(formData.monthlyUsers.toString), Some(formData.commercialModel), Some(formData.content), Some(formData.contentFormat), Some(formData.articlesPerDay.toString))
     new BonoboUser(java.util.UUID.randomUUID().toString, formData.email, formData.name, Some(formData.companyName), Some(formData.companyUrl), additionalInfo, List.empty)
   }
 }
@@ -41,6 +41,8 @@ object BonoboUser {
 case class AdditionalUserInfo(
   createdAt: DateTime,
   registrationType: RegistrationType,
+  remindedAt: Option[Long],
+  extendedAt: Option[Long],
   businessArea: Option[String],
   monthlyUsers: Option[String],
   commercialModel: Option[String],
@@ -50,7 +52,7 @@ case class AdditionalUserInfo(
 
 object AdditionalUserInfo {
   def apply(date: DateTime, registrationType: RegistrationType): AdditionalUserInfo = {
-    new AdditionalUserInfo(date, registrationType, None, None, None, None, None, None)
+    new AdditionalUserInfo(date, registrationType, None, None, None, None, None, None, None, None)
   }
 }
 

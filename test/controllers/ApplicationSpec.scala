@@ -37,6 +37,8 @@ class ApplicationSpec extends FlatSpec with Matchers with MockitoSugar with Stub
 
       def saveUser(bonoboKey: BonoboUser): Unit = ???
 
+      def deleteUser(bonoboUser: BonoboUser): Unit = ???
+
       def updateUser(bonoboUser: BonoboUser): Unit = ???
 
       def getUserWithId(id: String): Option[BonoboUser] = ???

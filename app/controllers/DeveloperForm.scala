@@ -1,6 +1,7 @@
 package controllers
 
 import email.MailClient
+import org.joda.time.DateTime
 import kong.Kong
 import kong.Kong.{ ConflictFailure, GenericFailure }
 import logic.DeveloperFormLogic
@@ -13,7 +14,7 @@ import store.DB
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder)
+class DeveloperForm(override val controllerComponents: ControllerComponents, dynamo: DB, kong: Kong, awsEmail: MailClient, assetsFinder: AssetsFinder, hashFn: (String, Long) => String)
   extends BaseController with I18nSupport {
   import DeveloperForm._
   import Forms.DeveloperCreateKeyFormData
@@ -44,6 +45,51 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
     createKeyForm.bindFromRequest.fold[Future[Result]](handleInvalidForm, handleValidForm)
   }
 
+  /**
+   * Deletes user's account and keys. This action is subsequent of
+   * the user receiving an email asking whether they are still using their api keys.
+   * It is a strong constraint, so we make sure the user indeed received the email
+   * by checking the `user.additionalInfo.remindedAt` field.
+   */
+  def deleteUser(userId: String, hash: String) = Action.async { implicit request =>
+    Future { dynamo.getUserWithId(userId) } flatMap { user =>
+      if (user.exists(_.additionalInfo.remindedAt.exists(validate(userId, hash))))
+        logic.deleteUser(user.get).recover {
+          case err =>
+            awsEmail.sendEmailDeletionFailed(userId, err)
+            ()
+        }.map {
+          _ => Ok(views.html.developerDeleteComplete(assetsFinder))
+        }
+      else
+        Future.successful(Forbidden)
+    }
+  }
+
+  /**
+   * Extends the lifetime of a user's account and keys. This action is subsequent of
+   * the user receiving an email asking whether they are still using their api keys.
+   * It is a strong constraint, so we make sure the user indeed received the email
+   * by checking the `user.additionalInfo.remindedAt` field.
+   */
+  def extendUser(userId: String, hash: String) = Action.async { implicit request =>
+    Future { dynamo.getUserWithId(userId) } flatMap { user =>
+      if (user.exists(_.additionalInfo.remindedAt.exists(validate(userId, hash))))
+        logic.extendUser(user.get).recover {
+          case err =>
+            awsEmail.sendEmailExtensionFailed(userId, err)
+            ()
+        }.map {
+          _ => Ok(views.html.developerExtendComplete(assetsFinder))
+        }
+      else
+        Future.successful(Forbidden)
+    }
+  }
+
+  def validate(userId: String, hash: String)(time: Long): Boolean =
+    hashFn(userId, time) == hash
+
   def complete = Action {
     Ok(views.html.developerRegisterComplete(assetsFinder))
   }
@@ -51,6 +97,9 @@ class DeveloperForm(override val controllerComponents: ControllerComponents, dyn
 
 object DeveloperForm {
   import Forms.DeveloperCreateKeyFormData
+
+  /** Time (in weeks) a deletion/extension request remains valid */
+  val gracePeriod = 2
 
   val createKeyForm: Form[DeveloperCreateKeyFormData] = Form(
     mapping(

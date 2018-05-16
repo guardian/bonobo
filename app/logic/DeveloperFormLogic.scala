@@ -4,6 +4,7 @@ import controllers.Forms.DeveloperCreateKeyFormData
 import kong.Kong
 import kong.Kong.ConflictFailure
 import models._
+import org.joda.time.DateTime
 import play.api.Logger
 import store.DB
 
@@ -39,6 +40,27 @@ class DeveloperFormLogic(dynamo: DB, kong: Kong) {
           saveUserAndKeyOnDB(consumer, form)
           consumer.key
       }
+    }
+  }
+
+  def deleteUser(user: BonoboUser): Future[_] =
+    Future { dynamo.getKeysWithUserId(user.bonoboId) } flatMap {
+      Future.traverse(_) { key =>
+        for {
+          _ <- kong.deleteConsumer(key.kongConsumerId)
+        } yield {
+          dynamo.deleteKey(key)
+        }
+      }.map { _ =>
+        dynamo.deleteUser(user)
+      }
+    }
+
+  def extendUser(user: BonoboUser): Future[_] = {
+    val now = Some(DateTime.now.getMillis)
+    val newUser = user.copy(additionalInfo = user.additionalInfo.copy(extendedAt = now, remindedAt = None))
+    Future {
+      dynamo.saveUser(newUser)
     }
   }
 }

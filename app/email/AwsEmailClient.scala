@@ -15,9 +15,13 @@ trait MailClient {
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult]
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult]
+
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult]
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult]
 }
 
-class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, enableEmail: Boolean) extends MailClient {
+class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddress: String, teamAddress: String, enableEmail: Boolean) extends MailClient {
 
   private def sendEmail(address: String, subject: String, message: String): Future[SendEmailResult] = {
     if (enableEmail) {
@@ -98,5 +102,39 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
          |For more details on how to use the open platform API, check out the documentation available at http://open-platform.theguardian.com/documentation/
          |""".stripMargin
     sendEmail(toEmail, "New Key Created", message)
+  }
+
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult] = {
+    val message =
+      s"""Damn Daniel.
+         |
+         |Something went wrong when trying to delete assets for user
+         |
+         |     $userId
+         |
+         |As a result, all their assets are still there. Sorry but you'll have to investigate.
+         |Here's all I've got:
+         |
+         | $err
+         |
+         |Good luck.""".stripMargin
+    sendEmail(teamAddress, "Keys deletion failed", message)
+  }
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult] = {
+    val message =
+      s"""Damn Daniel.
+         |
+         |Something went wrong when trying to extend assets for user
+         |
+         |     $userId
+         |
+         |As a result, all their assets are still there. Sorry but you'll have to investigate.
+         |Here's all I've got:
+         |
+         | $err
+         |
+         |Good luck.""".stripMargin
+    sendEmail(teamAddress, "Keys deletion failed", message)
   }
 }

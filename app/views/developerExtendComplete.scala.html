@@ -1,0 +1,13 @@
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, success: Option[String] = None, error: Option[String] = None)
+
+@mainOpenForm(assets, "Show key", success, error) {
+    <div>
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2 column">
+                <p>Thank you!</p>
+                <p>All your keys are now valid for another 30 months.</p>
+            </div>
+        </div>
+    </div>
+}

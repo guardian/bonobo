@@ -17,6 +17,8 @@ trait DB {
 
   def updateUser(bonoboUser: BonoboUser): Unit
 
+  def deleteUser(bonoboUser: BonoboUser): Unit
+
   def getUserWithId(id: String): Option[BonoboUser]
 
   def isEmailInUse(email: String): Boolean
@@ -119,6 +121,12 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     val keys = getKeysWithUserId(bonoboUser.bonoboId)
     keys.foreach(kongKey => updateKeyLabelIds(kongKey, bonoboUser.labelIds))
     Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been updated")
+  }
+
+  def deleteUser(bonoboUser: BonoboUser): Unit = {
+    BonoboTable.deleteItem(
+      new PrimaryKey("id", bonoboUser.bonoboId))
+    Logger.info(s"DynamoDB: User ${bonoboUser.bonoboId} has been deleted")
   }
 
   private def updateKeyLabelIds(kongKey: KongKey, labelIds: List[String]): Unit = {
@@ -346,6 +354,8 @@ object Dynamo {
     bonoboKey.companyName.foreach(companyName => item.withString("companyName", companyName))
     bonoboKey.companyUrl.foreach(companyUrl => item.withString("companyUrl", companyUrl))
 
+    bonoboKey.additionalInfo.remindedAt.foreach(remindedAt => item.withLong("remindedAt", remindedAt))
+    bonoboKey.additionalInfo.extendedAt.foreach(extendedAt => item.withLong("extendedAt", extendedAt))
     bonoboKey.additionalInfo.businessArea.foreach(businessArea => item.withString("businessArea", businessArea))
     bonoboKey.additionalInfo.monthlyUsers.foreach(monthlyUsers => item.withString("monthlyUsers", monthlyUsers))
     bonoboKey.additionalInfo.commercialModel.foreach(commercialModel => item.withString("commercialModel", commercialModel))
@@ -371,6 +381,8 @@ object Dynamo {
       companyUrl = Option(item.getString("companyUrl")),
       additionalInfo = AdditionalUserInfo(
         createdAt = new DateTime(item.getString("createdAt").toLong),
+        remindedAt = Option(item.getString("remindedAt")).map(_.toLong),
+        extendedAt = Option(item.getString("extendedAt")).map(_.toLong),
         registrationType = toRegistrationType(item.getString("registrationType")),
         businessArea = Option(item.getString("businessArea")),
         monthlyUsers = Option(item.getString("monthlyUsers")),

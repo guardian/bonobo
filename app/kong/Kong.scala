@@ -55,6 +55,8 @@ trait Kong {
 
   def updateConsumer(id: String, newRateLimit: RateLimits): Future[Happy.type]
 
+  def deleteConsumer(id: String): Future[Happy.type]
+
   def updateConsumerUsername(id: String, tier: Tier): Future[Happy.type]
 
   def createKey(consumerId: String, customKey: Option[String] = None): Future[String]
@@ -133,6 +135,15 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
             case _ => genericFail(s"Kong: Failed to parse json when getting the $RateLimitingPluginName plugin. Response: ${response.json}")
           }
       }
+  }
+
+  def deleteConsumer(consumerId: String): Future[Happy.type] = {
+    ws.url(s"$serverUrl/consumers/$consumerId").delete().flatMap { response =>
+      response.status match {
+        case 204 => success(s"Kong: Successfully deleted consumer $consumerId", Happy)
+        case _ => genericFail(s"Kong: Failed to delete consumer $consumerId. Response ${response.status} ${response.statusText}: ${response.body}")
+      }
+    }
   }
 
   def updateConsumer(consumerId: String, newRateLimit: RateLimits): Future[Happy.type] = {

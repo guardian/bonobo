@@ -35,6 +35,10 @@ class FakeEmailClient extends MailClient {
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for commercial request to user"))
 
   def sendEmailNewKey(toEmail: String, key: String): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for new key"))
+
+  def sendEmailDeletionFailed(userId: String, err: Throwable): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for a failed deletion"))
+
+  def sendEmailExtensionFailed(userId: String, err: Throwable): Future[SendEmailResult] = Future.failed(new Exception("Error when sending emails for a failed extension"))
 }
 
 trait IntegrationSpecBase
@@ -64,6 +68,10 @@ trait IntegrationSpecBase
       "id-label-3" -> LabelProperties("label-3", "#123412"))
   }
 
+  trait FakeHashComponent extends HashComponent {
+    val salt = "super-secret"
+  }
+
   class TestComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with AhcWSComponents
@@ -73,6 +81,7 @@ trait IntegrationSpecBase
     with FakeKongComponent
     with FakeAwsEmailComponent
     with FakeLabelsComponent
+    with FakeHashComponent
     with ControllersComponent
     with NoHttpFiltersComponents
     with AssetsComponents {

@@ -435,6 +435,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
+        extendedAt = None,
+        remindedAt = None,
         registrationType = CommercialRegistration),
       labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
@@ -474,6 +476,8 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
         contentFormat = Some("Text"),
         articlesPerDay = Some("20"),
         createdAt = DateTime.now(),
+        remindedAt = None,
+        extendedAt = None,
         registrationType = CommercialRegistration),
       labelIds = List.empty)
     val result = route(app, FakeRequest(POST, "/register/commercial").withFormUrlEncodedBody(
@@ -493,6 +497,172 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
 
     status(result) shouldBe 303 // on success it redirects to the message page
     flash(result).get("error") shouldBe defined
+  }
+
+  behavior of "deleting a user's keys and account"
+
+  it should "fail if hash is absent" in {
+    val result = route(app, FakeRequest(GET, "/user/1245/delete")).get
+
+    status(result) shouldBe 400
+  }
+
+  it should "swallow the error if the user does not exist" in {
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/delete?h=${components.hash(userId, 0)}")).get
+
+    status(result) shouldBe 403
+  }
+
+  it should "forbid if hash is wrong" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "jed.samaritan@email.me",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "jed-flys-high",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val user = dynamo.getUserWithEmail("jed.samaritan@email.me")
+
+    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/delete?h=blablabla")).get
+    status(result) shouldBe 403
+  }
+
+  it should "delete the user's keys and account" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "malcolm.gladwell@email.me",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "malcom-has-a-key",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val userBefore = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
+    val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
+
+    dynamo.saveUser(user)
+
+    val hashedId = components.hash(userBefore.value.bonoboId, user.additionalInfo.remindedAt.get)
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${user.bonoboId}").withFormUrlEncodedBody(
+      "tier" -> "RightsManaged",
+      "productName" -> "Another Product",
+      "productUrl" -> "http://anotherproduct.co.uk",
+      "key" -> "the-dark-day",
+      "sendEmail" -> "false")).get
+
+    val keysBefore = dynamo.getKeysWithUserId(user.bonoboId)
+
+    keysBefore.length shouldBe 1
+
+    val resdelete = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/delete?h=${hashedId}")).get
+
+    status(resdelete) shouldBe 200
+
+    val userAfter = dynamo.getUserWithEmail("malcolm.gladwell@email.me")
+    val keysAfter = dynamo.getKeysWithUserId(user.bonoboId)
+
+    userAfter shouldBe None
+    keysAfter.length shouldBe 0
+  }
+
+  behavior of "extending a user's keys"
+
+  it should "fail if hash is absent" in {
+    val result = route(app, FakeRequest(GET, "/user/1245/extend")).get
+
+    status(result) shouldBe 400
+  }
+
+  it should "swallow the error if the user does not exist" in {
+    val userId = "758947205"
+    val result = route(app, FakeRequest(GET, s"/user/${userId}/extend?h=${components.hash(userId, 0)}")).get
+
+    status(result) shouldBe 403
+  }
+
+  it should "forbid if hash is wrong" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "major@email.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "the-major-is-right",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val user = dynamo.getUserWithEmail("major@email.com")
+    val result = route(app, FakeRequest(GET, s"/user/${user.value.bonoboId}/extend?h=blablabla")).get
+
+    status(result) shouldBe 403
+  }
+
+  it should "extend the user's keys" in {
+    val resuser = route(app, FakeRequest(POST, "/user/create").withFormUrlEncodedBody(
+      "email" -> "herbert.simon@email.com",
+      "name" -> "Joe Bloggs",
+      "companyName" -> "The Test Company",
+      "companyUrl" -> "http://thetestcompany.co.uk",
+      "productName" -> "blabla",
+      "productUrl" -> "http://blabla",
+      "url" -> "some url",
+      "tier" -> "RightsManaged",
+      "key" -> "this-is-herber-key",
+      "labelIds" -> "",
+      "sendEmail" -> "false")).get
+
+    status(resuser) shouldBe 303
+
+    val userBefore = dynamo.getUserWithEmail("herbert.simon@email.com")
+    val user = userBefore.value.copy(additionalInfo = userBefore.value.additionalInfo.copy(remindedAt = Some(DateTime.now.getMillis)))
+
+    dynamo.saveUser(user)
+
+    val hashedId = components.hash(user.bonoboId, user.additionalInfo.remindedAt.get)
+
+    val addKeyResult = route(app, FakeRequest(POST, s"/key/create/${user.bonoboId}").withFormUrlEncodedBody(
+      "tier" -> "RightsManaged",
+      "productName" -> "Another Product",
+      "productUrl" -> "http://anotherproduct.co.uk",
+      "key" -> "the-dark-day",
+      "sendEmail" -> "false")).get
+
+    val keysBefore = dynamo.getKeysWithUserId(user.bonoboId)
+
+    keysBefore.length shouldBe 1
+
+    val resextend = route(app, FakeRequest(GET, s"/user/${user.bonoboId}/extend?h=${hashedId}")).get
+
+    status(resextend) shouldBe 200
+
+    val userAfter = dynamo.getUserWithId(user.bonoboId)
+    val keysAfter = dynamo.getKeysWithUserId(user.bonoboId)
+
+    userAfter.map(_.bonoboId) shouldBe Some(user.bonoboId)
+    keysAfter.length shouldBe 1
+    userAfter.value.additionalInfo.remindedAt shouldBe None
+    userAfter.value.additionalInfo.extendedAt shouldBe defined
   }
 }
 

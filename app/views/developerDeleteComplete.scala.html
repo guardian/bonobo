@@ -1,0 +1,14 @@
+@import controllers.AssetsFinder
+@(assets: AssetsFinder, success: Option[String] = None, error: Option[String] = None)
+
+@mainOpenForm(assets, "Show key", success, error) {
+    <div>
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2 column">
+                <p>Thank you!</p>
+                <p>You have successfully deleted all your keys.</p>
+                <p>If you ever want to get a new one, head over to <a href="https://bonobo.capi.gutools.co.uk/register/developer">the registration form</a>.</p>
+            </div>
+        </div>
+    </div>
+}

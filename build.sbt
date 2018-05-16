@@ -36,6 +36,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-ses" % "1.11.188",
   "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
   "com.gu" %% "play-googleauth" % "0.7.0",
+  "org.bouncycastle" % "bcpkix-jdk15on" % "1.59",
   "org.scalatest" % "scalatest_2.12" % "3.0.4" % "it,test",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.1" % "it,test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
