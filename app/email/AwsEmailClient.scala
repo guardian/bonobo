@@ -73,7 +73,7 @@ class AwsEmailClient(amazonMailClient: AmazonSimpleEmailServiceAsync, fromAddres
       |Monthly users: ${user.additionalInfo.monthlyUsers.getOrElse('-')}
       |Articles per day: ${user.additionalInfo.articlesPerDay.getOrElse('-')}
       |${controllers.routes.Application.editUserPage(user.bonoboId).absoluteURL().replace("http://", "https://")}""".stripMargin
-    sendEmail("content.delivery@theguardian.com", "Commercial Key Request", message)
+    sendEmail("content.delivery@guardian.co.uk", "Commercial Key Request", message)
   }
 
   def sendEmailCommercialRequestToUser(toEmail: String): Future[SendEmailResult] = {
