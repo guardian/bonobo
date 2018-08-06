@@ -17,15 +17,10 @@ lazy val root = (project in file("."))
   .settings(Defaults.itSettings: _*)
 
 riffRaffPackageType := (packageZipTarball in Universal).value
-riffRaffBuildIdentifier := sys.env.getOrElse("CIRCLE_BUILD_NUM", "DEV")
+riffRaffPackageName := name.value
 riffRaffUploadArtifactBucket := Some("riffraff-artifact")
 riffRaffUploadManifestBucket := Some("riffraff-builds")
-riffRaffManifestProjectName := {
-  if (sys.env.contains("CIRCLECI"))
-    "Content Platforms::bonobo::circleci"
-  else
-    "Content Platforms::bonobo"
-}
+riffRaffManifestProjectName := "Content Platforms::bonobo"
 
 libraryDependencies ++= Seq(
   ws,
