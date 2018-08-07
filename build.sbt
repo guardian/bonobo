@@ -45,8 +45,7 @@ parallelExecution in IntegrationTest := false
 sourceDirectory in IntegrationTest := (baseDirectory.value / "integration-test")
 
 assemblyMergeStrategy in assembly := {
-  case PathList(ps @ _*) if ps.last endsWith ".conf" => MergeStrategy.last
-  //case PathList("reference-overrides.conf") => MergeStrategy.concat
+  case PathList(ps @ _*) if ps == List("play", "reference-overrides.conf") => MergeStrategy.last
   case o =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(o)
