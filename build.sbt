@@ -4,8 +4,6 @@ import scalariform.formatter.preferences._
 name := "bonobo"
 scalaVersion := "2.12.4"
 
-assemblyJarName in assembly := "bonobo.jar"
-
 val preferences =
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(AlignSingleLineCaseStatements, true)
@@ -34,6 +32,15 @@ libraryDependencies ++= Seq(
   "com.beachape" %% "enumeratum-play-json" % "1.5.12-2.6.0-M7"
 )
 
+enablePlugins(RiffRaffArtifact, JavaAppPackaging)
+
+Universal / topLevelDirectory := None
+Universal / packageName := normalizedName.value
+riffRaffPackageType := (Universal / dist).value
+riffRaffUploadArtifactBucket := Option("riffraff-artifact")
+riffRaffUploadManifestBucket := Option("riffraff-builds")
+riffRaffManifestProjectName := s"Content Platforms::${name.value}"
+
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
 routesGenerator := InjectedRoutesGenerator
@@ -43,10 +50,3 @@ testOptions in Test += Tests.Argument("-oF")
 parallelExecution in IntegrationTest := false
 
 sourceDirectory in IntegrationTest := (baseDirectory.value / "integration-test")
-
-assemblyMergeStrategy in assembly := {
-  case PathList(ps @ _*) if ps == List("play", "reference-overrides.conf") => MergeStrategy.last
-  case o =>
-    val oldStrategy = (assemblyMergeStrategy in assembly).value
-    oldStrategy(o)
-}
