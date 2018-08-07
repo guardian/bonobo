@@ -41,5 +41,10 @@ testOptions in Test += Tests.Argument("-oF")
 parallelExecution in IntegrationTest := false
 
 sourceDirectory in IntegrationTest := (baseDirectory.value / "integration-test")
-//sourceDirectory in IntegrationTest <<= baseDirectory { base => base / "integration-test" }
 
+assemblyMergeStrategy in assembly := {
+  case PathList("reference-overrides.conf") => MergeStrategy.concat
+  case o =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(o)
+}
