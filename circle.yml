@@ -16,3 +16,8 @@ dependencies:
 test:
   override:
     - sbt test it:test riffRaffUpload
+
+general:
+  branches:
+    only:
+      - master
