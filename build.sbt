@@ -4,6 +4,8 @@ import scalariform.formatter.preferences._
 name := "bonobo"
 scalaVersion := "2.12.4"
 
+assemblyJarName in assembly := "bonobo.jar"
+
 val preferences =
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(AlignSingleLineCaseStatements, true)
