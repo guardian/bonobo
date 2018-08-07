@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   filters,
   "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery"),
   "org.webjars" % "jquery" % "3.2.1",
-  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.188",
+  "com.amazonaws" % "aws-java-sdk-dynamodb" % "1.11.188" exclude("commons-logging", "commons-logging"),
   "com.amazonaws" % "aws-java-sdk-ses" % "1.11.188",
   "com.adrianhurt" %% "play-bootstrap" % "1.2-P26-B3",
   "com.gu" %% "play-googleauth" % "0.7.6",
