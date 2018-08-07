@@ -2,7 +2,6 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 name := "bonobo"
-version := "1.0-SNAPSHOT"
 scalaVersion := "2.12.4"
 
 val preferences =
@@ -12,15 +11,9 @@ val preferences =
     .setPreference(DanglingCloseParenthesis, Preserve)
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala, RiffRaffArtifact, UniversalPlugin)
+  .enablePlugins(PlayScala)
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*)
-
-riffRaffPackageType := (packageZipTarball in Universal).value
-riffRaffPackageName := name.value
-riffRaffUploadArtifactBucket := Some("riffraff-artifact")
-riffRaffUploadManifestBucket := Some("riffraff-builds")
-riffRaffManifestProjectName := "Content Platforms::bonobo"
 
 libraryDependencies ++= Seq(
   ws,
@@ -47,5 +40,6 @@ testOptions in Test += Tests.Argument("-oF")
 
 parallelExecution in IntegrationTest := false
 
-sourceDirectory in IntegrationTest <<= baseDirectory { base => base / "integration-test" }
+sourceDirectory in IntegrationTest := (baseDirectory.value / "integration-test")
+//sourceDirectory in IntegrationTest <<= baseDirectory { base => base / "integration-test" }
 
