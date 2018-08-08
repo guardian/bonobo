@@ -171,12 +171,12 @@ Resources:
             mkdir logs
             mkdir -p /etc/gu
 
-            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo-1.0-SNAPSHOT.tgz bonobo-1.0-SNAPSHOT.tgz
+            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.zip bonobo.zip
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.service bonobo.service
 
-            tar -xvf bonobo-1.0-SNAPSHOT.tgz
-            mv bonobo-1.0-SNAPSHOT bonobo
             mv bonobo.service /etc/systemd/system
+            mkdir bonobo
+            unzip bonobo.zip -d bonobo
 
             aws s3 cp s3://content-api-config/bonobo/${Stage}/bonobo.conf /etc/gu/bonobo.conf
             aws s3 cp s3://content-api-config/bonobo/bonobo-google-service-account.json /etc/gu/bonobo-google-service-account.json
