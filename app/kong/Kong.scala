@@ -99,6 +99,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
     ws.url(s"$serverUrl/apis/$apiName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
       "name" -> Seq(RateLimitingPluginName),
+      "config.policy" -> Seq("local"),
       "config.minute" -> Seq(rateLimit.requestsPerMinute.toString),
       "config.day" -> Seq(rateLimit.requestsPerDay.toString))).flatMap {
       response =>
@@ -152,6 +153,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
         ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
           "consumer_id" -> Seq(consumerId),
           "name" -> Seq(RateLimitingPluginName),
+          "config.policy" -> Seq("local"),
           "config.minute" -> Seq(newRateLimit.requestsPerMinute.toString),
           "config.day" -> Seq(newRateLimit.requestsPerDay.toString))).flatMap {
           response =>
