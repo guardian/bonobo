@@ -155,7 +155,7 @@ Resources:
     Properties:
       ImageId:
         Ref: AMI
-      InstanceType: t2.micro
+      InstanceType: t3.micro
       IamInstanceProfile:
         Ref: InstanceProfile
       SecurityGroups:
