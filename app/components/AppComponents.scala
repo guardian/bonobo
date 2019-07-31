@@ -114,7 +114,7 @@ trait AwsEmailComponentImpl extends AwsEmailComponent { self: BuiltInComponents 
     val awsRegion = Regions.fromName(configuration.getOptional[String]("aws.region") getOrElse "eu-west-1")
     val clientBuilder = AmazonSimpleEmailServiceAsyncClientBuilder.standard()
     val amazonSesClient: AmazonSimpleEmailServiceAsync = clientBuilder.withCredentials(CredentialsProvider).withRegion(awsRegion).build()
-    val fromAddress = "no-reply@open-platform.theguardian.com" //The open-platform.theguardian.com domain is verified, therefore any email can be used (e.g. test@open-platform.theguardian.com)
+    val fromAddress = "no-reply@email.open-platform.theguardian.com" //The email.open-platform.theguardian.com domain is verified, therefore any email can be used (e.g. test@open-platform.theguardian.com)
     val teamAddress = configuration.get[String]("aws.email.teamAddress")
     val enableEmail = configuration.getOptional[Boolean]("email.enabled") getOrElse false
     new AwsEmailClient(amazonSesClient, fromAddress, teamAddress, enableEmail)
