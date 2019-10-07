@@ -1,42 +1,42 @@
 @import controllers.csrf.CSRFSupport
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, keyForm: Form[controllers.Forms.CommercialRequestKeyFormData], success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.vertical.fieldConstructor }
+@implicitFieldConstructor = @{ b4.vertical.fieldConstructor }
 
 @mainOpenForm(assets, "Request a key", success, error) {
     <div class="row">
         <div class="col-md-8 col-md-offset-2 column">
-        @b3.form(routes.CommercialForm.requestKey()) {
+        @b4.form(routes.CommercialForm.requestKey()) {
             @CSRFSupport.formField
             <div class="row">
                 <div class="col-md-6">
-                    @b3.text(keyForm("name"), '_label -> "Name", 'tabIndex -> "1")
-                    @b3.text(keyForm("productName"), '_label -> "Product Name", 'tabIndex -> "3")
-                    @b3.text(keyForm("companyName"), '_label -> "Company Name", 'tabIndex -> "5")
+                    @b4.text(keyForm("name"), '_label -> "Name", 'tabIndex -> "1")
+                    @b4.text(keyForm("productName"), '_label -> "Product Name", 'tabIndex -> "3")
+                    @b4.text(keyForm("companyName"), '_label -> "Company Name", 'tabIndex -> "5")
                 </div>
                 <div class="col-md-6">
-                    @b3.email(keyForm("email"), '_label -> "Email address", 'tabIndex -> "2")
-                    @b3.text(keyForm("productUrl"), '_label -> "Product URL", 'tabIndex -> "4")
-                    @b3.text(keyForm("companyUrl"), '_label -> "Company URL", 'tabIndex -> "6")
+                    @b4.email(keyForm("email"), '_label -> "Email address", 'tabIndex -> "2")
+                    @b4.text(keyForm("productUrl"), '_label -> "Product URL", 'tabIndex -> "4")
+                    @b4.text(keyForm("companyUrl"), '_label -> "Company URL", 'tabIndex -> "6")
                 </div>
             </div>
-            @b3.free(){
+            @b4.free(){
                 <p>To help us understand your requirements, it would be great if you could provide us with:</p>
             }
             <div class="row">
                 <div class="col-md-6">
-                    @b3.text(keyForm("businessArea"), '_label -> "Business Area", 'tabIndex -> "7")
-                    @b3.text(keyForm("commercialModel"), '_label -> "What is your commercial model?", 'placeholder -> "e.g. digital advertising", 'tabIndex -> "9")
-                    @b3.number(keyForm("articlesPerDay"), '_label -> "How many articles will you display per day on avarage?", 'min -> "0", 'tabIndex -> "11")
+                    @b4.text(keyForm("businessArea"), '_label -> "Business Area", 'tabIndex -> "7")
+                    @b4.text(keyForm("commercialModel"), '_label -> "What is your commercial model?", 'placeholder -> "e.g. digital advertising", 'tabIndex -> "9")
+                    @b4.number(keyForm("articlesPerDay"), '_label -> "How many articles will you display per day on avarage?", 'min -> "0", 'tabIndex -> "11")
                 </div>
                 <div class="col-md-6">
-                    @b3.text(keyForm("content"), '_label -> "What content do you intend to display?", 'placeholder -> "e.g. sport, culture", 'tabIndex -> "8")
-                    @b3.text(keyForm("contentFormat"), '_label -> "Content format", 'placeholder -> "e.g. text, images, video", 'tabIndex -> "10")
-                    @b3.number(keyForm("monthlyUsers"), '_label -> "Currently monthly users", 'min -> "0", 'tabIndex -> "12")
+                    @b4.text(keyForm("content"), '_label -> "What content do you intend to display?", 'placeholder -> "e.g. sport, culture", 'tabIndex -> "8")
+                    @b4.text(keyForm("contentFormat"), '_label -> "Content format", 'placeholder -> "e.g. text, images, video", 'tabIndex -> "10")
+                    @b4.number(keyForm("monthlyUsers"), '_label -> "Currently monthly users", 'min -> "0", 'tabIndex -> "12")
                 </div>
             </div>
-            @b3.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
-            @b3.submit('class -> "btn btn-primary btn-block") { Submit Request }
+            @b4.checkbox(keyForm("acceptTerms"), '_text -> Html("I accept the <a href=\"http://www.theguardian.com/open-platform/terms-and-conditions\" target=\"_blank\">Guardian Open Platform terms and conditions</a>"))
+            @b4.submit('class -> "btn btn-primary btn-block") { Submit Request }
         }
         </div>
     </div>

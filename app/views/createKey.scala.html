@@ -1,21 +1,21 @@
 @import controllers.csrf.CSRFSupport
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, userId: String, keyForm: Form[controllers.Forms.CreateKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
+@implicitFieldConstructor = @{ b4.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Add a key for existing user", firstName, pageTitle, success, error){ }{
   <div>
     <h4>Add a key for the current user</h4>
     <div class="row">
       <div class="col-md-6 col-md-offset-2 column">
-      @b3.form(routes.Application.createKey(userId)) {
+      @b4.form(routes.Application.createKey(userId)) {
         @CSRFSupport.formField
-        @b3.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key")
-        @b3.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-        @b3.text( keyForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
-        @b3.select( keyForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
-        @b3.checkbox( keyForm("sendEmail"), '_label -> "Send email" )
-        @b3.free('_id -> "idFormGroup") {
+        @b4.text(keyForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key")
+        @b4.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
+        @b4.text( keyForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
+        @b4.select( keyForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+        @b4.checkbox( keyForm("sendEmail"), '_label -> "Send email" )
+        @b4.free('_id -> "idFormGroup") {
           <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save key</button>
           <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
         }
