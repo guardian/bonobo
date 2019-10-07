@@ -27,7 +27,7 @@ libraryDependencies ++= Seq(
   "com.gu" %% "play-googleauth" % "0.7.9",
   "org.bouncycastle" % "bcpkix-jdk15on" % "1.63",
   "org.scalatest" %% "scalatest" % "3.0.8" % "it,test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % "it,test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "it,test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.beachape" %% "enumeratum" % "1.5.13",
   "com.beachape" %% "enumeratum-play-json" % "1.5.16"
