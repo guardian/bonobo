@@ -1,28 +1,28 @@
 @import controllers.csrf.CSRFSupport
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, userForm: Form[controllers.Forms.CreateUserFormData], labelMap: Map[String, LabelProperties], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
+@implicitFieldConstructor = @{ b4.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Create user", firstName, pageTitle, success, error){ }{
     <div class="row">
         <div class="col-md-6 col-md-offset-2 column">
-            @b3.form(routes.Application.createUser) {
+            @b4.form(routes.Application.createUser) {
                 @CSRFSupport.formField
-                @b3.text( userForm("name"), '_label -> "Name", 'placeholder -> "Name" )
-                @b3.email( userForm("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
-                @b3.text( userForm("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
-                @b3.text( userForm("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
-                @b3.text( userForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-                @b3.text( userForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
-                @b3.select( userForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
-                @b3.text( userForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
-                @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
-                @b3.text( userForm("labelIds") )
-                @b3.free() {
+                @b4.text( userForm("name"), '_label -> "Name", 'placeholder -> "Name" )
+                @b4.email( userForm("email"), '_label -> "Email", 'placeholder -> "example@mail.com" )
+                @b4.text( userForm("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
+                @b4.text( userForm("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
+                @b4.text( userForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
+                @b4.text( userForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
+                @b4.select( userForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+                @b4.text( userForm("key"), '_label -> "Key (optional)", 'placeholder -> "Custom key" )
+                @b4.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
+                @b4.text( userForm("labelIds") )
+                @b4.free() {
                     <div id="divChosenLabels"></div>
                 }
-                @b3.checkbox( userForm("sendEmail"), '_label -> "Send email" )
-                @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
+                @b4.checkbox( userForm("sendEmail"), '_label -> "Send email" )
+                @b4.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
             }
         </div>
         <div id="divAllLabels" class="col-md-4">

@@ -1,27 +1,27 @@
 @import controllers.csrf.CSRFSupport
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, id: String, form: Form[controllers.Forms.EditUserFormData], additionalInfo: Option[AdditionalUserInfo], userLabels: List[String], labelMap: Map[String, LabelProperties], firstName: String, keys: List[KongKey], pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, flash: Flash, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
+@implicitFieldConstructor = @{ b4.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Edit User", firstName, pageTitle, success, error, flash = Option(flash)){ }{
   <div class="row">
     <div class="col-md-6 col-md-offset-2 column">
-    @b3.form(routes.Application.editUser(id)) {
+    @b4.form(routes.Application.editUser(id)) {
       @CSRFSupport.formField
-      @b3.text( form("name"), '_label -> "Name", 'placeholder -> "Name")
-      @b3.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
-      @b3.text( form("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
-      @b3.text( form("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
-      @b3.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
-      @b3.text( form("labelIds") )
-      @b3.free(){
+      @b4.text( form("name"), '_label -> "Name", 'placeholder -> "Name")
+      @b4.text( form("email"), '_label -> "Email", 'placeholder -> "Email")
+      @b4.text( form("companyName"), '_label -> "Company name (optional)", 'placeholder -> "Company name" )
+      @b4.text( form("companyUrl"), '_label -> "Company URL (optional)", 'placeholder -> "Company URL" )
+      @b4.button('_label -> "Labels", 'class -> "btn btn-default btn-sm", 'id -> "btnAddLabels") { <span class="glyphicon glyphicon-plus"></span> }
+      @b4.text( form("labelIds") )
+      @b4.free(){
         <div id="divChosenLabels">
           @for(labelId <- userLabels){
             <span class="label label-default" data-id="@labelId" data-used="true" style="background-color: @labelMap.get(labelId).map(_.colour)">@labelMap.get(labelId).map(_.name)</span>
           }
         </div>
       }
-      @b3.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
+      @b4.submit('class -> "btn btn-primary"){ <span class="glyphicon glyphicon-ok"></span> Save }
     }
     </div>
     <div id="divAllLabels" class="col-md-4">
@@ -103,7 +103,7 @@
             <td>@key.createdAt.toString("dd-MM-yyyy hh:mma")</td>
             <td>@key.status</td>
             <td>
-              @b3.form(routes.Application.deleteKey(key.key), 'class -> "js-delete-key") {
+              @b4.form(routes.Application.deleteKey(key.key), 'class -> "js-delete-key") {
                 @CSRFSupport.formField
                 <button type="submit" class="btn btn-danger btn-sm">
                   <span class="glyphicon glyphicon-remove"></span>

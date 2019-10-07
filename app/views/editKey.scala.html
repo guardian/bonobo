@@ -1,10 +1,10 @@
 @import controllers.csrf.CSRFSupport
 @import controllers.AssetsFinder
 @(assets: AssetsFinder, userId: String, form: Form[controllers.Forms.EditKeyFormData], firstName: String, pageTitle: String, success: Option[String] = None, error: Option[String] = None)(implicit messages: play.api.i18n.MessagesProvider, request: RequestHeader)
-@implicitFieldConstructor = @{ b3.horizontal.fieldConstructor("col-md-5", "col-md-7") }
+@implicitFieldConstructor = @{ b4.horizontal.fieldConstructor("col-md-5", "col-md-7") }
 
 @main(assets, "Edit key", firstName, pageTitle, success, error) {
-    @b3.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right js-delete-key") {
+    @b4.form(routes.Application.deleteKey(form("key").value.get), 'class -> "pull-right js-delete-key") {
         @CSRFSupport.formField
         <button type="submit" class="btn btn-danger">
             <span class="glyphicon glyphicon-remove"></span> Delete key
@@ -13,17 +13,17 @@
 }{
     <div class="row">
         <div class="col-md-8 col-md-offset-1 column">
-        @b3.form(routes.Application.editKey(form("key").value.get)) {
+        @b4.form(routes.Application.editKey(form("key").value.get)) {
             @CSRFSupport.formField
-            @b3.text( form("key"), '_label -> "Key", 'readonly -> true )
-            @b3.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
-            @b3.text( form("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
-            @b3.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
-            @b3.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
-            @b3.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
-            @b3.checkbox( form("defaultRequests"), '_label -> "Use default rate limits" )
-            @b3.select( form("status"), options = Seq(KongKey.Active -> "Active", KongKey.Inactive -> "Inactive"), '_label -> "Status" )
-            @b3.free('_id -> "idFormGroup") {
+            @b4.text( form("key"), '_label -> "Key", 'readonly -> true )
+            @b4.text( form("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
+            @b4.text( form("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
+            @b4.number( form("requestsPerDay"), '_label -> "Requests per day", 'placeholder -> "Requests per day", 'min -> "0" )
+            @b4.number( form("requestsPerMinute"), '_label -> "Requests per minute", 'placeholder -> "Requests per minute", 'min -> "0" )
+            @b4.select( form("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+            @b4.checkbox( form("defaultRequests"), '_label -> "Use default rate limits" )
+            @b4.select( form("status"), options = Seq(KongKey.Active -> "Active", KongKey.Inactive -> "Inactive"), '_label -> "Status" )
+            @b4.free('_id -> "idFormGroup") {
                 <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save changes</button>
                 <a href="@routes.Application.editUserPage(userId)" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span> Back to user</a>
             }

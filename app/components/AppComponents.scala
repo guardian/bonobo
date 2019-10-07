@@ -3,7 +3,7 @@ package components
 import java.io.FileInputStream
 
 import akka.stream.Materializer
-import auth.{Authorisation, DummyAuthorisation, GoogleGroupsAuthorisation}
+import auth.{ Authorisation, DummyAuthorisation, GoogleGroupsAuthorisation }
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder
@@ -12,21 +12,21 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsyncClientBui
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceAsync
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import controllers._
-import com.gu.googleauth.{AntiForgeryChecker, GoogleAuthConfig, GoogleServiceAccount}
-import email.{AwsEmailClient, MailClient}
-import java.security.{MessageDigest, Security}
+import com.gu.googleauth.{ AntiForgeryChecker, GoogleAuthConfig, GoogleServiceAccount }
+import email.{ AwsEmailClient, MailClient }
+import java.security.{ MessageDigest, Security }
 
-import kong.{Kong, KongClient}
+import kong.{ Kong, KongClient }
 import models.LabelProperties
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.joda.time.Duration
 import play.api.ApplicationLoader.Context
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.{ActionBuilder, ActionFunction, AnyContent, Filter, RequestHeader, Result, Results}
+import play.api.mvc.{ ActionBuilder, ActionFunction, AnyContent, Filter, RequestHeader, Result, Results }
 import play.api.routing.Router
-import play.api.{BuiltInComponents, BuiltInComponentsFromContext, Logger, Mode}
+import play.api.{ BuiltInComponents, BuiltInComponentsFromContext, Logger, Mode }
 import play.filters.csrf.CSRFComponents
-import play.filters.headers.{SecurityHeadersConfig, SecurityHeadersFilter}
+import play.filters.headers.{ SecurityHeadersConfig, SecurityHeadersFilter }
 import store.Dynamo
 import util.AWSConstants._
 import router.Routes

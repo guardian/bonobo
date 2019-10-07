@@ -5,7 +5,7 @@ import models._
 import com.gu.googleauth.UserIdentity
 import org.joda.time.DateTime
 import org.scalatest._
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import play.api.i18n._
 import play.api.mvc._
 import play.api.mvc.Security.AuthenticatedBuilder
