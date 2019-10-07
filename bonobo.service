@@ -8,7 +8,7 @@ Restart=on-failure
 Environment='HOME=/home/content-api'
 Environment='JAVA_OPTS=-Xmx256m -Xms256m -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/home/content-api/logs/gc.log -XX:ReservedCodeCacheSize=64m -Dconfig.file=/etc/gu/bonobo.conf'
 WorkingDirectory=/home/content-api
-ExecStart=/home/content-api/bonobo/bonobo-1.0-SNAPSHOT/bin/bonobo
+ExecStart=/home/content-api/bonobo/bin/bonobo
 
 [Install]
 WantedBy=multi-user.target
