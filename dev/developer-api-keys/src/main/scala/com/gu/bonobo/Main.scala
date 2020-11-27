@@ -107,7 +107,7 @@ object Main extends App {
       println("processing API key")
       val highRiskApiKey =
         for {
-          kongKey <- dynamo.getKeyWithValueV2(usage.apiKey) if usage.count >= config.usageCount
+          kongKey <- dynamo.getKeyWithValue(usage.apiKey) if usage.count >= config.usageCount
           user <- dynamo.getUserWithId(kongKey.bonoboId) if kongKey.tier == Tier.Developer
         } yield {
           HighRiskApiKey(user.email, kongKey.productName, usage.count)
