@@ -205,16 +205,6 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
   }
 
   def getKeyWithValue(keyValue: String): Option[KongKey] = {
-    val query = new QuerySpec()
-      .withConsistentRead(true)
-      .withKeyConditionExpression("hashkey = :h")
-      .withFilterExpression("keyValue = :k")
-      .withValueMap(new ValueMap().withString(":h", "hashkey").withString(":k", keyValue))
-    val result = KongTable.query(query)
-    result.asScala.toList.map(fromKongItem).headOption
-  }
-
-  def getKeyWithValueV2(keyValue: String): Option[KongKey] = {
     val querySpec = new QuerySpec()
       .withKeyConditionExpression("keyValue = :keyValue")
       .withValueMap(new ValueMap().withString(":keyValue", keyValue))
