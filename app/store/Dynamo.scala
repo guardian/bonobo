@@ -214,6 +214,14 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
     result.asScala.toList.map(fromKongItem).headOption
   }
 
+  def getKeyWithValueV2(keyValue: String): Option[KongKey] = {
+    val querySpec = new QuerySpec()
+      .withKeyConditionExpression("keyValue = :keyValue")
+      .withValueMap(new ValueMap().withString(":keyValue", keyValue))
+    val result = KongTable.getIndex("keyValue-index-all-attributes").query(querySpec)
+    result.asScala.toList.map(fromKongItem).headOption
+  }
+
   def getKeysWithUserId(bonoboId: String): List[KongKey] = {
     val keyQuery = new QuerySpec()
       .withKeyConditionExpression("hashkey = :h")

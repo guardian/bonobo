@@ -16,6 +16,14 @@ lazy val root = (project in file("."))
   .configs(IntegrationTest)
   .settings(Defaults.itSettings: _*)
 
+lazy val developerApiKeys = (project in file("dev/developer-api-keys"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.github.scopt" %% "scopt" % "4.0.0-RC2"
+    )
+  )
+  .dependsOn(root)
+
 libraryDependencies ++= Seq(
   ws,
   filters,
