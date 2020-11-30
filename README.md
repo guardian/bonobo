@@ -73,3 +73,11 @@ Make sure you have completed step 1 and 2 from the previous section and then run
 ```
 $ sbt it:test
 ```
+
+## Developer Tier
+<!---
+This anchor is linked to in the Bonobo application. 
+If you change this anchor, you should change the corresponding Bonobo source code. 
+--->
+Keys issued under the `Developer` tier can be periodically deleted by [Gibbons](https://github.com/guardian/gibbons).
+Therefore, if an API key is intended to be used by a service, it should __not__ be issued under the `Developer` tier.

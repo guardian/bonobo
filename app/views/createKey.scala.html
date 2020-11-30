@@ -14,6 +14,7 @@
         @b4.text( keyForm("productName"), '_label -> "Product name", 'placeholder -> "Product name" )
         @b4.text( keyForm("productUrl"), '_label -> "Product URL (optional)", 'placeholder -> "Product URL" )
         @b4.select( keyForm("tier"), options = Seq(Tier.Developer.toString -> Tier.Developer.friendlyName, Tier.RightsManaged.toString -> Tier.RightsManaged.friendlyName, Tier.External.toString -> Tier.External.friendlyName, Tier.Internal.toString -> Tier.Internal.friendlyName), '_label -> "Tier" )
+        @developerTierWarning()
         @b4.checkbox( keyForm("sendEmail"), '_label -> "Send email" )
         @b4.free('_id -> "idFormGroup") {
           <button type="submit" class="btn btn-primary"> <span class="glyphicon glyphicon-ok"></span> Save key</button>
