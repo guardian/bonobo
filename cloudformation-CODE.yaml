@@ -21,6 +21,9 @@ Parameters:
     Description: AMI ID
     Type: String
     Default: ami-6b50e218
+  LoggingKinesisStream:
+    Description: The name of the stream used to send logs to The Guardian's central ELK stack
+    Type: String
 Resources:
   RootRole:
     Type: AWS::IAM::Role
@@ -85,6 +88,22 @@ Resources:
           Resource: "*"
       Roles:
       - Ref: RootRole
+  LoggingKinesisStreamSenderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: logging-kinesis-stream-sender
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - kinesis:PutRecord
+              - kinesis:PutRecords
+              - kinesis:DescribeStream
+            Resource:
+              !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
+      Roles:
+        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
