@@ -184,7 +184,11 @@ Resources:
       UserData:
         Fn::Base64:
           !Sub |
-            #!/usr/bin/env bash
+            #!/bin/bash -xve
+
+            # send script output to /tmp so we can debug boot failures
+            exec > /tmp/userdata.log 2>&1
+
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
