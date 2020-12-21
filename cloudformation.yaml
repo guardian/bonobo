@@ -14,6 +14,9 @@ Parameters:
     Description: Environment name
     Type: String
     Default: CODE
+    AllowedValues:
+      - CODE
+      - PROD
   SSLCertificate:
     Description: The ARN of the SSL certificate to use for the ELB
     Type: String
@@ -21,9 +24,15 @@ Parameters:
     Description: AMI ID
     Type: String
     Default: ami-6b50e218
-  LoggingKinesisStream:
-    Description: The name of the stream used to send logs to The Guardian's central ELK stack
-    Type: String
+Conditions:
+  # Previously there were different Cloud Formation templates for CODE and PROD,
+  # which were identical asides from the keys and users Dyanmo DB tables were cloud formed for PROD, but not for CODE.
+  # It is advantageous to work with just one template across stages e.g. avoids duplicate template changes.
+  # As a "light weight" approach to get to a one template set up in a backwards compatible manner,
+  # only cloud form the Dynamo DB tables if the stage is PROD.
+  ShouldCloudFormDynamoDBTables: !Equals
+    - !Ref Stage
+    - PROD
 Resources:
   RootRole:
     Type: AWS::IAM::Role
@@ -88,22 +97,6 @@ Resources:
           Resource: "*"
       Roles:
       - Ref: RootRole
-  LoggingKinesisStreamSenderPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: logging-kinesis-stream-sender
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - kinesis:PutRecord
-              - kinesis:PutRecords
-              - kinesis:DescribeStream
-            Resource:
-              !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
-      Roles:
-        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -184,11 +177,7 @@ Resources:
       UserData:
         Fn::Base64:
           !Sub |
-            #!/bin/bash -xve
-
-            # send script output to /tmp so we can debug boot failures
-            exec > /tmp/userdata.log 2>&1
-
+            #!/usr/bin/env bash
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
@@ -198,7 +187,6 @@ Resources:
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.service bonobo.service
 
             mv bonobo.service /etc/systemd/system
-
             mkdir bonobo
             unzip bonobo.zip -d bonobo
 
@@ -253,3 +241,47 @@ Resources:
       ToPort: '9000'
       DestinationSecurityGroupId:
         !GetAtt BonoboSecurityGroup.GroupId
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Condition: ShouldCloudFormDynamoDBTables
+    Properties:
+      TableName: !Sub bonobo-${Stage}-users
+      AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+      - AttributeName: email
+        AttributeType: S
+      KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 20
+        WriteCapacityUnits: 10
+      GlobalSecondaryIndexes:
+      - IndexName: email-index
+        KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        Projection:
+          ProjectionType: KEYS_ONLY
+        ProvisionedThroughput:
+          ReadCapacityUnits: 20
+          WriteCapacityUnits: 10
+  KeysTable:
+    Type: AWS::DynamoDB::Table
+    Condition: ShouldCloudFormDynamoDBTables
+    Properties:
+      TableName: !Sub bonobo-${Stage}-keys
+      AttributeDefinitions:
+      - AttributeName: hashkey
+        AttributeType: S
+      - AttributeName: rangekey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: hashkey
+        KeyType: HASH
+      - AttributeName: rangekey
+        KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 20
+        WriteCapacityUnits: 10
