@@ -14,6 +14,9 @@ Parameters:
     Description: Environment name
     Type: String
     Default: CODE
+    AllowedValues:
+      - CODE
+      - PROD
   SSLCertificate:
     Description: The ARN of the SSL certificate to use for the ELB
     Type: String
@@ -21,6 +24,15 @@ Parameters:
     Description: AMI ID
     Type: String
     Default: ami-6b50e218
+Conditions:
+  # Previously there were different Cloud Formation templates for CODE and PROD,
+  # which were identical asides from the keys and users Dyanmo DB tables were cloud formed for PROD, but not for CODE.
+  # It is advantageous to work with just one template across stages e.g. avoids duplicate template changes.
+  # As a "light weight" approach to get to a one template set up in a backwards compatible manner,
+  # only cloud form the Dynamo DB tables if the stage is PROD.
+  ShouldCloudFormDynamoDBTables: !Equals
+    - !Ref Stage
+    - PROD
 Resources:
   RootRole:
     Type: AWS::IAM::Role
@@ -231,6 +243,7 @@ Resources:
         !GetAtt BonoboSecurityGroup.GroupId
   UsersTable:
     Type: AWS::DynamoDB::Table
+    Condition: ShouldCloudFormDynamoDBTables
     Properties:
       TableName: !Sub bonobo-${Stage}-users
       AttributeDefinitions:
@@ -256,6 +269,7 @@ Resources:
           WriteCapacityUnits: 10
   KeysTable:
     Type: AWS::DynamoDB::Table
+    Condition: ShouldCloudFormDynamoDBTables
     Properties:
       TableName: !Sub bonobo-${Stage}-keys
       AttributeDefinitions:
