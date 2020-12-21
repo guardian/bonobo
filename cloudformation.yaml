@@ -24,6 +24,9 @@ Parameters:
     Description: AMI ID
     Type: String
     Default: ami-6b50e218
+  LoggingKinesisStream:
+    Description: The name of the stream used to send logs to The Guardian's central ELK stack
+    Type: String
 Conditions:
   # Previously there were different Cloud Formation templates for CODE and PROD,
   # which were identical asides from the keys and users Dyanmo DB tables were cloud formed for PROD, but not for CODE.
@@ -97,6 +100,22 @@ Resources:
           Resource: "*"
       Roles:
       - Ref: RootRole
+  LoggingKinesisStreamSenderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: logging-kinesis-stream-sender
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - kinesis:PutRecord
+              - kinesis:PutRecords
+              - kinesis:DescribeStream
+            Resource:
+              !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
+      Roles:
+        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -177,7 +196,11 @@ Resources:
       UserData:
         Fn::Base64:
           !Sub |
-            #!/usr/bin/env bash
+            #!/bin/bash -xve
+
+            # send script output to /tmp so we can debug boot failures
+            exec > /tmp/userdata.log 2>&1
+
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
