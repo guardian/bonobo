@@ -208,6 +208,10 @@ Resources:
 
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.zip bonobo.zip
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.service bonobo.service
+            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/logstash.conf logstash.conf
+
+            sed -i  -e 's,@@STAGE,${Stage},g' -e 's,@@LOGGING_STREAM,${LoggingKinesisStream},g' -e 's,@@REGION,${AWS::Region},g' logstash.conf
+            mv logstash.conf /etc/logstash/conf.d/
 
             mv bonobo.service /etc/systemd/system
             mkdir bonobo
@@ -217,6 +221,7 @@ Resources:
             aws s3 cp s3://content-api-config/bonobo/bonobo-google-service-account.json /etc/gu/bonobo-google-service-account.json
             chown -R content-api:content-api /home/content-api /etc/gu
             systemctl start bonobo.service
+            systemctl start logstash
 
   BonoboSecurityGroup:
     Type: AWS::EC2::SecurityGroup
