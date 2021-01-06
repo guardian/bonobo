@@ -14,7 +14,7 @@ deployments:
     type: ami-cloudformation-parameter
     parameters:
       amiTags:
-        Recipe: ubuntu-xenial-capi
+        Recipe: ubuntu-xenial-capi-logstash-7.x
         AmigoStage: PROD
       amiEncrypted: true
       cloudFormationStackName: bonobo
