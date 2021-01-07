@@ -6,7 +6,7 @@ User=content-api
 Group=content-api
 Restart=on-failure
 Environment='HOME=/home/content-api'
-Environment='JAVA_OPTS=-Xmx256m -Xms256m -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/home/content-api/logs/gc.log -XX:ReservedCodeCacheSize=64m -Dconfig.file=/etc/gu/bonobo.conf'
+Environment='JAVA_OPTS=-Xmx768m -Xms768m -XX:+UseConcMarkSweepGC -XX:NewRatio=2 -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/home/content-api/logs/gc.log -XX:ReservedCodeCacheSize=64m -Dconfig.file=/etc/gu/bonobo.conf'
 WorkingDirectory=/home/content-api
 ExecStart=/home/content-api/bonobo/bin/bonobo
 

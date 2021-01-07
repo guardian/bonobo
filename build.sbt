@@ -50,6 +50,8 @@ riffRaffUploadArtifactBucket := Option("riffraff-artifact")
 riffRaffUploadManifestBucket := Option("riffraff-builds")
 riffRaffManifestProjectName := s"Content Platforms::${name.value}"
 
+riffRaffArtifactResources += baseDirectory.value / "logstash.conf" -> s"${riffRaffPackageName.value}/logstash.conf"
+
 routesGenerator := InjectedRoutesGenerator
 
 testOptions in Test += Tests.Argument("-oF")

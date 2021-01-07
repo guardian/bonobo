@@ -24,6 +24,9 @@ Parameters:
     Description: AMI ID
     Type: String
     Default: ami-6b50e218
+  LoggingKinesisStream:
+    Description: The name of the stream used to send logs to The Guardian's central ELK stack
+    Type: String
 Conditions:
   # Previously there were different Cloud Formation templates for CODE and PROD,
   # which were identical asides from the keys and users Dyanmo DB tables were cloud formed for PROD, but not for CODE.
@@ -97,6 +100,22 @@ Resources:
           Resource: "*"
       Roles:
       - Ref: RootRole
+  LoggingKinesisStreamSenderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: logging-kinesis-stream-sender
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - kinesis:PutRecord
+              - kinesis:PutRecords
+              - kinesis:DescribeStream
+            Resource:
+              !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
+      Roles:
+        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -167,7 +186,7 @@ Resources:
     Properties:
       ImageId:
         Ref: AMI
-      InstanceType: t3.micro
+      InstanceType: t3.small
       IamInstanceProfile:
         Ref: InstanceProfile
       SecurityGroups:
@@ -177,7 +196,11 @@ Resources:
       UserData:
         Fn::Base64:
           !Sub |
-            #!/usr/bin/env bash
+            #!/bin/bash -xve
+
+            # send script output to /tmp so we can debug boot failures
+            exec > /tmp/userdata.log 2>&1
+
             adduser --disabled-password content-api
             cd /home/content-api
             mkdir logs
@@ -185,6 +208,10 @@ Resources:
 
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.zip bonobo.zip
             aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/bonobo.service bonobo.service
+            aws --region eu-west-1 s3 cp s3://content-api-dist/content-api/${Stage}/bonobo/logstash.conf logstash.conf
+
+            sed -i  -e 's,@@STAGE,${Stage},g' -e 's,@@LOGGING_STREAM,${LoggingKinesisStream},g' -e 's,@@REGION,${AWS::Region},g' logstash.conf
+            mv logstash.conf /etc/logstash/conf.d/
 
             mv bonobo.service /etc/systemd/system
             mkdir bonobo
@@ -194,6 +221,7 @@ Resources:
             aws s3 cp s3://content-api-config/bonobo/bonobo-google-service-account.json /etc/gu/bonobo-google-service-account.json
             chown -R content-api:content-api /home/content-api /etc/gu
             systemctl start bonobo.service
+            systemctl start logstash
 
   BonoboSecurityGroup:
     Type: AWS::EC2::SecurityGroup
