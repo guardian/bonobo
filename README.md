@@ -9,9 +9,7 @@ We recommend running them in Docker containers. See instructions below on how to
 
 ## To run locally using Docker
 
-Install Docker Toolkit, following the instructions on the [Docker website](http://docs.docker.com/).
-
-Make sure you have [virtualbox](https://www.virtualbox.org/) installed.
+Ensure Docker Desktop is running.
 
 1. Make sure your Docker VM is running:
 
