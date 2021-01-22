@@ -4,26 +4,13 @@ Key management for Kong
 
 ## Prerequisites for development
 
-Bonobo needs an instance of Kong to connect to, so you will need Kong and it's PostgreSQL running somewhere. 
+Bonobo needs an instance of Kong  to connect to, so you will need Kong and it's PostgreSQL running somewhere. 
 We recommend running them in Docker containers. See instructions below on how to set this up.
 
 ## To run locally using Docker
 
 Ensure Docker Desktop is running.
 
-1. Make sure your Docker VM is running:
-
-  ```
-  $ docker-machine ls
-  NAME   ACTIVE   DRIVER       STATE     URL                         SWARM
-  dev    *        virtualbox   Running   tcp://192.168.99.100:2376
-  ```
-
- If nothing is listed here, you will need to create it.
- 
- ```
-  $ docker-machine create --driver virtualbox dev
- ```
 
 2. Make sure `$DOCKER_HOST` is set:
 
