@@ -2,7 +2,7 @@ version: '2'
 services:
   
   kong:
-    image: kong:0.9.9
+    image: kong:0.14
     restart: always
     depends_on:
       - postgres
@@ -17,7 +17,8 @@ services:
       - "7946:7946/udp"
 
   postgres:
-    image: postgres:9.4
+    image: postgres:9.5.22
     environment:
       - POSTGRES_USER=kong
+      - POSTGRES_PASSWORD=kong
       - POSTGRES_DB=kong
