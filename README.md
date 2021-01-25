@@ -4,7 +4,7 @@ Key management for Kong
 
 ## Prerequisites for development
 
-Bonobo needs an instance of Kong  to connect to, so you will need Kong and it's PostgreSQL running somewhere. 
+Bonobo needs an instance of Kong to connect to, so you will need Kong and it's PostgreSQL running somewhere. 
 We recommend running them in Docker containers. See instructions below on how to set this up.
 
 ## To run locally using Docker
