@@ -12,31 +12,16 @@ We recommend running them in Docker containers. See instructions below on how to
 Ensure Docker Desktop is running.
 
 
-2. Make sure `$DOCKER_HOST` is set:
+
+2. Run the `configure-docker.sh` script:
 
   ```
-  $ echo $DOCKER_HOST
-  tcp://192.168.99.100:2376
+  cd scripts
+  ./configure-docker.sh
   ```
-  
-  If it is not, type `docker-machine env <machine-name>` to find out how to set it:
-  
-  ```
-  $ docker-machine env dev
-  export DOCKER_TLS_VERIFY="1"
-  export DOCKER_HOST="tcp://192.168.99.100:2376"
-  export DOCKER_CERT_PATH="/Users/cbirchall/.docker/machine/machines/dev"
-  export DOCKER_MACHINE_NAME="dev"
-  # Run this command to configure your shell:
-  # eval "$(docker-machine env dev)"
-  ```
-
-3. Run the `configure-docker.sh` script:
-
-  ```
-  ./scripts/configure-docker.sh
-  ```
-  This will create two containers - one for Cassandra and one for Kong - and start them. Then it will add an API in Kong with the key-auth plugin enabled.
+  This will create two containers for Kong and it's PostgreSQL/
+  It will run Kong's database migration scripts to setup the schema.
+ Then it will add an API in Kong with the key-auth plugin enabled.
 
 4. Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster (in this example: `http://192.168.99.100:8001`). In the same file you should configure `aws.dynamo.usersTableName`, `aws.dynamo.keysTableName` and `aws.dynamo.labelsTableName` to point to the DynamoDB tables you are going to use.
 

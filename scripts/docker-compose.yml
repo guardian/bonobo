@@ -12,7 +12,7 @@ services:
       - KONG_PG_DB=kong
       - KONG_PG_USER=kong
       - KONG_PG_PASSWORD=kong
-b      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
     command: sh -c "echo 'migrating' && kong migrations up && echo 'starting' && kong start"
     ports:
       - "8000:8000"
