@@ -11,9 +11,7 @@ We recommend running them in Docker containers. See instructions below on how to
 
 Ensure Docker Desktop is running.
 
-
-
-2. Run the `configure-docker.sh` script:
+Fom2. Run the `configure-docker.sh` script:
 
   ```
   cd scripts
@@ -21,7 +19,7 @@ Ensure Docker Desktop is running.
   ```
   This will create two containers for Kong and it's PostgreSQL/
   It will run Kong's database migration scripts to setup the schema.
- Then it will add an API in Kong with the key-auth plugin enabled.
+  Then it will add an API in Kong with the key-auth plugin enabled.
 
 4. Edit `conf/application.conf` to point `kong.apiAddress` at your Kong cluster (in this example: `http://192.168.99.100:8001`). In the same file you should configure `aws.dynamo.usersTableName`, `aws.dynamo.keysTableName` and `aws.dynamo.labelsTableName` to point to the DynamoDB tables you are going to use.
 
