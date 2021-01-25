@@ -9,6 +9,10 @@ services:
     environment:
       - KONG_DATABASE=postgres
       - KONG_PG_HOST=postgres
+      - KONG_PG_DB=kong
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=kong
+    command: kong migrations up
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -22,3 +26,8 @@ services:
       - POSTGRES_USER=kong
       - POSTGRES_PASSWORD=kong
       - POSTGRES_DB=kong
+
+networks:
+  default:
+    external:
+      name: kong-net
