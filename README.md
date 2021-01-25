@@ -11,7 +11,7 @@ We recommend running them in Docker containers. See instructions below on how to
 
 Ensure Docker Desktop is running.
 
-Fom2. Run the `configure-docker.sh` script:
+2. Run the `configure-docker.sh` script:
 
   ```
   cd scripts
