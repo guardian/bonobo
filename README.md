@@ -1,6 +1,18 @@
 # bonobo
 
-Key management for Kong
+Self serve key management for Kong
+
+Bonobo provides the interface for the general public to request Content API keys
+and Guardian staff to manage them.
+
+ie.
+```
+https://open-platform.theguardian.com/access/
+https://bonobo.capi.gutools.co.uk/register/developer
+```
+
+Bonobo manages the keys in Kong via the Kong API.
+
 
 ## Prerequisites for development
 
