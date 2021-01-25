@@ -1,5 +1,4 @@
 #! /bin/bash -e
-pwd
 
 echo Starting Kong Docker images ...
 docker-compose up -d

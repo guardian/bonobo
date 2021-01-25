@@ -19,12 +19,13 @@ services:
       - "8001:8001"
 
   postgres:
-    image: postgres:9.5.22
+    image: postgres:12.3
     environment:
       - POSTGRES_USER=kong
       - POSTGRES_PASSWORD=kong
       - POSTGRES_DB=kong
-
+    ports:
+      - "5432:5432"
 networks:
   default:
     external:
