@@ -46,6 +46,8 @@ object Kong {
   }
 
   def consumerCreationResponseFor(consumer: KongCreateConsumerResponse, key: String): ConsumerCreationResult = {
+    // Kong API 0.14 (and higher) renders data as 10 digit seconds since 1970.
+    // Previous Kong API versions (such as 0.9) used a 14 digit milliseconds since 1970 format
     ConsumerCreationResult(consumer.id, new DateTime(new Instant(consumer.created_at * 1000), DateTimeZone.UTC), key)
   }
 }
