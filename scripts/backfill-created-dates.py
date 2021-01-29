@@ -1,6 +1,7 @@
 import boto3
 from boto3.dynamodb.conditions import Attr
 from decimal import Decimal
+import time
 
 print(boto3.session.Session().available_profiles)
 
@@ -45,4 +46,5 @@ for item in items:
             ReturnValues="UPDATED_NEW"
         )
         print(updateResponse)
+        time.sleep(0.5)
 
