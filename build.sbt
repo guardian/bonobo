@@ -38,7 +38,8 @@ libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "it,test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.beachape" %% "enumeratum" % "1.5.13",
-  "com.beachape" %% "enumeratum-play-json" % "1.5.16"
+  "com.beachape" %% "enumeratum-play-json" % "1.5.16",
+  "joda-time" % "joda-time" % "2.10.9"
 )
 
 enablePlugins(RiffRaffArtifact, JavaAppPackaging)
