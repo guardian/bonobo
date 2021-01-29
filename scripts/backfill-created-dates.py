@@ -1,5 +1,6 @@
 import boto3
 from boto3.dynamodb.conditions import Attr
+from decimal import Decimal
 
 print(boto3.session.Session().available_profiles)
 
@@ -18,17 +19,30 @@ print(table)
 cutoffDate = 1000000000000
 
 response = table.scan(
-    Limit=25,
-    FilterExpression=Attr('createdAt').lt(cutoffDate)
+    Limit=23,
+    FilterExpression=Attr('createdAt').lt(cutoffDate),
 )
 
 print(f"Found {response['Count']} / scanned {response['ScannedCount']}")
 
 items = response['Items']
 for item in items:
-	keyValue = item['keyValue']
-	createdAt = item['createdAt']
-	if createdAt < cutoffDate:
-	    updatedCreatedAt = createdAt * 1000
-	    print(f"Item {keyValue} has old createdAt {createdAt} and will updated to {updatedCreatedAt}")
-        // TODO apply update
+    keyValue = item['keyValue']
+    createdAt = item['createdAt']
+    if createdAt < cutoffDate:
+        updatedCreatedAt = createdAt * 1000
+        print(f"Item {keyValue} has old createdAt {createdAt} and will updated to {updatedCreatedAt}")
+        rangeKey = item['rangekey']
+        updateResponse = table.update_item(
+            Key={
+                'hashkey': "hashkey",
+                'rangekey': rangeKey,
+            },
+            UpdateExpression="set createdAt=:c",
+            ExpressionAttributeValues={
+            ':c': Decimal(updatedCreatedAt)
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+        print(updateResponse)
+
