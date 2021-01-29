@@ -1,14 +1,12 @@
 package kong
 
-import java.util.UUID
-
 import models._
-import org.joda.time.DateTime
-
+import org.joda.time.{ DateTime, DateTimeZone, Instant }
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.Logger
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -46,6 +44,12 @@ object Kong {
   object KongPluginConfig {
     implicit val pluginsRead = Json.reads[KongPluginConfig]
   }
+
+  def consumerCreationResponseFor(consumer: KongCreateConsumerResponse, key: String): ConsumerCreationResult = {
+    // Kong API 0.14 (and higher) renders data as 10 digit seconds since 1970.
+    // Previous Kong API versions (such as 0.9) used a 14 digit milliseconds since 1970 format
+    ConsumerCreationResult(consumer.id, new DateTime(new Instant(consumer.created_at * 1000), DateTimeZone.UTC), key)
+  }
 }
 
 trait Kong {
@@ -73,10 +77,10 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
     for {
-      consumer <- createConsumer(tier)
-      _ <- setRateLimit(consumer.id, rateLimit)
-      key <- createKey(consumer.id, key)
-    } yield ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
+      createConsumerResponse <- createConsumer(tier)
+      _ <- setRateLimit(createConsumerResponse.id, rateLimit)
+      key <- createKey(createConsumerResponse.id, key)
+    } yield consumerCreationResponseFor(createConsumerResponse, key)
   }
 
   private def createConsumer(tier: Tier): Future[KongCreateConsumerResponse] = {
