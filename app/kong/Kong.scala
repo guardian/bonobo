@@ -1,14 +1,12 @@
 package kong
 
-import java.util.UUID
-
 import models._
-import org.joda.time.DateTime
-
+import org.joda.time.{DateTime, DateTimeZone, Instant}
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.Logger
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -48,7 +46,7 @@ object Kong {
   }
 
   def consumerCreationResponseFor(consumer: KongCreateConsumerResponse, key: String): ConsumerCreationResult = {
-    ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
+    ConsumerCreationResult(consumer.id, new DateTime(new Instant(consumer.created_at * 1000), DateTimeZone.UTC), key)
   }
 }
 

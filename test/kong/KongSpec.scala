@@ -18,7 +18,7 @@ class KongSpec extends FlatSpec with Matchers {
 
     val result = Kong.consumerCreationResponseFor(createConsumerResponse, keyId)
 
-    assert(result.createdAt == ISODateTimeFormat.basicDateTimeNoMillis().parseDateTime("20150127T192214Z"))
+    assert(result.createdAt.isEqual(ISODateTimeFormat.basicDateTimeNoMillis().parseDateTime("20150127T192214Z")))
   }
 
 }
