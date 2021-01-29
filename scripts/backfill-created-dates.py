@@ -19,7 +19,7 @@ print(table)
 cutoffDate = 1000000000000
 
 response = table.scan(
-    Limit=23,
+    Limit=100,
     FilterExpression=Attr('createdAt').lt(cutoffDate),
 )
 
