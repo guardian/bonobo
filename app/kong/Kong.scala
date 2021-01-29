@@ -73,10 +73,14 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
 
   def createConsumerAndKey(tier: Tier, rateLimit: RateLimits, key: Option[String]): Future[ConsumerCreationResult] = {
     for {
-      consumer <- createConsumer(tier)
-      _ <- setRateLimit(consumer.id, rateLimit)
-      key <- createKey(consumer.id, key)
-    } yield ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
+      createConsumerResponse <- createConsumer(tier)
+      _ <- setRateLimit(createConsumerResponse.id, rateLimit)
+      key <- createKey(createConsumerResponse.id, key)
+    } yield consumerCreationResponseFor(createConsumerResponse, key)
+  }
+
+  protected def consumerCreationResponseFor(consumer: KongCreateConsumerResponse, key: String): ConsumerCreationResult = {
+    ConsumerCreationResult(consumer.id, new DateTime(consumer.created_at), key)
   }
 
   private def createConsumer(tier: Tier): Future[KongCreateConsumerResponse] = {
