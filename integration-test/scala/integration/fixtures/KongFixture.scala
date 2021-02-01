@@ -24,7 +24,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   @tailrec
   private def waitForPostgresToStart(): Unit = {
-    s"nc -z $containersHost 5434".! match {
+    s"nc -z $containersHost 5432".! match {
       case 0 => ()
       case _ =>
         println(s"Waiting for Postgres to start listening ...")
@@ -42,18 +42,13 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 5434:5432 -e POSTGRES_USER=kong -e POSTGRES_DB=kong --name postgres postgres:12.3".!
-    println(s"Created Postgres container")
+    println(s"Creating containers")
+    "docker-compose -f scripts/docker-compose.yml up -d".!
 
-    "docker create -p 8000:8000 -p 8001:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong --link postgres:postgres -e KONG_DATABASE=postgres -e KONG_PG_HOST=postgres kong:0.14".!
-    println(s"Created Kong container")
-
-    "docker start postgres".!
-    println(s"Started Postgres container")
+    println(s"Waiting for Postgres container")
     waitForPostgresToStart()
 
-    "docker start kong".!
-    println(s"Started Kong container")
+    println(s"Waiting for Kong container")
     waitForKongToStart()
 
     configureKong()
