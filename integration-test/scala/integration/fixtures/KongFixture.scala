@@ -35,7 +35,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   private def configureKong(): Unit = {
     println("Registering the API with Kong")
-    s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d request_host=foo.com -d upstream_url=http://example.com".!
+    s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d hosts=foo.com -d upstream_url=http://example.com".!
 
     println("Enabling the key-auth plugin")
     s"curl -sS -X POST $kongUrl/apis/$kongApiName/plugins/ -d name=key-auth".!
