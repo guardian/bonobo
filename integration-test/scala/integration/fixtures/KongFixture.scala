@@ -7,18 +7,7 @@ import sys.process._
 
 trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
-  val containersHost = {
-    /*
-    If we are running boot2docker on an OSX developer machine, $DOCKER_HOST will be set and will give us the VirtualBox VM's address.
-    If we are on TeamCity, docker port forwarding should work properly so we can connect to Kong on localhost.
-    */
-    val DockerHostPattern = """tcp://(.+):\d+""".r
-    sys.env.get("DOCKER_HOST").fold("localhost") {
-      // DOCKER_HOST will look like tcp://192.168.99.100:2376. Extract the IP address from there.
-      case DockerHostPattern(hostname) => hostname
-      case other => fail(s"DOCKER_HOST had an unexpected format: $other")
-    }
-  }
+  val containersHost = "localhost"
   val kongUrl = s"http://$containersHost:8001"
   val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
 
