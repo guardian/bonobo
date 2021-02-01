@@ -136,7 +136,7 @@ class ApplicationLogic(dynamo: DB, kong: Kong) {
       }
 
       if (oldRateLimits != newRateLimits) {
-        kong.updateConsumer(kongConsumerId, newRateLimits)
+        kong.updateConsumerRateLimit(kongConsumerId, newRateLimits)
       } else {
         Future.successful(Happy)
       }
