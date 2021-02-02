@@ -100,7 +100,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   private def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
-    ws.url(s"$serverUrl/apis/$apiName/plugins").post(Map(
+    ws.url(s"$serverUrl/services/$apiName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
       "name" -> Seq(RateLimitingPluginName),
       "config.policy" -> Seq("local"),
@@ -131,7 +131,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   private def getRateLimitingPluginId(consumerId: String): Future[String] = {
-    ws.url(s"$serverUrl/apis/$apiName/plugins")
+    ws.url(s"$serverUrl/services/$apiName/plugins")
       .withQueryStringParameters(("consumer_id" -> s"$consumerId"), ("name" -> RateLimitingPluginName))
       .get().flatMap {
         response =>
@@ -154,7 +154,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   def updateConsumerRateLimit(consumerId: String, newRateLimit: RateLimits): Future[Happy.type] = {
     getRateLimitingPluginId(consumerId) flatMap {
       pluginId =>
-        ws.url(s"$serverUrl/apis/$apiName/plugins/$pluginId").patch(Map(
+        ws.url(s"$serverUrl/plugins/$pluginId").patch(Map(
           "consumer_id" -> Seq(consumerId),
           "name" -> Seq(RateLimitingPluginName),
           "config.policy" -> Seq("local"),
