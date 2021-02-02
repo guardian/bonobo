@@ -2,15 +2,13 @@ package integration
 
 import models._
 import org.joda.time.DateTime
-import org.scalatest.concurrent.{ Eventually, ScalaFutures }
-import org.scalatest.{ Matchers, OptionValues, FlatSpec }
-import play.api.test.Helpers._
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.{FlatSpec, Matchers, OptionValues}
 import play.api.test.FakeRequest
+import play.api.test.Helpers.{status, _}
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future }
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.libs.json._
 
 class IntegrationTests extends FlatSpec with Matchers with OptionValues with IntegrationSpecBase with ScalaFutures with Eventually {
 
@@ -32,6 +30,11 @@ class IntegrationTests extends FlatSpec with Matchers with OptionValues with Int
     status(result) shouldBe 303 // on success it redirects to the "edit user" page
 
     val dynamoKongKey = dynamo.getKeyWithValue("123124-13434-32323-3439")
+
+    // The key creation date relates to when the consumer was created in Kong.
+    // Checks that we are parsing the consumer creation date from Kong sensibly
+    dynamoKongKey.value.createdAt.isAfter(DateTime.now().minusHours(1)) shouldBe true
+
     val consumerId = dynamoKongKey.value.kongConsumerId
 
     // check the consumerId in dynamo matches the one on Kong
