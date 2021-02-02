@@ -60,33 +60,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     try super.afterAll()
     finally {
       Try {
-        "docker kill kong".!!
-        println("Killed Kong container")
+        "docker-compose -f scripts/docker-compose.yml down".!!
+        println("Killed containers")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Kong container. Exception: $e}")
-      }
-
-      Try {
-        "docker kill postgres".!!
-        println("Killed Postgres container")
-        Thread.sleep(2000L)
-      } recover {
-        case e => println(s"Failed to kill Postgres container. Exception: $e}")
-      }
-
-      Try {
-        "docker rm kong".!!
-        println("Removed Kong container")
-      } recover {
-        case e => println(s"Failed to remove Kong container. Exception: $e}")
-      }
-
-      Try {
-        "docker rm postgres".!!
-        println("Removed Postgres container")
-      } recover {
-        case e => println(s"Failed to remove Postgres container. Exception: $e}")
+        case e => println(s"Failed to kill containers. Exception: $e}")
       }
     }
   }
