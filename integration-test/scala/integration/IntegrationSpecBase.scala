@@ -128,7 +128,7 @@ trait IntegrationSpecBase
   }
 
   def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/apis/$kongApiName/plugins")
+    wsClient.url(s"$kongUrl/services/$kongApiName/plugins")
       .withQueryStringParameters(("consumer_id" -> consumerId)).get().map {
         response =>
           val maybeDay = (response.json \\ "day").headOption
