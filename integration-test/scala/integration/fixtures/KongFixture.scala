@@ -7,18 +7,7 @@ import sys.process._
 
 trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
-  val containersHost = {
-    /*
-    If we are running boot2docker on an OSX developer machine, $DOCKER_HOST will be set and will give us the VirtualBox VM's address.
-    If we are on TeamCity, docker port forwarding should work properly so we can connect to Kong on localhost.
-    */
-    val DockerHostPattern = """tcp://(.+):\d+""".r
-    sys.env.get("DOCKER_HOST").fold("localhost") {
-      // DOCKER_HOST will look like tcp://192.168.99.100:2376. Extract the IP address from there.
-      case DockerHostPattern(hostname) => hostname
-      case other => fail(s"DOCKER_HOST had an unexpected format: $other")
-    }
-  }
+  val containersHost = "localhost"
   val kongUrl = s"http://$containersHost:8001"
   val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
 
@@ -35,7 +24,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   @tailrec
   private def waitForPostgresToStart(): Unit = {
-    s"nc -z $containersHost 5434".! match {
+    s"nc -z $containersHost 5432".! match {
       case 0 => ()
       case _ =>
         println(s"Waiting for Postgres to start listening ...")
@@ -46,25 +35,20 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   private def configureKong(): Unit = {
     println("Registering the API with Kong")
-    s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d request_host=foo.com -d upstream_url=http://example.com".!
+    s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d hosts=foo.com -d upstream_url=http://example.com".!
 
     println("Enabling the key-auth plugin")
     s"curl -sS -X POST $kongUrl/apis/$kongApiName/plugins/ -d name=key-auth".!
   }
 
   override def beforeAll(): Unit = {
-    "docker create -p 5434:5432 -e POSTGRES_USER=kong -e POSTGRES_DB=kong --name postgres postgres:9.4".!
-    println(s"Created Postgres container")
+    println(s"Creating containers")
+    "docker-compose -f scripts/docker-compose.yml up -d".!
 
-    "docker create -p 8000:8000 -p 8001:8001 -p 8443:8443 -p 7946:7946 -p 7946:7946/udp --name kong --link postgres:postgres -e KONG_DATABASE=postgres -e KONG_PG_HOST=postgres kong:0.9.9".!
-    println(s"Created Kong container")
-
-    "docker start postgres".!
-    println(s"Started Postgres container")
+    println(s"Waiting for Postgres container")
     waitForPostgresToStart()
 
-    "docker start kong".!
-    println(s"Started Kong container")
+    println(s"Waiting for Kong container")
     waitForKongToStart()
 
     configureKong()
@@ -76,33 +60,11 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
     try super.afterAll()
     finally {
       Try {
-        "docker kill kong".!!
-        println("Killed Kong container")
+        "docker-compose -f scripts/docker-compose.yml down".!!
+        println("Killed containers")
         Thread.sleep(2000L)
       } recover {
-        case e => println(s"Failed to kill Kong container. Exception: $e}")
-      }
-
-      Try {
-        "docker kill postgres".!!
-        println("Killed Postgres container")
-        Thread.sleep(2000L)
-      } recover {
-        case e => println(s"Failed to kill Postgres container. Exception: $e}")
-      }
-
-      Try {
-        "docker rm kong".!!
-        println("Removed Kong container")
-      } recover {
-        case e => println(s"Failed to remove Kong container. Exception: $e}")
-      }
-
-      Try {
-        "docker rm postgres".!!
-        println("Removed Postgres container")
-      } recover {
-        case e => println(s"Failed to remove Postgres container. Exception: $e}")
+        case e => println(s"Failed to kill containers. Exception: $e}")
       }
     }
   }

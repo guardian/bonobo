@@ -64,7 +64,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
 
   private val BonoboTable = db.getTable(usersTable)
   private val KongTable = db.getTable(keysTable)
-  private val LableTable = db.getTable(labelTable)
+  private val LabelTable = db.getTable(labelTable)
 
   def search(query: String, limit: Int = 20): List[BonoboInfo] = {
     val keysScan = new ScanSpec()
@@ -327,7 +327,7 @@ class Dynamo(db: DynamoDB, usersTable: String, keysTable: String, labelTable: St
    * The following methods are used for labeling an user
    */
   def getLabels(): List[Label] = {
-    LableTable.scan(new ScanSpec()).asScala.toList.map(toLabel)
+    LabelTable.scan(new ScanSpec()).asScala.toList.map(toLabel)
   }
 
   def getLabelsFor(bonoboId: String): List[String] = {

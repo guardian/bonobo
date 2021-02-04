@@ -17,22 +17,32 @@ trait BonoboKeysTableFixture extends DynamoDbClientFixture with BeforeAndAfterAl
     val keySchema: List[KeySchemaElement] = List(
       new KeySchemaElement().withAttributeName("hashkey").withKeyType(KeyType.HASH),
       new KeySchemaElement().withAttributeName("rangekey").withKeyType(KeyType.RANGE))
-    val indexKeySchema: List[KeySchemaElement] = new KeySchemaElement().withAttributeName("keyValue").withKeyType(KeyType.HASH) :: Nil
+    val indexKeySchema = Seq(new KeySchemaElement().withAttributeName("keyValue").withKeyType(KeyType.HASH))
 
-    val createTableRequest: CreateTableRequest = new CreateTableRequest()
+    val keyValueIndex = new GlobalSecondaryIndex()
+      .withIndexName("keyValue-index")
+      .withKeySchema(indexKeySchema.asJava)
+      .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
+      .withProvisionedThroughput(new ProvisionedThroughput()
+        .withReadCapacityUnits(5L)
+        .withWriteCapacityUnits(5L))
+
+    val keyValueIndexAllAttributesIndex = new GlobalSecondaryIndex()
+      .withIndexName("keyValue-index-all-attributes")
+      .withKeySchema(indexKeySchema.asJava)
+      .withProjection(new Projection().withProjectionType(ProjectionType.ALL))
+      .withProvisionedThroughput(new ProvisionedThroughput()
+        .withReadCapacityUnits(5L)
+        .withWriteCapacityUnits(5L))
+
+    val createTableRequest = new CreateTableRequest()
       .withTableName(keysTableName)
       .withKeySchema(keySchema.asJava)
       .withAttributeDefinitions(attributeDefinitions.asJava)
       .withProvisionedThroughput(new ProvisionedThroughput()
         .withReadCapacityUnits(100L)
         .withWriteCapacityUnits(100L))
-      .withGlobalSecondaryIndexes(new GlobalSecondaryIndex()
-        .withIndexName("keyValue-index")
-        .withKeySchema(indexKeySchema.asJava)
-        .withProjection(new Projection().withProjectionType(ProjectionType.KEYS_ONLY))
-        .withProvisionedThroughput(new ProvisionedThroughput()
-          .withReadCapacityUnits(5L)
-          .withWriteCapacityUnits(5L)))
+      .withGlobalSecondaryIndexes(keyValueIndex, keyValueIndexAllAttributesIndex)
 
     println(s"Creating keys table $keysTableName")
     dynamoClient.createTable(createTableRequest)
