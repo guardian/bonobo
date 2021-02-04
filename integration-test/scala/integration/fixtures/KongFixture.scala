@@ -17,7 +17,7 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
 
   val containersHost = "localhost"
   val kongUrl = s"http://$containersHost:8001"
-  val kongApiName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
+  val kongServiceName = s"integration-test-${Random.alphanumeric.take(10).mkString}"
   val apiBackendUrl = "http://example.com"
   val apiPublicHostname = "foo.com"
 
@@ -44,41 +44,29 @@ trait KongFixture extends BeforeAndAfterAll { this: Suite =>
   }
 
   private def configureKong(): Unit = {
-    // Setup using the deprecated api interface
-    println("Registering the API with Kong")
-    s"curl -sS -X POST $kongUrl/apis -d name=$kongApiName -d hosts=$apiPublicHostname -d upstream_url=$apiBackendUrl".!
-
-    println("Enabling the key-auth plugin for API")
-    s"curl -sS -X POST $kongUrl/apis/$kongApiName/plugins/ -d name=key-auth".!
-
     // Setup a service and routing pair
     println("Creating Kong service")
-    val service = Await.result(wsClient.url(s"$kongUrl/services").post(Json.obj(
-      "name" -> kongApiName,
+    Await.result(wsClient.url(s"$kongUrl/services").post(Json.obj(
+      "name" -> kongServiceName,
       "url" -> apiBackendUrl
     )).map {
       response =>
         println("Create Kong service replied: " + response.body)
-        response.json
     }, atMost = 10.seconds)
 
-    println("Creating Kong route for service: " + service)
-    val route = Await.result(wsClient.url(s"$kongUrl/routes").post(Json.obj(
-      "hosts" -> Seq(apiPublicHostname),
-      "service" -> service
-    )).map { response =>
-      println("Create Kong route replied: " + response.body)
-      response.json
-    }, atMost = 10.seconds)
-
-    val routeId = (route \ "id").get.as[String]
-    println("Enabling key-auth plugin for route: " + routeId)
-    Await.result(wsClient.url(s"$kongUrl/routes/$routeId/plugins").post(Json.obj(
+    println("Enabling key-auth plugin for service")
+    Await.result(wsClient.url(s"$kongUrl/routes/$kongServiceName/plugins").post(Json.obj(
       "name" -> "key-auth"
     )).map {
       response =>
         println("Kong enable route replied: " + response.body)
-        response.json
+    }, atMost = 10.seconds)
+
+    println("Creating Kong route for service")
+    val route = Await.result(wsClient.url(s"$kongUrl/services/$kongServiceName/routes").post(Json.obj(
+      "hosts" -> Seq(apiPublicHostname)
+    )).map { response =>
+      println("Create Kong route replied: " + response.body)
     }, atMost = 10.seconds)
   }
 

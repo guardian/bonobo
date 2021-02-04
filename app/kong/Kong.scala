@@ -68,7 +68,7 @@ trait Kong {
   def deleteKey(consumerId: String): Future[Happy.type]
 }
 
-class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong {
+class KongClient(ws: WSClient, serverUrl: String, serviceName: String) extends Kong {
 
   import Kong._
 
@@ -100,7 +100,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   private def setRateLimit(consumerId: String, rateLimit: RateLimits): Future[Unit] = {
-    ws.url(s"$serverUrl/services/$apiName/plugins").post(Map(
+    ws.url(s"$serverUrl/services/$serviceName/plugins").post(Map(
       "consumer_id" -> Seq(consumerId),
       "name" -> Seq(RateLimitingPluginName),
       "config.policy" -> Seq("local"),
@@ -131,7 +131,7 @@ class KongClient(ws: WSClient, serverUrl: String, apiName: String) extends Kong 
   }
 
   private def getRateLimitingPluginId(consumerId: String): Future[String] = {
-    ws.url(s"$serverUrl/services/$apiName/plugins")
+    ws.url(s"$serverUrl/services/$serviceName/plugins")
       .withQueryStringParameters(("consumer_id" -> s"$consumerId"), ("name" -> RateLimitingPluginName))
       .get().flatMap {
         response =>
