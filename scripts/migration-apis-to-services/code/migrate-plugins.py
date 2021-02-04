@@ -24,7 +24,7 @@ while url != "":
             resp, content = http.request("http://localhost:8001/services/internal/plugins",
                     "PUT", body=json.dumps(payload),
                     headers={'content-type':'application/json'})
-            print(request)
+            print(content)
 
     url = ""
     if 'next' in parsed:
