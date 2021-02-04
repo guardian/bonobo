@@ -1,0 +1,12 @@
+{
+         "enabled" : true,
+         "config" : {
+            "hide_credentials" : false,
+            "anonymous" : "",
+            "key_names" : [
+               "api-key"
+            ],
+            "run_on_preflight" : true
+         },
+         "name" : "key-auth"
+}

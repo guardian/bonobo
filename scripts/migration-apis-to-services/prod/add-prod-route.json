@@ -1,0 +1,7 @@
+{
+	"strip_path" : false,
+         "hosts" : [
+            "content.guardianapis.com"
+         ],
+         "preserve_host" : false
+}
