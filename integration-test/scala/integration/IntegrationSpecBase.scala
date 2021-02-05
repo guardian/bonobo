@@ -56,7 +56,7 @@ trait IntegrationSpecBase
     val dynamo = self.dynamo
   }
   trait FakeKongComponent extends KongComponent { self: AhcWSComponents =>
-    val kong = new KongClient(wsClient, kongUrl, kongApiName)
+    val kong = new KongClient(wsClient, kongUrl, kongServiceName)
   }
   trait FakeAwsEmailComponent extends AwsEmailComponent {
     val awsEmail = new FakeEmailClient()
@@ -128,7 +128,7 @@ trait IntegrationSpecBase
   }
 
   def checkRateLimitsMatch(consumerId: String, minutes: Int, day: Int): Future[Boolean] = {
-    wsClient.url(s"$kongUrl/services/$kongApiName/plugins")
+    wsClient.url(s"$kongUrl/services/$kongServiceName/plugins")
       .withQueryStringParameters(("consumer_id" -> consumerId)).get().map {
         response =>
           val maybeDay = (response.json \\ "day").headOption
