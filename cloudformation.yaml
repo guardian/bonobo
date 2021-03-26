@@ -116,6 +116,32 @@ Resources:
               !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
       Roles:
         - !Ref RootRole
+  Ec2DescribeInstancesPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ec2-describe-instances
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - ec2:DescribeInstances
+              - ec2:DescribeTags
+            Resource: "*"
+      Roles:
+        - !Ref RootRole
+  Ec2DescribeAutoScalingGroupsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ec2-describe-autoscaling-groups
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:DescribeAutoScalingGroups
+              - autoscaling:DescribeAutoScalingInstances
+            Resource: "*"
+      Roles:
+        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -192,6 +218,7 @@ Resources:
       SecurityGroups:
       - Ref: BonoboSecurityGroup
       - Ref: BonoboSecurityGroupForKong
+      - Ref: WazuhSecurityGroup
       AssociatePublicIpAddress: true
       UserData:
         Fn::Base64:
@@ -244,6 +271,17 @@ Resources:
         ToPort: '9000'
         SourceSecurityGroupId:
           Ref: LoadBalancerSecurityGroup
+  WazuhSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow outbound traffic from wazuh agent to manager
+      VpcId:
+        !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 1514
+          ToPort: 1515
+          CidrIp: 0.0.0.0/0
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
