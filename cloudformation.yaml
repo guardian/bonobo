@@ -192,6 +192,7 @@ Resources:
       SecurityGroups:
       - Ref: BonoboSecurityGroup
       - Ref: BonoboSecurityGroupForKong
+      - Ref: WazuhSecurityGroup
       AssociatePublicIpAddress: true
       UserData:
         Fn::Base64:
@@ -244,6 +245,17 @@ Resources:
         ToPort: '9000'
         SourceSecurityGroupId:
           Ref: LoadBalancerSecurityGroup
+  WazuhSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow outbound traffic from wazuh agent to manager
+      VpcId:
+        !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 1514
+          ToPort: 1515
+          CidrIp: 0.0.0.0/0
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
