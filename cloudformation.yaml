@@ -116,6 +116,32 @@ Resources:
               !Sub arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${LoggingKinesisStream}
       Roles:
         - !Ref RootRole
+  Ec2DescribeInstancesPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ec2-describe-instances
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - ec2:DescribeInstances
+              - ec2:DescribeTags
+            Resource: "*"
+      Roles:
+        - !Ref RootRole
+  Ec2DescribeAutoScalingGroupsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: ec2-describe-autoscaling-groups
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - autoscaling:DescribeAutoScalingGroups
+              - autoscaling:DescribeAutoScalingInstances
+            Resource: "*"
+      Roles:
+        - !Ref RootRole
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
