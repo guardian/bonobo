@@ -1,8 +1,4 @@
-@import org.joda.time.DateTime
-
 @(keys: List[BonoboInfo], lastDirection: String, hasNext: Boolean)
-
-
 
 <div class="col-md-12">
     <table class="table table-responsive table-striped table-hover">
@@ -15,8 +11,7 @@
                 <th>Product</th>
                 <th>Tier</th>
                 <th>Status</th>
-                <th>Created</th>
-                <th>Extended</th>
+                <th>Created at</th>
             </tr>
         </thead>
         <tbody>
@@ -30,12 +25,6 @@
                     <td>@key.kongKey.tier.friendlyName</td>
                     <td>@key.kongKey.status</td>
                     <td>@key.kongKey.createdAt.toString("dd-MM-yyyy hh:mma")</td>
-                    <td>
-                    @if(key.bonoboUser.additionalInfo.extendedAt.isDefined) {
-                        @{new DateTime(key.bonoboUser.additionalInfo.extendedAt.get).toString("dd-MM-yyyy hh:mma")}
-                    }
-                    </td>
-
                 </tr>
             }
         </tbody>
